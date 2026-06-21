@@ -1,0 +1,1095 @@
+0800: LD SP,0x4000             ; 31 00 40
+0803: LD A,0xc0                ; 3E C0
+0805: OUT (0x00e7),A           ; D3 E7
+0807: LD HL,0xff               ; 21 FF 00
+080A: LD (0x3d00),HL           ; 22 00 3D
+080D: LD (0x3d02),HL           ; 22 02 3D
+0810: LD (0x3d04),HL           ; 22 04 3D
+0813: LD HL,0x55aa             ; 21 AA 55
+0816: LD (0x3d06),HL           ; 22 06 3D
+0819: LD (0x3d08),HL           ; 22 08 3D
+081C: LD A,0                   ; 3E 00
+081E: LD (0x3000),A            ; 32 00 30
+0821: LD B,0                   ; 06 00
+0823: LD DE,0x3d00             ; 11 00 3D
+0826: LD A,(DE)                ; 1A
+0827: CALL 0x0035              ; CD 35 00
+082A: INC DE                   ; 13
+082B: INC B                    ; 04
+082C: LD A,B                   ; 78
+082D: CP 9                     ; FE 09
+082F: JP nz,0x0026             ; C2 26 00
+0832: JP 0x001c                ; C3 1C 00
+0835: PUSH BC                  ; C5
+0836: LD C,A                   ; 4F
+0837: LD A,B                   ; 78
+0838: CPL                      ; 2F
+0839: OUT (0x00e5),A           ; D3 E5
+083B: LD A,C                   ; 79
+083C: OUT (0x00e4),A           ; D3 E4
+083E: LD A,4                   ; 3E 04
+0840: OUT (0x00e7),A           ; D3 E7
+0842: XOR A                    ; AF
+0843: OUT (0x00e7),A           ; D3 E7
+0845: LD A,1                   ; 3E 01
+0847: OUT (0x00e7),A           ; D3 E7
+0849: CALL 0x005d              ; CD 5D 00
+084C: LD A,5                   ; 3E 05
+084E: OUT (0x00e7),A           ; D3 E7
+0850: LD A,3                   ; 3E 03
+0852: OUT (0x00e7),A           ; D3 E7
+0854: NOP                      ; 00
+0855: NOP                      ; 00
+0856: NOP                      ; 00
+0857: LD A,2                   ; 3E 02
+0859: OUT (0x00e7),A           ; D3 E7
+085B: POP BC                   ; C1
+085C: RET                      ; C9
+085D: LD A,0x60                ; 3E 60
+085F: DEC A                    ; 3D
+0860: JP nz,0x005f             ; C2 5F 00
+0863: RET                      ; C9
+0864: CALL 0x02ad              ; CD AD 02
+0867: LD HL,0x2000             ; 21 00 20
+086A: LD C,(HL)                ; 4E
+086B: LD A,(HL)                ; 7E
+086C: CPL                      ; 2F
+086D: LD (HL),A                ; 77
+086E: LD A,(0x2000)            ; 3A 00 20
+0871: LD A,(HL)                ; 7E
+0872: LD (HL),C                ; 71
+0873: CPL                      ; 2F
+0874: CP C                     ; B9
+0875: JP z,0x087f              ; CA 7F 08
+0878: LD B,A                   ; 47
+0879: XOR A                    ; AF
+087A: LD D,0x10                ; 16 10
+087C: CALL 0x0217              ; CD 17 02
+087F: LD HL,0x27ff             ; 21 FF 27
+0882: LD C,(HL)                ; 4E
+0883: LD A,(HL)                ; 7E
+0884: CPL                      ; 2F
+0885: LD (HL),A                ; 77
+0886: LD A,(0x2000)            ; 3A 00 20
+0889: LD A,(HL)                ; 7E
+088A: LD (HL),C                ; 71
+088B: CPL                      ; 2F
+088C: CP C                     ; B9
+088D: JP z,0x0897              ; CA 97 08
+0890: LD B,A                   ; 47
+0891: XOR A                    ; AF
+0892: LD D,0x12                ; 16 12
+0894: CALL 0x0217              ; CD 17 02
+0897: LD HL,0x3c1c             ; 21 1C 3C
+089A: LD B,0x40                ; 06 40
+089C: LD C,1                   ; 0E 01
+089E: DI                       ; F3
+089F: OUT (0x0002),A           ; D3 02
+08A1: LD DE,0                  ; 11 00 00
+08A4: LD A,(DE)                ; 1A
+08A5: LD (HL),A                ; 77
+08A6: INC DE                   ; 13
+08A7: INC HL                   ; 23
+08A8: LD A,H                   ; 7C
+08A9: CP B                     ; B8
+08AA: JP nz,0x08a4             ; C2 A4 08
+08AD: DEC HL                   ; 2B
+08AE: DEC DE                   ; 1B
+08AF: LD A,(HL)                ; 7E
+08B0: CPL                      ; 2F
+08B1: LD (HL),A                ; 77
+08B2: DEC HL                   ; 2B
+08B3: DEC DE                   ; 1B
+08B4: LD A,D                   ; 7A
+08B5: OR A                     ; B7
+08B6: JP p,0x08af              ; F2 AF 08
+08B9: INC HL                   ; 23
+08BA: INC DE                   ; 13
+08BB: LD A,(HL)                ; 7E
+08BC: CPL                      ; 2F
+08BD: LD (HL),A                ; 77
+08BE: INC HL                   ; 23
+08BF: INC DE                   ; 13
+08C0: LD A,H                   ; 7C
+08C1: CP B                     ; B8
+08C2: JP nz,0x08bb             ; C2 BB 08
+08C5: DEC DE                   ; 1B
+08C6: DEC HL                   ; 2B
+08C7: LD A,(DE)                ; 1A
+08C8: CP (HL)                  ; BE
+08C9: JP nz,0x08dd             ; C2 DD 08
+08CC: DEC HL                   ; 2B
+08CD: DEC DE                   ; 1B
+08CE: LD A,D                   ; 7A
+08CF: OR A                     ; B7
+08D0: JP p,0x08c7              ; F2 C7 08
+08D3: LD A,C                   ; 79
+08D4: OR A                     ; B7
+08D5: LD A,0                   ; 3E 00
+08D7: RET z                    ; C8
+08D8: OR A                     ; B7
+08D9: EI                       ; FB
+08DA: JP 0x08e9                ; C3 E9 08
+08DD: LD E,C                   ; 59
+08DE: LD C,A                   ; 4F
+08DF: LD B,(HL)                ; 46
+08E0: LD A,E                   ; 7B
+08E1: OR A                     ; B7
+08E2: LD A,1                   ; 3E 01
+08E4: JP nz,0x08e9             ; C2 E9 08
+08E7: OR A                     ; B7
+08E8: RET                      ; C9
+08E9: EI                       ; FB
+08EA: JP z,0x08f3              ; CA F3 08
+08ED: LD D,0xd4                ; 16 D4
+08EF: LD A,H                   ; 7C
+08F0: CALL 0x021d              ; CD 1D 02
+08F3: CALL 0x05f1              ; CD F1 05
+08F6: CALL 0x02ad              ; CD AD 02
+08F9: LD HL,0x4000             ; 21 00 40
+08FC: LD B,0x42                ; 06 42
+08FE: LD C,0                   ; 0E 00
+0900: CALL 0x089f              ; CD 9F 08
+0903: JP z,0x090e              ; CA 0E 09
+0906: LD A,L                   ; 7D
+0907: AND 3                    ; E6 03
+0909: LD D,0x20                ; 16 20
+090B: CALL 0x021d              ; CD 1D 02
+090E: CALL 0x02ad              ; CD AD 02
+0911: CALL 0x0a1d              ; CD 1D 0A
+0914: CALL 0x02ad              ; CD AD 02
+0917: CALL 0x0c48              ; CD 48 0C
+091A: LD D,0x40                ; 16 40
+091C: CALL nz,0x021d           ; C4 1D 02
+091F: CALL 0x02ad              ; CD AD 02
+0922: CALL 0x0942              ; CD 42 09
+0925: CALL 0x02ad              ; CD AD 02
+0928: CALL 0x0b75              ; CD 75 0B
+092B: LD D,0x90                ; 16 90
+092D: CALL nz,0x021d           ; C4 1D 02
+0930: JP 0x00cc                ; C3 CC 00
+0933: OUT (0x0002),A           ; D3 02
+0935: LD DE,0x41ff             ; 11 FF 41
+0938: LD A,(HL)                ; 7E
+0939: LD (DE),A                ; 12
+093A: DEC DE                   ; 1B
+093B: INC HL                   ; 23
+093C: LD A,E                   ; 7B
+093D: CP B                     ; B8
+093E: JP nz,0x0938             ; C2 38 09
+0941: RET                      ; C9
+0942: LD HL,0xa0d              ; 21 0D 0A
+0945: LD B,0xef                ; 06 EF
+0947: CALL 0x0933              ; CD 33 09
+094A: LD DE,0x9e5              ; 11 E5 09
+094D: LD HL,0x9d5              ; 21 D5 09
+0950: LD B,0                   ; 06 00
+0952: CALL 0x099a              ; CD 9A 09
+0955: LD A,0xfe                ; 3E FE
+0957: LD (0x41fa),A            ; 32 FA 41
+095A: LD HL,0x9d5              ; 21 D5 09
+095D: LD B,0                   ; 06 00
+095F: CALL 0x099a              ; CD 9A 09
+0962: LD A,0x7e                ; 3E 7E
+0964: LD (0x41fa),A            ; 32 FA 41
+0967: LD A,0x55                ; 3E 55
+0969: LD (0x41fb),A            ; 32 FB 41
+096C: LD B,4                   ; 06 04
+096E: LD HL,0x9d5              ; 21 D5 09
+0971: CALL 0x099a              ; CD 9A 09
+0974: LD A,0xfe                ; 3E FE
+0976: LD (0x41fa),A            ; 32 FA 41
+0979: LD HL,0x9d5              ; 21 D5 09
+097C: LD B,4                   ; 06 04
+097E: CALL 0x099a              ; CD 9A 09
+0981: LD A,1                   ; 3E 01
+0983: LD (0x41fb),A            ; 32 FB 41
+0986: LD HL,0x9dd              ; 21 DD 09
+0989: LD B,8                   ; 06 08
+098B: CALL 0x099a              ; CD 9A 09
+098E: LD BC,0                  ; 01 00 00
+0991: IN A,(0x0003)            ; DB 03
+0993: AND 1                    ; E6 01
+0995: LD A,C                   ; 79
+0996: CALL nz,0x09d0           ; C4 D0 09
+0999: RET                      ; C9
+099A: LD C,4                   ; 0E 04
+099C: PUSH DE                  ; D5
+099D: LD E,C                   ; 59
+099E: LD D,B                   ; 50
+099F: LD A,(HL)                ; 7E
+09A0: OUT (0x0007),A           ; D3 07
+09A2: INC HL                   ; 23
+09A3: LD A,(HL)                ; 7E
+09A4: OUT (0x0006),A           ; D3 06
+09A6: INC HL                   ; 23
+09A7: OUT (0x0003),A           ; D3 03
+09A9: EX (SP),HL               ; E3
+09AA: IN A,(0x0007)            ; DB 07
+09AC: LD B,A                   ; 47
+09AD: LD C,(HL)                ; 4E
+09AE: INC HL                   ; 23
+09AF: CP C                     ; B9
+09B0: JP z,0x09b5              ; CA B5 09
+09B3: INC D                    ; 14
+09B4: INC D                    ; 14
+09B5: IN A,(0x0006)            ; DB 06
+09B7: LD B,A                   ; 47
+09B8: LD C,(HL)                ; 4E
+09B9: INC HL                   ; 23
+09BA: CP C                     ; B9
+09BB: JP z,0x09bf              ; CA BF 09
+09BE: INC D                    ; 14
+09BF: LD A,D                   ; 7A
+09C0: AND 3                    ; E6 03
+09C2: JP nz,0x09ce             ; C2 CE 09
+09C5: LD B,D                   ; 42
+09C6: LD C,E                   ; 4B
+09C7: EX DE,HL                 ; EB
+09C8: POP HL                   ; E1
+09C9: DEC C                    ; 0D
+09CA: JP nz,0x099c             ; C2 9C 09
+09CD: RET                      ; C9
+09CE: LD A,D                   ; 7A
+09CF: POP DE                   ; D1
+09D0: LD D,0x80                ; 16 80
+09D2: JP 0x021d                ; C3 1D 02
+09D5: LD D,L                   ; 55
+09D6: LD D,L                   ; 55
+09D7: XOR D                    ; AA
+09D8: XOR D                    ; AA
+09D9: LD H,(HL)                ; 66
+09DA: LD H,(HL)                ; 66
+09DB: SBC A,C                  ; 99
+09DC: SBC A,C                  ; 99
+09DD: INC SP                   ; 33
+09DE: INC SP                   ; 33
+09DF: CALL z,0x3fcc            ; CC CC 3F
+09E2: RST 0x38                 ; FF
+09E3: RET nz                   ; C0
+09E4: NOP                      ; 00
+09E5: RST 0                    ; C7
+09E6: RST 0x38                 ; FF
+09E7: SCF                      ; 37
+09E8: RST 0x38                 ; FF
+09E9: CP H                     ; BC
+09EA: CALL z,0x3243            ; CC 43 32
+09ED: JR c,0x09ef              ; 38 00
+09EF: RET z                    ; C8
+09F0: NOP                      ; 00
+09F1: LD B,E                   ; 43
+09F2: INC SP                   ; 33
+09F3: CP H                     ; BC
+09F4: CALL 0xff8f              ; CD 8F FF
+09F7: LD L,A                   ; 6F
+09F8: RST 0x38                 ; FF
+09F9: ADD A,B                  ; 80
+09FA: NOP                      ; 00
+09FB: LD A,A                   ; 7F
+09FC: RST 0x38                 ; FF
+09FD: LD (HL),B                ; 70
+09FE: NOP                      ; 00
+09FF: SUB B                    ; 90
+0A00: NOP                      ; 00
+0A01: LD A,A                   ; 7F
+0A02: RST 0x38                 ; FF
+0A03: ADD A,B                  ; 80
+0A04: NOP                      ; 00
+0A05: LD H,H                   ; 64
+0A06: ADC A,0x9b               ; CE 9B
+0A08: INC SP                   ; 33
+0A09: LD A,L                   ; 7D
+0A0A: RST 0x38                 ; FF
+0A0B: ADD A,D                  ; 82
+0A0C: LD (BC),A                ; 02
+0A0D: RST 0x38                 ; FF
+0A0E: RST 0x38                 ; FF
+0A0F: RST 0x38                 ; FF
+0A10: RST 0x38                 ; FF
+0A11: XOR C                    ; A9
+0A12: LD A,(HL)                ; 7E
+0A13: RST 0x18                 ; DF
+0A14: RST 0x18                 ; DF
+0A15: CP 0xfe                  ; FE FE
+0A17: RST 0x38                 ; FF
+0A18: RST 0x30                 ; F7
+0A19: RST 0x38                 ; FF
+0A1A: CP 0xef                  ; FE EF
+0A1C: CP A                     ; BF
+0A1D: CALL 0x0b40              ; CD 40 0B
+0A20: OUT (0x0007),A           ; D3 07
+0A22: IN A,(0x0002)            ; DB 02
+0A24: CALL 0x0b44              ; CD 44 0B
+0A27: CALL nz,0x0b57           ; C4 57 0B
+0A2A: CALL 0x0b49              ; CD 49 0B
+0A2D: OUT (0x0007),A           ; D3 07
+0A2F: IN A,(0x0002)            ; DB 02
+0A31: CALL 0x0b44              ; CD 44 0B
+0A34: CALL nz,0x0b57           ; C4 57 0B
+0A37: LD HL,0xb65              ; 21 65 0B
+0A3A: LD B,0xf3                ; 06 F3
+0A3C: CALL 0x0933              ; CD 33 09
+0A3F: CALL 0x0b40              ; CD 40 0B
+0A42: OUT (0x0007),A           ; D3 07
+0A44: OUT (0x0000),A           ; D3 00
+0A46: OUT (0x0003),A           ; D3 03
+0A48: EX (SP),HL               ; E3
+0A49: EX (SP),HL               ; E3
+0A4A: OUT (0x0003),A           ; D3 03
+0A4C: IN A,(0x0007)            ; DB 07
+0A4E: CALL 0x0b4d              ; CD 4D 0B
+0A51: CALL nz,0x0b56           ; C4 56 0B
+0A54: CALL 0x0b49              ; CD 49 0B
+0A57: OUT (0x0002),A           ; D3 02
+0A59: OUT (0x0007),A           ; D3 07
+0A5B: IN A,(0x0007)            ; DB 07
+0A5D: CALL 0x0b4d              ; CD 4D 0B
+0A60: CALL z,0x0b57            ; CC 57 0B
+0A63: OUT (0x0000),A           ; D3 00
+0A65: IN A,(0x0007)            ; DB 07
+0A67: CALL 0x0b4d              ; CD 4D 0B
+0A6A: CALL z,0x0b59            ; CC 59 0B
+0A6D: OUT (0x0001),A           ; D3 01
+0A6F: OUT (0x0003),A           ; D3 03
+0A71: CALL 0x0b49              ; CD 49 0B
+0A74: OUT (0x0007),A           ; D3 07
+0A76: IN A,(0x0007)            ; DB 07
+0A78: CALL 0x0b4d              ; CD 4D 0B
+0A7B: CALL nz,0x0b58           ; C4 58 0B
+0A7E: OUT (0x0000),A           ; D3 00
+0A80: OUT (0x0003),A           ; D3 03
+0A82: OUT (0x0002),A           ; D3 02
+0A84: LD HL,0xb71              ; 21 71 0B
+0A87: LD B,0xf7                ; 06 F7
+0A89: CALL 0x0933              ; CD 33 09
+0A8C: CALL 0x0b40              ; CD 40 0B
+0A8F: IN A,(0x0000)            ; DB 00
+0A91: CALL 0x0b44              ; CD 44 0B
+0A94: CALL nz,0x0b5b           ; C4 5B 0B
+0A97: IN A,(0x0005)            ; DB 05
+0A99: AND 0xdf                 ; E6 DF
+0A9B: CALL 0x0b44              ; CD 44 0B
+0A9E: CALL nz,0x0b54           ; C4 54 0B
+0AA1: CALL 0x0b49              ; CD 49 0B
+0AA4: LD (0x41fc),A            ; 32 FC 41
+0AA7: OUT (0x0006),A           ; D3 06
+0AA9: OUT (0x0007),A           ; D3 07
+0AAB: IN A,(0x0000)            ; DB 00
+0AAD: CALL 0x0b44              ; CD 44 0B
+0AB0: CALL nz,0x0b5b           ; C4 5B 0B
+0AB3: IN A,(0x0006)            ; DB 06
+0AB5: CALL 0x0b44              ; CD 44 0B
+0AB8: CALL nz,0x0b53           ; C4 53 0B
+0ABB: IN A,(0x0007)            ; DB 07
+0ABD: CALL 0x0b44              ; CD 44 0B
+0AC0: CALL nz,0x0b52           ; C4 52 0B
+0AC3: LD C,0xa1                ; 0E A1
+0AC5: IN A,(0x0003)            ; DB 03
+0AC7: OR 1                     ; F6 01
+0AC9: CALL 0x0b44              ; CD 44 0B
+0ACC: CALL nz,0x0b56           ; C4 56 0B
+0ACF: CALL 0x0b40              ; CD 40 0B
+0AD2: OUT (0x0006),A           ; D3 06
+0AD4: OUT (0x0007),A           ; D3 07
+0AD6: IN A,(0x0006)            ; DB 06
+0AD8: CALL 0x0b44              ; CD 44 0B
+0ADB: CALL nz,0x0b53           ; C4 53 0B
+0ADE: IN A,(0x0007)            ; DB 07
+0AE0: CALL 0x0b44              ; CD 44 0B
+0AE3: CALL nz,0x0b52           ; C4 52 0B
+0AE6: CALL 0x0b49              ; CD 49 0B
+0AE9: IN A,(0x0004)            ; DB 04
+0AEB: OR 0x20                  ; F6 20
+0AED: CALL 0x0b44              ; CD 44 0B
+0AF0: CALL nz,0x0b55           ; C4 55 0B
+0AF3: LD C,0x5a                ; 0E 5A
+0AF5: IN A,(0x0001)            ; DB 01
+0AF7: CALL 0x0b44              ; CD 44 0B
+0AFA: CALL nz,0x0b58           ; C4 58 0B
+0AFD: LD A,0xa5                ; 3E A5
+0AFF: LD (0x41fd),A            ; 32 FD 41
+0B02: LD C,A                   ; 4F
+0B03: IN A,(0x0001)            ; DB 01
+0B05: CALL 0x0b44              ; CD 44 0B
+0B08: CALL nz,0x0b58           ; C4 58 0B
+0B0B: LD C,0xaa                ; 0E AA
+0B0D: IN A,(0x0005)            ; DB 05
+0B0F: CALL 0x0b44              ; CD 44 0B
+0B12: CALL nz,0x0b54           ; C4 54 0B
+0B15: LD A,0x95                ; 3E 95
+0B17: LD (0x41fe),A            ; 32 FE 41
+0B1A: CALL 0x0b40              ; CD 40 0B
+0B1D: IN A,(0x0004)            ; DB 04
+0B1F: AND 0xdf                 ; E6 DF
+0B21: CALL 0x0b44              ; CD 44 0B
+0B24: CALL nz,0x0b55           ; C4 55 0B
+0B27: LD A,0xca                ; 3E CA
+0B29: LD (0x41ff),A            ; 32 FF 41
+0B2C: LD C,0x54                ; 0E 54
+0B2E: IN A,(0x0003)            ; DB 03
+0B30: AND 0xfe                 ; E6 FE
+0B32: CALL 0x0b44              ; CD 44 0B
+0B35: CALL nz,0x0b56           ; C4 56 0B
+0B38: LD HL,0xad7e             ; 21 7E AD
+0B3B: LD (0x41fe),HL           ; 22 FE 41
+0B3E: XOR A                    ; AF
+0B3F: RET                      ; C9
+0B40: LD A,0x55                ; 3E 55
+0B42: LD C,A                   ; 4F
+0B43: RET                      ; C9
+0B44: LD B,A                   ; 47
+0B45: CP C                     ; B9
+0B46: LD A,0                   ; 3E 00
+0B48: RET                      ; C9
+0B49: LD A,0xaa                ; 3E AA
+0B4B: LD C,A                   ; 4F
+0B4C: RET                      ; C9
+0B4D: LD B,A                   ; 47
+0B4E: CP C                     ; B9
+0B4F: LD A,0x10                ; 3E 10
+0B51: RET                      ; C9
+0B52: INC A                    ; 3C
+0B53: INC A                    ; 3C
+0B54: INC A                    ; 3C
+0B55: INC A                    ; 3C
+0B56: INC A                    ; 3C
+0B57: INC A                    ; 3C
+0B58: INC A                    ; 3C
+0B59: CP 0                     ; FE 00
+0B5B: PUSH BC                  ; C5
+0B5C: OUT (0x0002),A           ; D3 02
+0B5E: LD D,0x30                ; 16 30
+0B60: CALL 0x021d              ; CD 1D 02
+0B63: POP BC                   ; C1
+0B64: RET                      ; C9
+0B65: RST 0x38                 ; FF
+0B66: RST 0x38                 ; FF
+0B67: RST 0x38                 ; FF
+0B68: RST 0x38                 ; FF
+0B69: RST 0x38                 ; FF
+0B6A: CP 0xdf                  ; FE DF
+0B6C: OR A                     ; B7
+0B6D: RST 0x38                 ; FF
+0B6E: RST 0x38                 ; FF
+0B6F: RST 0x38                 ; FF
+0B70: RST 0x38                 ; FF
+0B71: XOR L                    ; AD
+0B72: LD L,D                   ; 6A
+0B73: LD E,D                   ; 5A
+0B74: LD D,L                   ; 55
+0B75: OUT (0x0002),A           ; D3 02
+0B77: LD HL,0xc28              ; 21 28 0C
+0B7A: LD B,0xdf                ; 06 DF
+0B7C: CALL 0x0933              ; CD 33 09
+0B7F: LD A,0x55                ; 3E 55
+0B81: OUT (0x0006),A           ; D3 06
+0B83: OUT (0x0007),A           ; D3 07
+0B85: OUT (0x0000),A           ; D3 00
+0B87: OUT (0x0005),A           ; D3 05
+0B89: OUT (0x0003),A           ; D3 03
+0B8B: LD A,0x80                ; 3E 80
+0B8D: LD (0x41f5),A            ; 32 F5 41
+0B90: LD A,0xaa                ; 3E AA
+0B92: OUT (0x0006),A           ; D3 06
+0B94: OUT (0x0007),A           ; D3 07
+0B96: OUT (0x0005),A           ; D3 05
+0B98: OUT (0x0003),A           ; D3 03
+0B9A: OUT (0x0005),A           ; D3 05
+0B9C: OUT (0x0003),A           ; D3 03
+0B9E: IN A,(0x0006)            ; DB 06
+0BA0: CP 0x55                  ; FE 55
+0BA2: LD A,0                   ; 3E 00
+0BA4: JP 0x0ba9                ; C3 A9 0B
+0BA7: LD A,0x80                ; 3E 80
+0BA9: LD (0x3e3d),A            ; 32 3D 3E
+0BAC: XOR A                    ; AF
+0BAD: LD (0x41f5),A            ; 32 F5 41
+0BB0: OUT (0x0000),A           ; D3 00
+0BB2: OUT (0x0005),A           ; D3 05
+0BB4: LD BC,0x5555             ; 01 55 55
+0BB7: LD HL,0                  ; 21 00 00
+0BBA: LD A,C                   ; 79
+0BBB: OUT (0x0006),A           ; D3 06
+0BBD: LD A,B                   ; 78
+0BBE: OUT (0x0007),A           ; D3 07
+0BC0: OUT (0x0003),A           ; D3 03
+0BC2: INC BC                   ; 03
+0BC3: INC HL                   ; 23
+0BC4: XOR A                    ; AF
+0BC5: CP L                     ; BD
+0BC6: JP nz,0x0bba             ; C2 BA 0B
+0BC9: LD A,(0x3e3d)            ; 3A 3D 3E
+0BCC: CP H                     ; BC
+0BCD: JP nz,0x0bba             ; C2 BA 0B
+0BD0: LD BC,0x5555             ; 01 55 55
+0BD3: LD HL,0                  ; 21 00 00
+0BD6: OUT (0x0005),A           ; D3 05
+0BD8: LD DE,0xaaaa             ; 11 AA AA
+0BDB: CALL 0x0be1              ; CD E1 0B
+0BDE: JP 0x0c05                ; C3 05 0C
+0BE1: LD A,E                   ; 7B
+0BE2: OUT (0x0006),A           ; D3 06
+0BE4: LD A,D                   ; 7A
+0BE5: OUT (0x0007),A           ; D3 07
+0BE7: OUT (0x0003),A           ; D3 03
+0BE9: IN A,(0x0006)            ; DB 06
+0BEB: CP C                     ; B9
+0BEC: JP nz,0x0c12             ; C2 12 0C
+0BEF: IN A,(0x0007)            ; DB 07
+0BF1: CP B                     ; B8
+0BF2: JP nz,0x0c22             ; C2 22 0C
+0BF5: INC BC                   ; 03
+0BF6: INC DE                   ; 13
+0BF7: INC HL                   ; 23
+0BF8: XOR A                    ; AF
+0BF9: CP L                     ; BD
+0BFA: JP nz,0x0be1             ; C2 E1 0B
+0BFD: LD A,(0x3e3d)            ; 3A 3D 3E
+0C00: CP H                     ; BC
+0C01: JP nz,0x0be1             ; C2 E1 0B
+0C04: RET                      ; C9
+0C05: LD BC,0xaaaa             ; 01 AA AA
+0C08: LD HL,0                  ; 21 00 00
+0C0B: OUT (0x0005),A           ; D3 05
+0C0D: CALL 0x0be1              ; CD E1 0B
+0C10: XOR A                    ; AF
+0C11: RET                      ; C9
+0C12: LD D,1                   ; 16 01
+0C14: LD B,A                   ; 47
+0C15: LD A,H                   ; 7C
+0C16: AND 0x40                 ; E6 40
+0C18: LD A,0                   ; 3E 00
+0C1A: JP z,0x0c1f              ; CA 1F 0C
+0C1D: LD A,4                   ; 3E 04
+0C1F: OR D                     ; B2
+0C20: POP DE                   ; D1
+0C21: RET                      ; C9
+0C22: LD C,B                   ; 48
+0C23: LD D,2                   ; 16 02
+0C25: JP 0x0c14                ; C3 14 0C
+0C28: LD A,L                   ; 7D
+0C29: CP 0xdf                  ; FE DF
+0C2B: RST 0x38                 ; FF
+0C2C: LD A,H                   ; 7C
+0C2D: CALL m,0x0000            ; FC 00 00
+0C30: CP 0xfd                  ; FE FD
+0C32: NOP                      ; 00
+0C33: NOP                      ; 00
+0C34: RST 0x38                 ; FF
+0C35: CALL m,0x1000            ; FC 00 10
+0C38: RST 0x38                 ; FF
+0C39: CALL m,0x2000            ; FC 00 20
+0C3C: RST 0x38                 ; FF
+0C3D: CALL m,0x3000            ; FC 00 30
+0C40: RST 0x38                 ; FF
+0C41: CP 0xef                  ; FE EF
+0C43: OR A                     ; B7
+0C44: RST 0x38                 ; FF
+0C45: RST 0x38                 ; FF
+0C46: RST 0x38                 ; FF
+0C47: RST 0x38                 ; FF
+0C48: OUT (0x0000),A           ; D3 00
+0C4A: OUT (0x0002),A           ; D3 02
+0C4C: XOR A                    ; AF
+0C4D: LD (0x3c40),A            ; 32 40 3C
+0C50: LD HL,0xcdb              ; 21 DB 0C
+0C53: LD B,0xeb                ; 06 EB
+0C55: CALL 0x0933              ; CD 33 09
+0C58: LD HL,0xcc3              ; 21 C3 0C
+0C5B: CALL 0x0c7b              ; CD 7B 0C
+0C5E: LD HL,0xcc3              ; 21 C3 0C
+0C61: CALL 0x0c91              ; CD 91 0C
+0C64: LD HL,0xccf              ; 21 CF 0C
+0C67: CALL 0x0c7b              ; CD 7B 0C
+0C6A: LD HL,0xccf              ; 21 CF 0C
+0C6D: CALL 0x0c91              ; CD 91 0C
+0C70: LD A,(0x3c40)            ; 3A 40 3C
+0C73: OR A                     ; B7
+0C74: RET z                    ; C8
+0C75: LD HL,(0x3c41)           ; 2A 41 3C
+0C78: LD B,H                   ; 44
+0C79: LD C,L                   ; 4D
+0C7A: RET                      ; C9
+0C7B: LD DE,0x41fa             ; 11 FA 41
+0C7E: LD C,4                   ; 0E 04
+0C80: LD A,(HL)                ; 7E
+0C81: LD (DE),A                ; 12
+0C82: INC HL                   ; 23
+0C83: INC HL                   ; 23
+0C84: LD A,(HL)                ; 7E
+0C85: OUT (0x0006),A           ; D3 06
+0C87: OUT (0x0007),A           ; D3 07
+0C89: OUT (0x0003),A           ; D3 03
+0C8B: INC HL                   ; 23
+0C8C: DEC C                    ; 0D
+0C8D: JP nz,0x0c80             ; C2 80 0C
+0C90: RET                      ; C9
+0C91: LD B,1                   ; 06 01
+0C93: INC HL                   ; 23
+0C94: LD A,(HL)                ; 7E
+0C95: LD (DE),A                ; 12
+0C96: OUT (0x0003),A           ; D3 03
+0C98: INC HL                   ; 23
+0C99: IN A,(0x0006)            ; DB 06
+0C9B: CP (HL)                  ; BE
+0C9C: LD C,0x10                ; 0E 10
+0C9E: CALL nz,0x0cb3           ; C4 B3 0C
+0CA1: IN A,(0x0007)            ; DB 07
+0CA3: CP (HL)                  ; BE
+0CA4: LD C,0x20                ; 0E 20
+0CA6: CALL nz,0x0cb3           ; C4 B3 0C
+0CA9: INC HL                   ; 23
+0CAA: LD A,B                   ; 78
+0CAB: ADD A,A                  ; 87
+0CAC: CP 0x10                  ; FE 10
+0CAE: LD B,A                   ; 47
+0CAF: JP nz,0x0c93             ; C2 93 0C
+0CB2: RET                      ; C9
+0CB3: LD (0x3c42),A            ; 32 42 3C
+0CB6: LD A,(HL)                ; 7E
+0CB7: LD (0x3c41),A            ; 32 41 3C
+0CBA: LD A,(0x3c40)            ; 3A 40 3C
+0CBD: OR B                     ; B0
+0CBE: OR C                     ; B1
+0CBF: LD (0x3c40),A            ; 32 40 3C
+0CC2: RET                      ; C9
+0CC3: JP nz,0x55ce             ; C2 CE 55
+0CC6: ADD A,0xde               ; C6 DE
+0CC8: LD H,(HL)                ; 66
+0CC9: JP z,0x77ee              ; CA EE 77
+0CCC: ADC A,0xfe               ; CE FE
+0CCE: XOR 0xc2                 ; EE C2
+0CD0: ADC A,0xaa               ; CE AA
+0CD2: ADD A,0xde               ; C6 DE
+0CD4: SBC A,C                  ; 99
+0CD5: JP z,0x88ee              ; CA EE 88
+0CD8: ADC A,0xfe               ; CE FE
+0CDA: LD DE,0xffff             ; 11 FF FF
+0CDD: RST 0x38                 ; FF
+0CDE: RST 0x38                 ; FF
+0CDF: LD A,L                   ; 7D
+0CE0: JP nz,0xffdf             ; C2 DF FF
+0CE3: CP 0xfe                  ; FE FE
+0CE5: RST 0x38                 ; FF
+0CE6: RST 0x30                 ; F7
+0CE7: RST 0x38                 ; FF
+0CE8: CP 0xef                  ; FE EF
+0CEA: OR A                     ; B7
+0CEB: RST 0x38                 ; FF
+0CEC: RST 0x38                 ; FF
+0CED: RST 0x38                 ; FF
+0CEE: RST 0x38                 ; FF
+0CEF: LD H,0xcd                ; 26 CD
+0CF1: PUSH DE                  ; D5
+0CF2: INC BC                   ; 03
+0CF3: LD HL,0xd16              ; 21 16 0D
+0CF6: CALL 0x0d1e              ; CD 1E 0D
+0CF9: LD HL,0xd16              ; 21 16 0D
+0CFC: CALL 0x0d1e              ; CD 1E 0D
+0CFF: OUT (0x0002),A           ; D3 02
+0D01: LD HL,0x1639             ; 21 39 16
+0D04: LD DE,0x4180             ; 11 80 41
+0D07: LD B,0x80                ; 06 80
+0D09: CALL 0x0614              ; CD 14 06
+0D0C: OUT (0x0001),A           ; D3 01
+0D0E: OUT (0x0003),A           ; D3 03
+0D10: CALL 0x02ad              ; CD AD 02
+0D13: JP 0x0d10                ; C3 10 0D
+0D16: XOR D                    ; AA
+0D17: XOR D                    ; AA
+0D18: SBC A,C                  ; 99
+0D19: SBC A,C                  ; 99
+0D1A: ADD A,A                  ; 87
+0D1B: RST 0                    ; C7
+0D1C: LD A,A                   ; 7F
+0D1D: LD H,B                   ; 60
+0D1E: OUT (0x0002),A           ; D3 02
+0D20: OUT (0x0000),A           ; D3 00
+0D22: OUT (0x0003),A           ; D3 03
+0D24: PUSH HL                  ; E5
+0D25: CALL 0x121f              ; CD 1F 12
+0D28: LD HL,0xd69              ; 21 69 0D
+0D2B: LD B,0xef                ; 06 EF
+0D2D: CALL 0x0933              ; CD 33 09
+0D30: POP HL                   ; E1
+0D31: LD A,(HL)                ; 7E
+0D32: OUT (0x0006),A           ; D3 06
+0D34: INC HL                   ; 23
+0D35: LD A,(HL)                ; 7E
+0D36: INC HL                   ; 23
+0D37: OUT (0x0007),A           ; D3 07
+0D39: OUT (0x0003),A           ; D3 03
+0D3B: LD A,0xf6                ; 3E F6
+0D3D: LD (0x41fa),A            ; 32 FA 41
+0D40: LD A,(HL)                ; 7E
+0D41: OUT (0x0006),A           ; D3 06
+0D43: INC HL                   ; 23
+0D44: LD A,(HL)                ; 7E
+0D45: INC HL                   ; 23
+0D46: OUT (0x0007),A           ; D3 07
+0D48: OUT (0x0003),A           ; D3 03
+0D4A: LD A,0xfa                ; 3E FA
+0D4C: LD (0x41fa),A            ; 32 FA 41
+0D4F: LD A,(HL)                ; 7E
+0D50: OUT (0x0006),A           ; D3 06
+0D52: INC HL                   ; 23
+0D53: LD A,(HL)                ; 7E
+0D54: INC HL                   ; 23
+0D55: OUT (0x0007),A           ; D3 07
+0D57: OUT (0x0003),A           ; D3 03
+0D59: LD A,0xfe                ; 3E FE
+0D5B: LD (0x41fa),A            ; 32 FA 41
+0D5E: LD A,(HL)                ; 7E
+0D5F: OUT (0x0006),A           ; D3 06
+0D61: INC HL                   ; 23
+0D62: LD A,(HL)                ; 7E
+0D63: INC HL                   ; 23
+0D64: OUT (0x0007),A           ; D3 07
+0D66: OUT (0x0003),A           ; D3 03
+0D68: RET                      ; C9
+0D69: RST 0x38                 ; FF
+0D6A: RST 0x38                 ; FF
+0D6B: RST 0x38                 ; FF
+0D6C: RST 0x38                 ; FF
+0D6D: LD A,L                   ; 7D
+0D6E: JP p,0xffdf              ; F2 DF FF
+0D71: RST 0x38                 ; FF
+0D72: CP 0xff                  ; FE FF
+0D74: RST 0x30                 ; F7
+0D75: RST 0x38                 ; FF
+0D76: RST 0x38                 ; FF
+0D77: RST 0x38                 ; FF
+0D78: RST 0x38                 ; FF
+0D79: LD A,L                   ; 7D
+0D7A: CP 0xdf                  ; FE DF
+0D7C: RST 0x38                 ; FF
+0D7D: LD A,H                   ; 7C
+0D7E: CALL m,0x0000            ; FC 00 00
+0D81: CP 0xfd                  ; FE FD
+0D83: NOP                      ; 00
+0D84: NOP                      ; 00
+0D85: RST 0x38                 ; FF
+0D86: CALL m,0x1000            ; FC 00 10
+0D89: RST 0x38                 ; FF
+0D8A: CALL m,0x2000            ; FC 00 20
+0D8D: RST 0x38                 ; FF
+0D8E: CALL m,0x3000            ; FC 00 30
+0D91: RST 0x38                 ; FF
+0D92: CP 0xef                  ; FE EF
+0D94: OR A                     ; B7
+0D95: RST 0x38                 ; FF
+0D96: RST 0x38                 ; FF
+0D97: RST 0x38                 ; FF
+0D98: RST 0x38                 ; FF
+0D99: OUT (0x0002),A           ; D3 02
+0D9B: OUT (0x0000),A           ; D3 00
+0D9D: OUT (0x0003),A           ; D3 03
+0D9F: CALL 0x121f              ; CD 1F 12
+0DA2: LD HL,0xe43              ; 21 43 0E
+0DA5: LD B,0xef                ; 06 EF
+0DA7: CALL 0x0933              ; CD 33 09
+0DAA: LD DE,0xe2f              ; 11 2F 0E
+0DAD: LD HL,0xe2b              ; 21 2B 0E
+0DB0: LD B,0xff                ; 06 FF
+0DB2: CALL 0x0df1              ; CD F1 0D
+0DB5: LD A,0xbd                ; 3E BD
+0DB7: LD (0x41fb),A            ; 32 FB 41
+0DBA: LD HL,0xe2b              ; 21 2B 0E
+0DBD: LD B,3                   ; 06 03
+0DBF: CALL 0x0df1              ; CD F1 0D
+0DC2: LD A,0x7e                ; 3E 7E
+0DC4: LD (0x41fa),A            ; 32 FA 41
+0DC7: LD A,0x7d                ; 3E 7D
+0DC9: LD (0x41fb),A            ; 32 FB 41
+0DCC: LD B,7                   ; 06 07
+0DCE: LD HL,0xe2b              ; 21 2B 0E
+0DD1: CALL 0x0df1              ; CD F1 0D
+0DD4: LD A,0xdd                ; 3E DD
+0DD6: LD (0x41fb),A            ; 32 FB 41
+0DD9: LD HL,0xe2b              ; 21 2B 0E
+0DDC: LD B,11                  ; 06 0B
+0DDE: CALL 0x0df1              ; CD F1 0D
+0DE1: LD A,0x5d                ; 3E 5D
+0DE3: LD (0x41fb),A            ; 32 FB 41
+0DE6: LD HL,0xe2b              ; 21 2B 0E
+0DE9: LD B,15                  ; 06 0F
+0DEB: CALL 0x0df1              ; CD F1 0D
+0DEE: JP 0x0344                ; C3 44 03
+0DF1: LD C,2                   ; 0E 02
+0DF3: PUSH DE                  ; D5
+0DF4: LD E,C                   ; 59
+0DF5: LD D,B                   ; 50
+0DF6: LD A,(HL)                ; 7E
+0DF7: OUT (0x0006),A           ; D3 06
+0DF9: INC HL                   ; 23
+0DFA: LD A,(HL)                ; 7E
+0DFB: OUT (0x0007),A           ; D3 07
+0DFD: INC HL                   ; 23
+0DFE: OUT (0x0003),A           ; D3 03
+0E00: EX (SP),HL               ; E3
+0E01: IN A,(0x0006)            ; DB 06
+0E03: LD B,A                   ; 47
+0E04: LD C,(HL)                ; 4E
+0E05: INC HL                   ; 23
+0E06: INC D                    ; 14
+0E07: CP C                     ; B9
+0E08: CALL nz,0x0e1e           ; C4 1E 0E
+0E0B: IN A,(0x0007)            ; DB 07
+0E0D: LD B,A                   ; 47
+0E0E: LD C,(HL)                ; 4E
+0E0F: INC HL                   ; 23
+0E10: INC D                    ; 14
+0E11: CP C                     ; B9
+0E12: CALL nz,0x0e1e           ; C4 1E 0E
+0E15: LD B,D                   ; 42
+0E16: LD C,E                   ; 4B
+0E17: EX DE,HL                 ; EB
+0E18: POP HL                   ; E1
+0E19: DEC C                    ; 0D
+0E1A: JP nz,0x0df3             ; C2 F3 0D
+0E1D: RET                      ; C9
+0E1E: LD A,D                   ; 7A
+0E1F: PUSH HL                  ; E5
+0E20: PUSH DE                  ; D5
+0E21: PUSH BC                  ; C5
+0E22: LD D,0xa0                ; 16 A0
+0E24: CALL 0x021d              ; CD 1D 02
+0E27: POP BC                   ; C1
+0E28: POP DE                   ; D1
+0E29: POP HL                   ; E1
+0E2A: RET                      ; C9
+0E2B: LD D,L                   ; 55
+0E2C: LD D,L                   ; 55
+0E2D: XOR D                    ; AA
+0E2E: XOR D                    ; AA
+0E2F: LD D,L                   ; 55
+0E30: LD D,L                   ; 55
+0E31: XOR D                    ; AA
+0E32: XOR D                    ; AA
+0E33: XOR D                    ; AA
+0E34: LD HL,(0xd555)           ; 2A 55 D5
+0E37: XOR C                    ; A9
+0E38: XOR D                    ; AA
+0E39: LD D,H                   ; 54
+0E3A: LD D,L                   ; 55
+0E3B: XOR D                    ; AA
+0E3C: JP pe,0x1555             ; EA 55 15
+0E3F: LD D,H                   ; 54
+0E40: SUB L                    ; 95
+0E41: XOR D                    ; AA
+0E42: LD L,D                   ; 6A
+0E43: RST 0x38                 ; FF
+0E44: RST 0x38                 ; FF
+0E45: RST 0x38                 ; FF
+0E46: RST 0x38                 ; FF
+0E47: LD A,L                   ; 7D
+0E48: CP 0xdf                  ; FE DF
+0E4A: RST 0x38                 ; FF
+0E4B: CP 0xfe                  ; FE FE
+0E4D: RST 0x38                 ; FF
+0E4E: RST 0x30                 ; F7
+0E4F: RST 0x38                 ; FF
+0E50: CP 0xef                  ; FE EF
+0E52: CP A                     ; BF
+0E53: CALL 0x03d5              ; CD D5 03
+0E56: LD HL,0x8000             ; 21 00 80
+0E59: LD C,8                   ; 0E 08
+0E5B: LD B,0                   ; 06 00
+0E5D: LD DE,0x2000             ; 11 00 20
+0E60: PUSH BC                  ; C5
+0E61: CALL 0x0e7a              ; CD 7A 0E
+0E64: POP BC                   ; C1
+0E65: DEC C                    ; 0D
+0E66: JP nz,0x0e5b             ; C2 5B 0E
+0E69: LD HL,0x2000             ; 21 00 20
+0E6C: LD DE,0x3d00             ; 11 00 3D
+0E6F: LD B,0                   ; 06 00
+0E71: CALL 0x0614              ; CD 14 06
+0E74: CALL 0x02ad              ; CD AD 02
+0E77: JP 0x0e56                ; C3 56 0E
+0E7A: LD C,8                   ; 0E 08
+0E7C: CALL 0x0614              ; CD 14 06
+0E7F: DEC C                    ; 0D
+0E80: JP nz,0x0e7c             ; C2 7C 0E
+0E83: RET                      ; C9
+0E84: CALL 0x03d5              ; CD D5 03
+0E87: LD HL,0xeec              ; 21 EC 0E
+0E8A: CALL 0x0d1e              ; CD 1E 0D
+0E8D: LD HL,0xeec              ; 21 EC 0E
+0E90: CALL 0x0d1e              ; CD 1E 0D
+0E93: OUT (0x0002),A           ; D3 02
+0E95: LD HL,0x4000             ; 21 00 40
+0E98: LD DE,0x4001             ; 11 01 40
+0E9B: LD (HL),0xff             ; 36 FF
+0E9D: LD B,0                   ; 06 00
+0E9F: CALL 0x0614              ; CD 14 06
+0EA2: CALL 0x0614              ; CD 14 06
+0EA5: LD HL,0xecc              ; 21 CC 0E
+0EA8: LD B,0xef                ; 06 EF
+0EAA: CALL 0x0933              ; CD 33 09
+0EAD: LD DE,0x4137             ; 11 37 41
+0EB0: LD HL,0xedc              ; 21 DC 0E
+0EB3: LD B,0x27                ; 06 27
+0EB5: CALL 0x0938              ; CD 38 09
+0EB8: LD A,0xfe                ; 3E FE
+0EBA: LD (0x407e),A            ; 32 7E 40
+0EBD: LD A,0xf7                ; 3E F7
+0EBF: LD (0x407c),A            ; 32 7C 40
+0EC2: OUT (0x0001),A           ; D3 01
+0EC4: OUT (0x0003),A           ; D3 03
+0EC6: CALL 0x02ad              ; CD AD 02
+0EC9: JP 0x0ec6                ; C3 C6 0E
+0ECC: LD A,L                   ; 7D
+0ECD: RST 8                    ; CF
+0ECE: RST 0x38                 ; FF
+0ECF: RST 0x38                 ; FF
+0ED0: LD A,H                   ; 7C
+0ED1: RST 0x18                 ; DF
+0ED2: RST 0x38                 ; FF
+0ED3: RST 0x38                 ; FF
+0ED4: CP 0xfe                  ; FE FE
+0ED6: RST 0x20                 ; E7
+0ED7: LD A,A                   ; 7F
+0ED8: RST 0x38                 ; FF
+0ED9: CP 0xeb                  ; FE EB
+0EDB: LD A,A                   ; 7F
+0EDC: LD A,L                   ; 7D
+0EDD: RST 0x28                 ; EF
+0EDE: RST 0x38                 ; FF
+0EDF: RST 0x38                 ; FF
+0EE0: LD A,H                   ; 7C
+0EE1: CP 0xdf                  ; FE DF
+0EE3: RST 0x38                 ; FF
+0EE4: CP 0xfe                  ; FE FE
+0EE6: NOP                      ; ED 7F
+0EE8: RST 0x38                 ; FF
+0EE9: CP 0xee                  ; FE EE
+0EEB: LD A,A                   ; 7F
+0EEC: LD D,L                   ; 55
+0EED: LD D,L                   ; 55
+0EEE: CALL z,0x99cc            ; CC CC 99
+0EF1: ADD HL,DE                ; 19
+0EF2: XOR D                    ; AA
+0EF3: JP m,0xd5cd              ; FA CD D5
+0EF6: INC BC                   ; 03
+0EF7: CALL 0x0f2c              ; CD 2C 0F
+0EFA: JP 0x0f17                ; C3 17 0F
+0EFD: CALL 0x03d5              ; CD D5 03
+0F00: CALL 0x0f2c              ; CD 2C 0F
+0F03: LD A,1                   ; 3E 01
+0F05: LD (0x41f8),A            ; 32 F8 41
+0F08: LD A,0                   ; 3E 00
+0F0A: LD (0x41f9),A            ; 32 F9 41
+0F0D: LD A,1                   ; 3E 01
+0F0F: LD (0x4130),A            ; 32 30 41
+0F12: LD A,0x40                ; 3E 40
+0F14: LD (0x4131),A            ; 32 31 41
+0F17: CALL 0x0fa2              ; CD A2 0F
+0F1A: CALL 0x0fc8              ; CD C8 0F
+0F1D: CALL 0x1228              ; CD 28 12
+0F20: CALL 0x1228              ; CD 28 12
+0F23: CALL 0x02ad              ; CD AD 02
+0F26: CALL 0x82cf              ; CD CF 82
+0F29: JP 0x0f17                ; C3 17 0F
+0F2C: LD HL,0x4000             ; 21 00 40
+0F2F: LD DE,0x4001             ; 11 01 40
+0F32: LD (HL),0xff             ; 36 FF
+0F34: LD B,0                   ; 06 00
+0F36: CALL 0x0614              ; CD 14 06
+0F39: CALL 0x0614              ; CD 14 06
+0F3C: LD HL,0xf5f              ; 21 5F 0F
+0F3F: LD B,0xef                ; 06 EF
+0F41: CALL 0x0933              ; CD 33 09
+0F44: LD HL,0xf6f              ; 21 6F 0F
+0F47: LD DE,0x4137             ; 11 37 41
+0F4A: LD B,0x27                ; 06 27
+0F4C: CALL 0x0938              ; CD 38 09
+0F4F: LD A,0xfe                ; 3E FE
+0F51: LD (0x4076),A            ; 32 76 40
+0F54: LD A,0xf7                ; 3E F7
+0F56: LD (0x4074),A            ; 32 74 40
+0F59: OUT (0x0001),A           ; D3 01
+0F5B: OUT (0x0003),A           ; D3 03
+0F5D: XOR A                    ; AF
+0F5E: RET                      ; C9
+0F5F: LD A,L                   ; 7D
+0F60: CP 0xcf                  ; FE CF
+0F62: RST 0x38                 ; FF
+0F63: LD A,H                   ; 7C
+0F64: CALL m,0xff3f            ; FC 3F FF
+0F67: CP 0xfd                  ; FE FD
+0F69: NOP                      ; 00
+0F6A: NOP                      ; 00
+0F6B: RST 0x38                 ; FF
+0F6C: CP 0xe6                  ; FE E6
+0F6E: LD A,A                   ; 7F
+0F6F: LD A,L                   ; 7D
+0F70: CP 0xcf                  ; FE CF
+0F72: RST 0x38                 ; FF
+0F73: LD A,H                   ; 7C
+0F74: CALL m,0xff7f            ; FC 7F FF
+0F77: CP 0xfd                  ; FE FD
+0F79: LD B,B                   ; 40
+0F7A: NOP                      ; 00
+0F7B: RST 0x38                 ; FF
+0F7C: CP 0xe9                  ; FE E9
+0F7E: LD A,A                   ; 7F
+0F7F: LD HL,0x2000             ; 21 00 20
+0F82: LD DE,0x2001             ; 11 01 20
+0F85: LD (HL),0                ; 36 00
+0F87: LD B,0xff                ; 06 FF
+0F89: LD C,8                   ; 0E 08
+0F8B: CALL 0x0614              ; CD 14 06
+0F8E: DEC C                    ; 0D
+0F8F: JP nz,0x0f8b             ; C2 8B 0F
+0F92: LD HL,0x2067             ; 21 67 20
+0F95: LD DE,0x2068             ; 11 68 20
+0F98: LD (HL),0xff             ; 36 FF
+0F9A: LD B,0x47                ; 06 47
+0F9C: CALL 0x0614              ; CD 14 06
+0F9F: JP 0x0344                ; C3 44 03
+0FA2: IN A,(0x0008)            ; DB 08
+0FA4: LD B,A                   ; 47
+0FA5: LD A,(0x3c63)            ; 3A 63 3C
+0FA8: OR B                     ; B0
+0FA9: LD (0x3c63),A            ; 32 63 3C
+0FAC: IN A,(0x0009)            ; DB 09
+0FAE: LD C,A                   ; 4F
+0FAF: LD A,(0x3c6a)            ; 3A 6A 3C
+0FB2: OR C                     ; B1
+0FB3: LD (0x3c6a),A            ; 32 6A 3C
+0FB6: RET                      ; C9
+0FB7: LD A,L                   ; 7D
+0FB8: OR 2                     ; F6 02
+0FBA: LD L,A                   ; 6F
+0FBB: LD A,7                   ; 3E 07
+0FBD: SUB 0x10                 ; D6 10
+0FBF: ADD HL,HL                ; 29
+0FC0: JP nc,0x0fbd             ; D2 BD 0F
+0FC3: ADD HL,HL                ; 29
+0FC4: RET nc                   ; D0
+0FC5: ADD A,8                  ; C6 08
+0FC7: RET                      ; C9
+0FC8: LD HL,0x3c63             ; 21 63 3C
+0FCB: CALL 0x10ab              ; CD AB 10
+0FCE: JP p,0x0fda              ; F2 DA 0F
+0FD1: LD HL,0x3c68             ; 21 68 3C
+0FD4: LD DE,0x3f89             ; 11 89 3F
+0FD7: CALL 0x1112              ; CD 12 11
+0FDA: LD HL,0x3c6a             ; 21 6A 3C
+0FDD: CALL 0x10ab              ; CD AB 10
+0FE0: JP p,0x0fec              ; F2 EC 0F
+0FE3: LD HL,0x3c6f             ; 21 6F 3C
+0FE6: LD DE,0x3f8b             ; 11 8B 3F
+0FE9: CALL 0x1112              ; CD 12 11
+0FEC: LD HL,0x3c37             ; 21 37 3C
+0FEF: DEC (HL)                 ; 35
+0FF0: RET p                    ; F0
+0FF1: LD (HL),3                ; 36 03
+0FF3: IN A,(0x0003)            ; DB 03
+0FF5: CPL                      ; 2F
+0FF6: AND 1                    ; E6 01
+0FF8: RRCA                     ; 0F
+0FF9: RRA                      ; 1F
+0FFA: LD (0x3c71),A            ; 32 71 3C
+0FFD: LD HL,0x3c63             ; 21 63 3C

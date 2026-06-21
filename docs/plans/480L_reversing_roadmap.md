@@ -12,8 +12,13 @@ there, then carry it up to the 480L — the hardest member of the family.
 community evidence (teardowns, developer posts) · ❓ open.
 
 **Progress:** Phase 0 ✅ · Phase 1 ✅ (PCM60 microword + topology decoded, V1.0 set) ·
-Phase 2 ✅ core done (PCM70 architecture + modulation mechanism; same-ISA confirmed) ·
-Phase 3 (224XL) → next. See the per-phase RESULTS blocks in §5.
+Phase 2 ✅ **complete** (PCM70 live-update + coefficient encoding decoded; **both carry-overs
+now closed** — U67 = 7 control planes + banner, coefficient = WCS plane 6; LFO phase accumulator
+= `sub_0ad2h`@0x0AD2/0x4335) · Phase 3 (224XL) **in progress** — Phase-0 integrity PASS; flat
+memory/bank map + ARU port interface (0x00-0x07) decoded; **datapath variant CONFIRMED** (2 mult
+bits via NVS4 0xB4F0 packer + dedicated shift-register port 0x05); microword field map 🟡 (4-byte
+step, ~100 steps). Remaining: decode a full program record + validate topology. See §5 RESULTS
+blocks + `docs/reference/PCM70/PCM70_phase2_results.md`.
 
 ---
 
@@ -174,8 +179,9 @@ but rounding/saturation + exact coeff sign/scaling remain.
   sum into which intermediate; where each write sources from). Lives in the *upper*
   control-word bits (the 480L byte-5 `ACC/`, `XCLK/`, `WA/RA` analogues). Tap map is
   done; the datapath plumbing is not.
-- ❓ Exact coefficient **sign/scaling convention** (unsigned /256 vs signed + control
-  SIGN bit) and **rounding-toward-zero / saturation** — same class as §8; wants hardware.
+- ✅ (resolved in Phase 2) Coefficient **sign/scaling convention** — **signed**: separate sign
+  control bit (value bit 7 → microword ctrl bit 3) + complemented, ÷4-shifted magnitude in a
+  3- or 4-bit field. **Rounding-toward-zero / saturation** behavior still wants hardware (§8).
 - ❓ MMU **row/col** physical mapping (linear delay is known; not needed for topology).
 
 **NEXT STEPS:** proceed to **Phase 2 (PCM70 diff)** to capture the modulation /
@@ -189,73 +195,224 @@ The PCM70 is "an updated PCM60" with a slave Z80 that reloads the control store 
 mechanism — the exact thing left open on the 480L (modulation injection points). Also
 captures the Concert Hall / Plate lineage. Minor decoder tweak for the extra T-state.
 
-**RESULTS ✅ core done (V2.0 set: U62/U67/U95, 2026-06).** Dumps clean (no corruption).
+**RESULTS ✅ core done (V2.0 set: U62/U67/U95, 2026-06).**
+
+*Integrity (Phase-0 discipline) — PASS.* Three **distinct** images (distinct hashes, no
+dedupe-collapse); **no Intel-HEX ASCII contamination** (the exact failure that poisoned the
+V2.0 PCM60 tails); no address-line aliasing (half/quarter self-compare ≈0.01–0.02; U67's
+0.77 is shared 0xFF fill, not a mirror). U62 fully programmed; **U67 active only in the low
+1 KB** (0x000–0x3FF), rest 0xFF. **Version skew:** master U62 = ©1986 **V2.0**; slave U95 +
+opcodes U67 = ©1985 **V1.20** — the V2.0 revision touched only the host firmware.
 
 *Architecture* — exactly the "PCM60 + Z80(s)" the roadmap predicted:
 
-| ROM | Size | Role |
+| ROM | Banner / type | Role |
 |---|---|---|
-| **U62** | 32 KB | **Master Z80 firmware** (©1986). Boots `JP 0x1800`; runs UI + DSP control + modulation. Holds reverb program names (CONCERT HALL, RICH PLATE/CHAMBER, INFINITE CHAMBER…) |
-| **U95** | 16 KB | **"SLAVE AND SPACEWARE V1.20"** — slave Z80 code (~0x60–0x18FB) **+** SpaceWare program data (120-byte records @0x1957+: CHORUS, ECHO FLANGE, PAN/CIRCULAR DLYS…) |
-| **U67** | 8 KB | **"PCM70 OPCODES V1.20"** — ARU control-word microcode (~1 KB), the analogue of PCM60 U43 |
+| **U62** | ©1986, 27256 | **Master host Z80** — RST table (`JP 0x1800`), program-name strings (CONCERT HALL, RICH PLATE/CHAMBER, INFINITE CHAMBER, CHORUS+ECHO, MULTIBAND DELAY…), category + BPM tables. **UI / program & parameter manager** (no DSP modulation here). |
+| **U95** | "PCM70 SLAVE AND SPACEWARE V1.20", 27128 | **Slave Z80** — the SpaceWare algorithm + **live-coefficient engine**. *This is the modulation axis.* |
+| **U67** | "PCM70 OPCODES V1.20", 2764 | **ARU microcode (control-store image)** — active 1 KB = **8 × 128-byte planes → 128-step program** (matches the family's 128). Repeated step motifs = chained allpass stages. |
 
-*The delta = a writable, Z80-streamed control store + modulation* (the PCM60 had a static
-parallel ROM addressed by knobs). The **slave Z80** loads each program's base
-microcode/coeffs into the DSP (OUT to ports 0x30/0x40 with strobe handshaking on 0x00).
-The **master Z80** then continuously modulates it via a **timer ISR** (RST38 → 0x1855):
-a free-running counter + a **0–15 LFO phase in bit-reversed order** (table @0x191C =
-`00 08 01 09…`, spreading 16 updates evenly), which each tick **selects one of 16
-control-store slots** (walking-bit strobe on ports 0x10/0x20) and **writes that slot's
-data** (ports 0x30/0x40) from RAM tables (0x9C03/0x9BF3) holding the current modulated
-values. That timed slot-refresh is the live-update substrate for chorus/flange/pan motion.
+*The live-update mechanism — the core Phase 2 result (all slave-side, U95):*
+- **Machine:** Z80, IM 1, ISR @**0x02D3** = a ÷8 **BPM-timekeeping** divider only (*not* the
+  coefficient modulation — that runs in the foreground). Foreground dispatcher @**0x80** polls
+  port 0x50 + RAM command flags 0x4343–0x4348 the master pokes. RAM 0x4000–0x47FF. **Ports:**
+  0x00 = WCS/data strobe · 0x30 = control/reset (init `0x69`) · 0x40 = address/latch · 0x50(in)
+  = status/handshake.
+- **The WCS is memory-mapped @≈0x8000–0x83FF** as 128-byte byte-planes — *not* port-streamed
+  (ports are strobe/latch/handshake only). `sub_02b6h` `lddr`-loads three planes into
+  0x8180/0x8280/0x8300 from ROM **0x2ACD–0x2C4C** (the descending-ramp region the earlier table
+  scan flagged — so those curves are **coefficient/offset plane data**). Structural planes come
+  from **U67**; the slave-managed coeff/offset planes are what get modulated. Read-back base =
+  pointer in `RAM[0x42EE]`.
+- **Per-coefficient write = RMW** (`sub_0ecch`/`sub_0e59h`): updates only the coeff/offset field,
+  preserving opcode/control bits. **Encoding (from the code):** magnitude `>>2` (÷4) → `cpl` →
+  **3-bit field** (single-byte) or **4-bit field** (two-byte, mode by control **bit 4**); **sign**
+  = the value's bit 7 → microword control **bit 3**. Every write is mirrored to a **RAM shadow
+  @0xBE00+offset** (the hardware store is write-only, so the shadow makes RMW possible).
+- **Animation engine** (`sub_071dh`): walks a list of 3-byte **`{addr_lo, addr_hi, value}`**
+  entries → `DE` = WCS target, **steps the value** (−4/pass if bit 7=0, −1/pass if bit 7=1 — a
+  multi-rate ramp), writes it back via `sub_0ecch`; self-loops. The **de-zipper / coefficient-
+  animation** engine. Rotates a 48-byte double-buffered param block (0x4000/0x4040/0x4080) and
+  indexes per-algorithm data via a pointer at **0x3FFE** (top of ROM).
+- **Change detection** (`sub_0527h`): diffs working params (0x4000–0x402F) vs the loaded copy
+  (0x4040–0x406F); on change runs `di → sub_071dh → sub_02b6h →` 0x40/0x00 strobe + 16-cycle
+  `djnz` settle.
+- **End-to-end:** master writes params → slave RAM 0x4000+ → `sub_0527h` detects → `sub_071dh`
+  ramps each `{WCS-addr, value}` toward target → `sub_0ecch` RMW-encodes it into the memory-mapped
+  WCS plane (+0xBE00 shadow). **Modulation injection points = the WCS addresses in the animated
+  list; "modulation" = time-varying values fed to them** — exactly the 480L's open mechanism, one
+  generation simpler.
 
-*Same ARU ISA — confirmed.* U67 opcodes use the **identical opcode vocabulary** as PCM60
-U43 (same low nibbles in the same rank order: n7 ≫ nF/n3 > n0=WRITE > nB/n8; matching
-high nibbles), and a U67 block run through the **Phase 1 decoder** resolves into the same
-READ/WRITE/MAC structure (setup section → long sustained-MAC tank). The microword
-encoding (16-bit signed offset → MMU, 8-bit coeff, control/opcode) and the decoder carry
-over directly. ✅ This validates the roadmap's central bet that the family shares one ISA.
+*ARU coefficient encoding — resolved:* the field is **signed** — separate sign control bit +
+complemented, ÷4-shifted magnitude, with two field-packing modes (3- or 4-bit). (Settles the
+§9 "unsigned /256 vs signed + SIGN bit" question; concrete input to the §8 ARU arithmetic too.)
 
-**Gaps CLOSED by Phase 2:**
-- ✅ PCM70 architecture (master Z80 / slave Z80 + SpaceWare / opcode ROM) and its diff vs PCM60.
-- ✅ The **modulation / live-update mechanism**: timed ISR rewriting control-store slots with
-  LFO-modulated offset/coeff values — directly models the 480L's "slave live-updates WCS".
-- ✅ Same-ISA confirmation: the PCM60 decoder transfers behaviorally to the PCM70.
+*Same-ISA bet — holds* (both sessions agree the PCM70 reuses the family model). The **precise
+U67 plane field-map** (which plane is opcode vs coefficient vs offset) is still open = **carry-
+over 1**. Partial result from this side (the other session didn't load the PCM60 set): with the
+PCM60 V1.0 images loaded, a *linear* read of U67's low region shows opcode nibbles matching
+PCM60 U43 (n7 ≫ nF/n3 > n0…) and a Phase-1-decoder pass resolves a read/write/MAC structure —
+consistent with the opcode/control plane sitting in the low bytes — but this must be re-run
+**plane-resolved** to label all 8 planes (U67 is plane-organized, so a contiguous read mixes
+fields). *(Supersedes this block's earlier port-streamed / {offset,ctrl} reading.)*
 
-**Gaps STILL OPEN (PCM70):**
-- ❓ **Per-program tap field-map.** *Progress:* programs are stored as **120-byte packed
-  blocks** (U95 @0x1957+: name@+0x00 (13B) + zero-pad + data region from ~+0x2C). The
-  parameter-entry format is confirmed from the `0x071D` code: **`{16-bit LE offset, ctrl
-  byte}`**, offset 2's-complement (delay = −offset), ctrl carrying the same opcode nibbles
-  as U67/PCM60 — e.g. `0E 9A 0F` → −26098-sample tap, ctrl `nF`=R/MAC. So the **offset
-  encoding matches the PCM60**; the *layout* (packed block) does not. **Remaining:** the
-  data region interleaves offsets, coeff runs (`C2 C8 5A CE…`) and symmetric mod patterns
-  (`99 CE 32 D8 32 99 CE`) — to label which bytes are taps vs coeffs vs mod-depth, trace the
-  **unpacking routine** that fills `0x41xx` working RAM from the block at program-select
-  (the list `0x071D` walks via pointer `(0x41FA)`). Then a byte-level PCM70-reverb-vs-PCM60
-  tap comparison is possible. Also confirm where the **reverb** blocks (CONCERT HALL etc.)
-  live — names are in U62; data blocks may be in either ROM.
-- ❓ Exact **port→lane mapping** (0x10/0x20 = select strobe; 0x30/0x40 = data — which lanes:
-  offset-hi/lo vs coeff/control) — same flavor of task as the PCM60 MMU mapping.
-- ❓ The modulation-compute code that fills 0x9C03/0x9BF3 (the actual LFO depth/waveform → tap math).
+**Gaps CLOSED by Phase 2 (and for the 480L §9):**
+- ✅ **Modulation / live-update mechanism** — slave maintains a `{WCS-addr, value}` list pushed
+  through a memory-mapped control-store window + RAM shadow + RMW. The 480L's 0x48000-window
+  streaming is the bigger-iron version of this.
+- ✅ **Coefficient encoding / sign convention** — signed; sign control bit + complemented ÷4
+  magnitude; two packing modes.
+- ✅ **Live-coefficient streaming pattern** — `sub_071dh` + `sub_0ecch`, RMW touching only the
+  coeff/offset field, opcode/control bits intact.
+- 🟡 **Parameter smoothing** = multi-rate ramping (de-zipper), not instantaneous writes.
 
-**NEXT STEPS:** (1) **[in progress]** trace the block-unpack routine (ROM 120-byte block →
-`0x41xx` RAM, the list `(0x41FA)`/`0x071D` walks) to label the tap/coeff/mod fields, then lay
-a specific PCM70 reverb's tap map beside the PCM60 baseline; (2) trace the 0x9C03/0x9BF3 fill
-code for the exact LFO→tap math; then (3) proceed to **Phase 3 (224XL)** — the Concert Hall
-ancestor — adapting the decoder for the 2-multiplier-bit variant.
+**Gaps STILL OPEN (PCM70):** — *both carry-overs now CLOSED (2026-06, byte-verified; see
+`docs/reference/PCM70/PCM70_phase2_results.md`).*
+- ✅ **LFO phase accumulator** — **`sub_0ad2h` @0x0AD2**; accumulator RAM word **0x4335**
+  (init 0x0010, +1/tick, `AND 7` wrap → 8-page window), sample cached 0x4337, depth-scaled via
+  `sub_10d3h`@0x10D3, staged to the 0x40B0 de-zipper queue, committed via `sub_0ecch`. Paced by
+  the foreground loop (`CALL`@0x00EF), not the ISR. Triangle/ramp vibrato (waveform-base 🟡).
+  Rate = cascaded reload dividers 0x4332/0x4333 from 0x418B/0x418C. **(Carry-over 2 ✅.)**
+- ✅ **U67 microword plane field-map** — active 1 KB = 8 plane-major 128-byte pages = **7 static
+  control/opcode/routing planes (0-6) + 1 ASCII banner plane (7)**. **No resident offset/coeff
+  VALUE planes** — those are slave-assembled at runtime into the WCS. (Per-bit layout identical
+  across planes 0-6 — bit5/4/3 fixed; cosine vs PCM60 U43 = 0.94-0.98; the "60-tap offset" was a
+  control-byte-pairing artifact.) **(Carry-over 1 ✅.)**
+- ✅ **WCS coefficient plane** — the live per-coefficient RMW de-zipper targets **WCS plane 6
+  (0x8300-0x837F)** exclusively (`sub_0655h` stamps DE=0x8300+(idx&0x7F); read-back base confirms).
+  Planes 3/4/5 get one-shot bulk preloads only. *(Most of the "exact WCS window decode" gap.)*
+- 🟡 **Fine sub-role split of U67 planes 0-6** — all control-domain; per-plane→ARU-bit-field
+  mapping (banks/sections/routing) not crisply resolved.
+- ❓ **Literal PCM70-vs-PCM60 reverb-tap diff** — must run **U95-WCS-source vs PCM60** (U67 has no
+  taps; PCM70 assembles its delay topology at runtime from per-algorithm record blocks).
 
-*Key addresses for resume:* entry walker `0x071D` (reads `E=(HL),D=(HL+1),A=(HL+2)`; ramp =
-SUB 4 / SUB 1 on bit-7 of ctrl; writes DSP via `CALL 0x0ECC`); working-list pointer `(0x41FA)`
-in slave RAM; program blocks @0x1957+ (U95), 120-byte stride, data region ~+0x2C; DSP data
-ports 0x30/0x40, strobe 0x00, slot-select 0x10/0x20; modulation RAM tables 0x9C03/0x9BF3;
-LFO phase table @0x191C (master U62).
+**NEXT STEPS:** (1) re-load PCM60 V1.0, run the Phase-1 decoder on U67 **plane-resolved** + the
+literal byte-diff (carry-over 1) — this also yields the byte-level PCM70-vs-PCM60 tap comparison;
+(2) isolate the LFO phase routine in U95 (carry-over 2); then (3) **Phase 3 (224XL)** — the
+Concert Hall figure-eight tank ancestor (validate integrity first; ARU variant: 2 multiplier
+bits + dedicated shift register; adapt the decoder).
+
+*Verified routines/addresses (for resume):* slave ISR `0x02D3` (÷8 BPM) · dispatcher `0x80`
+(polls 0x50 + flags 0x4343–0x4348) · plane loader `sub_02b6h` (→ WCS 0x8180/0x8280/0x8300 from
+ROM 0x2ACD–0x2C4C) · RMW coeff write `sub_0ecch`/`sub_0e59h` (÷4 + cpl + 3/4-bit field; sign →
+ctrl bit 3; mode → ctrl bit 4) · animation/de-zipper `sub_071dh` (`{addr,value}` list, −4/−1
+multi-rate ramp; self-loop `jp 0725h`) · change-detect `sub_0527h` (0x4000–0x402F vs 0x4040–
+0x406F) · WCS memory-map `0x8000–0x83FF` · write-only-store shadow `0xBE00` · per-algorithm data
+pointer `0x3FFE` · read-back base `RAM[0x42EE]` · param double-buffer `0x4000/0x4040/0x4080` ·
+ports `0x00/0x30/0x40/0x50`. (Artifacts from that session: `PCM70_U95_slave_disasm_org0.asm`,
+`PCM70_phase0_analysis.py`.)
 
 ### Phase 3 — 224XL: the Concert Hall ancestor
 The figure-eight / Griesinger-Dattorro Concert Hall tank you mapped originates here. The
 224XL ARU is a variant (two multiplier bits, dedicated shift register) — adapt the decoder
 accordingly. This is the most direct source for the *structure* of the classic hall,
 just in a slightly older dialect. (~100 steps.)
+
+**RESULTS — Phase-0 integrity + ROM roles ✅ (set: `ROMs/Lexicon 224/224XL v8_21`, 2026-06).**
+Tooling: `tools/phase0.py` (reusable integrity battery), `tools/nvs224_explore.py`, `tools/find_io.py`.
+
+*Integrity (Phase-0 discipline) — PASS.* 11 images (3× SBC 2716 + 8× NVS 2732), **all distinct**
+(no dedupe-collapse), **zero Intel-HEX ASCII contamination** anywhere, **no address-line aliasing**
+(half/quarter self-compare ≈0.01-0.05; the 0.22-0.41 on NVS5-7 is shared 0xFF-fill / repeated
+coefficient structure — like U67's 0.77 — not a mirror). Fill sane (NVS8 active to ~0x0900, FF after).
+
+*ROM roles (Phase-0 classification):*
+
+| ROM(s) | Size | Role | Evidence |
+|---|---|---|---|
+| **SBC1** | 2 KB ×1 | SBC Z80 **diagnostics** | banner `224XL V8.2 DIAGNOSTICS … DIAG ERROR … 224X TESTS`; z80-valid 0.999, RST-grid hits; I/O to console ports 0xEE/0xEF |
+| **SBC2** | 2 KB ×1 | SBC Z80 **hardware driver** | dense `OUT` to contiguous low-port block **0x00-0x07** (0x03:22, 0x07:18, 0x06:13…) + `IN` 0x00-0x09 — the parallel ARU/audio interface |
+| **SBC3** | 2 KB ×1 | SBC Z80 code + tables | z80-valid 0.999; console-port I/O |
+| **NVS1-8** | 4 KB ×8 | **program / microcode / coefficient data** | NVS3@0x0000 = program-name table (`CONCERT HALL / BRIGHT HALL / DARK HALL / RICH CHAMBER / … / M BAND DELAY / SIZE / GATE`); NVS4-8 = coefficient-alphabet bytes (BC/BF/7C/80/01/02) with a rising FF-fill ladder |
+
+*Key structural finding (changes the decode approach):* the 224XL ARU microcode is **NOT** stored
+as static repeating byte-planes like the PCM60. No NVS ROM shows a clean ~100-step (or any) period
+(autocorr ≤0.11 at every stride); NVS entropies (4.2-7.0) and FF-fill (0.1-42%) are too disparate
+for parallel byte-lanes of one word; no ldir/lddr in the SBC. → the 224XL is a **control-computer-
+programmed** design (the SBC formats/loads the ARU at runtime via the 0x00-0x07 port block — the
+bigger, earlier analogue of the PCM70 slave→WCS path). The microword field map therefore needs the
+**SBC disassembly** (find the ARU-load routine + microword bit packing) with the correct memory map,
+not a static plane decode.
+
+**RESULTS — ARU interface + memory map + microword field map (2026-06; 5-agent ARU-trace workflow,
+byte-grounded at correct load bases).**
+
+*Memory / bank map ✅ (HIGH — flat 64 KB, **NO bank switching**).* Proven by SBC1's reset
+ROM-checksum (0x0708-0x0766): phase 2 reads **all eight NVS ROMs linearly across 0x8000-0xFFFF with
+no intervening port write** — only possible if all are simultaneously mapped; Z80 also `CALL`s
+directly into the window.
+
+| Region | Window | Role |
+|---|---|---|
+| SBC1 | 0x0000-0x07FF | reset (`JP 0x003B`), RST-0x38 IV fill, ROM checksum, memcpy 0x0614 |
+| SBC2 | 0x0800-0x0FFF | boot init (`LD SP,0x4000`), **all *diagnostic* ARU loaders** + POST |
+| SBC3 | 0x1000-0x17FF | program directory lookups, program load/run, dispatch into NVS banks |
+| RAM | 0x4000+ | stack 0x4000; ARU microword RAM image staged at **0x41xx** (4-byte records, stride 4) |
+| batt-RAM | 0x3C00-0x3FFF | battery-backed presets / live params |
+| **NVS1** | 0x8000 | shared **ARU runtime engine** library (`CALL 0x8000`) |
+| **NVS2** | 0x9000 | per-program ("algorithm") control code |
+| **NVS3** | 0xA000 | program-name table + 5-byte directory @0xA446 + **loader/interpreter** (0xA791/0xAA9F) |
+| **NVS4** | 0xB000 | **math/pack bank** (packers 0xB4F0/0xB4FF, extractors 0xB54D/0xB552); coeff record array @0xB800 |
+| **NVS5-7** | 0xC000-0xEFFF | continuation of **21 × 0x2AA (682)-byte** ARU coeff/microcode records (array ends ~0xEFFE) |
+| **NVS8** | 0xF000 | variable-length per-program parameter/range records |
+
+> **Key correction:** the **SBC ROMs are the V8.2 *diagnostic* image**; the *operational* ARU
+> loader lives in the **NVS code banks** (NVS1 engine + NVS3 loader/interpreter + NVS4 packer).
+> Both the diagnostic and runtime paths drive the ARU through the **same low-port block 0x00-0x07**.
+
+*ARU port protocol ✅ (HIGH — pinned by the SBC2 POST walking-bit test 0x0A20-0x0B64, the Rosetta).*
+- **0x06** = data LOW byte (write + readback) · **0x07** = data HIGH byte → one **16-bit transfer
+  latch**, written low-then-high.
+- **0x03** = primary **write strobe** (latches 6/7 into the ARU); `IN 0x03 &1` = **busy/sync
+  handshake** → 0x3C71.
+- **0x02** = WCS step/sequencer reset + mode/diag latch (also POST error-code display).
+- **0x00** = address-counter clear / halt-reset · **0x01** = load-enable (issued before RUN).
+- **0x05** = address **auto-increment clock** = the **dedicated shift-register advance line**.
+- `IN 0x08/0x09` = overload/peak status + panel switch matrix.
+- *Refuted as ARU:* **0xE7** = system PIO/CTC + front-panel strobe (NOT a bank latch); 0xE4/0xE5 =
+  panel display; 0xEE/0xEF = console UART; **0x3D00** = boot-test display scratch RAM (NOT a DMA window).
+- *Canonical writer* (SBC2 `0x0D1E`): `OUT(0x02)` reset · `OUT(0x00)` clear · `OUT(0x03)` ·
+  settle · then per word `LD A,(HL);OUT(0x06)` lo · `LD A,(HL);OUT(0x07)` hi · `OUT(0x03)` latch.
+- *Canonical runtime load* (NVS3 `0xACEE-0xAD54`): `OUT(0x00)` halt · timing pads · `OUT(0x02)`
+  control · `OUT(0x01)` load-enable · build 0x41xx image (stride 4) · `OUT(0x03)` RUN.
+
+*ARU datapath variant ✅ CONFIRMED (the §3 "2 mult bits + dedicated shift register" prediction):*
+- **Two multiplier bits at once** = NVS4 `0xB4F0` coefficient packer: `A=B; CPL; ADD A,A; ADD A,A`
+  (= `~field << 2`) then `OR (2 LSBs from a companion table)` → each coeff byte carries a shifted
+  main field **plus 2 extra LSBs**. Extractors 0xB54D (`>>2`), 0xB552 (`>>3`).
+- **Dedicated shift register** = port **0x05** hardware auto-increment line + software serial
+  shift-add multipliers (SBC3 `0x120B`, NVS4 `0xB6FA`).
+- **Transport is PORT-based** (like PCM60), **not** a memory-mapped WCS (unlike PCM70).
+- Bus is **active-low** (every store preceded by `CPL`); coeff is **sign-magnitude** (bit7=sign,
+  NVS4 0xB4FF/0xB531 — the family's sign-in-MSB idiom); **opcode field only ~2 bits** (NVS4 0xB63C
+  `AND 3`) vs PCM60's 4-bit nibble.
+
+*Microword field map 🟡 (MEDIUM — hypothesis, needs a decoded program record to confirm):*
+- **Width = 4 bytes / 32 bits per step** (PCM60-family geometry); staged as 4-byte records in the
+  0x41xx RAM image; the 16-bit port-6/7 pair is the *bus transfer* width, so 1 step = 2 transfers.
+- **Step count ≈ 100** (NVS4 step counter base 0x10 @0xB55B; SUB 0x10 → 0-based). Per-program block
+  = one of **21 records × 682 bytes**; ~100×4=400 B microcode + ~280 B trailing coeff/param.
+- **Lane hypothesis:** `{offset_lo, offset_hi (16-bit signed 2's-comp; delay = −offset, computed by
+  NVS4 0xB714 = target − write_ptr), coeff (sign-magnitude + 2-bit mult extension), control (~2-bit
+  opcode)}` — i.e. the PCM60 `{off-lo, coeff, off-hi, ctrl}` lineage with the 224XL coeff extension.
+
+*Program selection / load path 🟡:* program# → 5-byte directory @NVS3 0xA446 (lookup SBC3
+0x1398) → picks per-program NVS2 control routine + the 0xB800 coeff record + NVS8 param record →
+NVS3 interpreter (0xAA9F) walks a packed bytecode definition, NVS4 0xB55B/0xB4F0 build each step,
+image copied to 0x41xx, clocked out via the 0x00/0x02/0x01/0x03 strobe sequence; knob moves rewrite
+only the affected coeff bytes in real time (NVS4 0xB000).
+
+**OPEN / NEXT (Phase 3 cont.):**
+- ❓ **Decode a full 682-byte program record** (e.g. from the 0xB800 array): run its raw fields
+  through the NVS4 0xB4F0/0xB4FF packers, lay out as 4×N, validate lane 0/1 offsets as a sane reverb
+  tap map (delay = −offset) and lane 2/3 coeffs against the alphabet — this confirms the lane
+  assignment **and** pins the exact step count (where offsets stop being sane = end of step array).
+- ❓ **Disassemble the NVS1 engine (0x8000) + NVS3 interpreter (0xAA9F)** end-to-end to fix
+  lane→ARU-pin mapping (currently inferred) and resolve the 100-vs-~147 step-count ambiguity.
+- ❓ Decode the 5-byte NVS3 directory (0xA446) semantics; verify physical NVS→window jumper order
+  vs the schematic ROM-select decode (NVS4-7 form one continuous record array, could be permuted).
+- Then: decode the ~100-step program and validate against the Concert Hall figure-eight topology;
+  adapt `tools/pcm60_decode.py` for the 4-byte 224XL word with the 2-bit-extended sign-magnitude coeff.
 
 ### Phase 4 — M300: the 480-family algorithms in Lexichip form
 Crossing into the Lexichip generation, but now fluent in ARU microcode. The M300 carries
@@ -326,10 +483,13 @@ no longer methodologically blocked.*
   scales the coefficient lane, deepest taps fastest — same pattern expected on 480L.)*
 - ❓ Damping-filter specifics.
 - ✅/🔄 Modulation injection points (LFO → which delay taps) — **Phase 2 found the
-  mechanism**: the control processor live-rewrites control-store *slots* on a timed ISR
-  refresh (16 slots, bit-reversed LFO phase, modulated offset/coeff data streamed to the
-  DSP). The *general model* is now answered; the **480L-specific tap targets** remain ❓
-  until Phase 5. (This is the live-update analogue of "slave loads WCS, then live-updates".)
+  mechanism** (slave-side, U95): the slave keeps an animated list of `{WCS-addr, value}`
+  entries (`sub_071dh`), ramps each value (multi-rate de-zipper), and RMW-encodes it
+  (`sub_0ecch`) into a **memory-mapped WCS window (~0x8000) with a 0xBE00 RAM shadow**.
+  Injection points = the WCS addresses in that list; "modulation" = the time-varying values.
+  The *general model* is now answered; the **480L-specific tap targets** remain ❓ until
+  Phase 5. (This is the one-generation-simpler analogue of "slave loads WCS, then live-updates"
+  — the 480L's `0x48000`-window streaming is the bigger-iron version.)
 - ❓ Output-tap map / inter-stage density taps.
 - ❓ Live parameter/coefficient streaming routine in the host firmware (distinct from the
   boot-time HALT probe; uses the same `0x48000` windows).

@@ -80,17 +80,154 @@ This is the roadmap's PCM70 model confirmed: PCM60's static microcode (**U67**) 
 
 ---
 
-## Open after Phase 2
+## Carry-over 1 — U67 microword plane field-map: **RESOLVED** ✅ (2026-06, byte-verified)
 
-- ❓ **LFO phase accumulator.** Waveform/curve tables are located (the 0x2B00 and 0x3800–0x3BC0 ramps) and the animation engine that consumes targets is mapped — but the specific routine that advances an LFO phase and writes *oscillating* targets into the update list is not yet isolated.
-- ❓ **U67 microword field map** (which of the ~8 planes is opcode vs coefficient vs offset). Wants the PCM60 Rosetta decoder cross-referenced; it was not loaded this session. Methodologically a Phase-1-style static decode — not blocked.
-- ❓ **Exact WCS window decode** — 0x8000 region is evidenced; precise plane count and the U67-vs-slave-plane interleave aren't fully pinned.
-- ❓ **Literal PCM70-vs-PCM60 microcode byte-diff** — needs the clean PCM60 V1.0 images loaded alongside U67 in the same session.
+Re-ran the Phase-1 decoder against U67 **plane-resolved** with the clean PCM60 V1.0 set
+loaded, then adversarially verified (two independent verifiers, both `agree=true`, no
+successful refutations). Tooling: `tools/u67_planes.py`, `tools/u67_explore.py`,
+`tools/u95_wcs_source.py`, cross-referenced against `tools/pcm60_decode.py`.
 
-**Next:** (1) re-load the PCM60 V1.0 set; run the Phase-1 decoder on U67 and do the literal diff; (2) isolate the LFO phase routine in U95; then **Phase 3 — 224XL** (the Concert Hall figure-eight tank ancestor).
+**Result: U67's active 1 KB = 8 plane-major 128-byte pages = 7 microword data planes (0-6)
++ 1 banner plane (7). Every data plane is a static ARU control / opcode / routing lane.
+There is NO resident delay-offset or coefficient-VALUE plane in U67.** The offset and
+coefficient *values* are slave-managed at runtime by U95 into the WCS (below).
+
+| U67 plane | Bytes | Label | Evidence | Conf. |
+|---|---|---|---|---|
+| **0** | 0x000 | control/opcode — most static (section/stride lane) | only **16 unique bytes**, H=2.81; low-nib 98% in PCM60 opcode alphabet; cosine vs PCM60 U43 = 0.944 | ✅ |
+| **1** | 0x080 | control/opcode | 27 uniq, H=4.05; low-nib dominated by n7; cosine vs U43 = 0.969 | ✅ |
+| **2** | 0x100 | control/opcode — sparse, high-FF, **boundary-marker-like** | 18 uniq, H=3.42, FF/F7 dominant; cosine vs U43 = 0.975 | ✅ |
+| **3** | 0x180 | control/opcode — most varied (the *false* "offset-hi" candidate) | highest uniq (39), H=4.60, but high-nibble is the fixed control set, **not** a delay ramp; cosine vs U43 = 0.979 | ✅ |
+| **4** | 0x200 | control/opcode (pairs with plane 5) | 29 uniq; 37/3F/27 motifs; cosine 0.982; loNib matches plane 5 78/128 | ✅ |
+| **5** | 0x280 | control/opcode — **best** cosine to PCM60 control | 30 uniq; cosine vs U43 = **0.984**; same motif family as plane 4 | ✅ |
+| **6** | 0x300 | control/opcode (paired with plane 3 in the spurious offset search) | 29 uniq; n7 dominant; cosine 0.981 | ✅ |
+| **7** | 0x380 | **ASCII banner — NOT microcode** | contiguous text `COPYRIGHT 1985  LEXICON INC.  PCM70 OPCODES  V1.20`, 0x1A pad; cosine vs U43 collapses to 0.160 | ✅ |
+
+**Why "all control, no value planes" holds (refutation tests that all FAILED):**
+- **Per-bit layout is identical across planes 0-6** — bit5≈0.98, bit4≈0.77, bit3≈0.30 in
+  *every* data plane. A free 16-bit address/offset field would have every bit ≈0.5; constant
+  bit positions prove structured control words, not value tables. (This also matches the
+  Phase-2 coeff encoding: sign → ctrl **bit 3**, packing mode → ctrl **bit 4**.)
+- **No offset-lo plane** — PCM60's real offset-lo (U32) has 64 unique bytes; the most-varied
+  U67 plane (3) has only 39. None reaches offset-lo entropy.
+- **No offset-hi plane** — a genuine offset-hi (PCM60 U38) is dominated by sign-extension
+  bytes 0xFF/0xFC/0xFB; no U67 plane shows this (high nibbles are the fixed control set).
+- **No coefficient plane** — zero 0x7F (×0.5) scalars in any plane; longest decay run 21 vs
+  59 for the genuine U95-sourced WCS envelope.
+- **The "60-tap plane3:plane6 offset" was a coincidence** — only 82/128 16-bit pairs are
+  distinct and the *repeats* are control-byte pairs (`0x3737`×9, `0x3FFF`×7, `0x2727`,
+  `0x27E7`, `0x3F3F`, `0xB737`), i.e. two opcode lanes arithmetically combining — not reused
+  delay magnitudes (PCM60's real offset repeats are `0xFFFF` sentinels).
+- **Plane-major confirmed** (slicing, not interleave): the banner is *contiguous* at 0x380;
+  stride-2/4 "columns" show no field specialization (all columns 42-58 uniq, all 16 low-nibbles
+  used) — a real packed microword would expose one high-entropy offset-lo column.
+
+**Open nuance** (🟡 medium): planes 0-6 could **not** be crisply split into orthogonal
+sub-roles — they are all control-domain variants (likely different microcode banks / sections /
+algorithm-routing columns rather than one-field-per-plane). Pinning which plane feeds which ARU
+microword bit-field wants the U95 dispatcher's WCS-write address arithmetic mapped onto the ARU
+bit layout.
+
+**Where offset/coefficient values actually live (the corrected lineage):** computed at runtime
+in the U95 slave and written into the memory-mapped **WCS (~0x8000-0x83FF, write-only, RAM shadow
+0xBE00)**. The static curve source is U95 ROM ~0x2ACD (the smooth descending 0xFF..0x81 envelope),
+plus per-algorithm coefficient blocks (record+0x133/+0x233). **So the reverb-tap lineage diff vs
+PCM60 must be run U95-WCS-source-vs-PCM60, *not* U67-vs-PCM60** — U67 carries no taps.
+
+**Coefficient WCS plane pinned = WCS plane 6 (0x8300-0x837F)** ✅ (byte-verified): `sub_0655h`
+@0x065D stamps `LD DE,0x8300` + `(idx & 0x7F)` as the RMW target for every per-coefficient list
+entry (addr_hi = **0x83** for all of them); `sub_0ecch`/`sub_0e59h` write `(DE)`=0x83xx with the
+0xBE00+DE shadow; read-back `sub_0e51h` uses `(0x42EE)=algo_base+0x7F33` so DE=0x8300 ⇒
+algo_base+0x233 = exactly the per-algorithm coeff block bulk-LDIR'd to WCS 0x8300 @0x06B2. Planes
+3 (0x8180) and 5 (0x8280) get only one-shot static curve preloads (`sub_02b6h` lddr); plane 4
+(0x8200) only the 0x0A21 dual-pointer load; **only plane 6 receives the moving-index per-coefficient
+de-zipper RMW.** (2-byte coeff mode `inc de`; at top index 0x7F the 2nd byte spills to 0x8380.)
+
+---
+
+## Carry-over 2 — LFO phase accumulator in U95: **RESOLVED** ✅ (2026-06, byte-verified)
+
+The phase-accumulator idiom (RAM word incremented per tick, masked/wrapped, used to index a
+table) is unambiguously **`sub_0ad2h` @0x0AD2**, the LFO/vibrato modulation engine. Core at
+**0x0B6B-0x0B79**:
+
+```
+0B6B  2A 35 43   LD HL,(0x4335)     ; phase accumulator (16-bit word)
+0B6E  23         INC HL             ; step = +1 per fire
+0B6F  7C         LD A,H
+0B70  E6 07      AND 7              ; wrap: H constrained 0..7  (0x0800 window)
+0B72  67         LD H,A
+0B73  22 35 43   LD (0x4335),HL
+0B76  7E         LD A,(HL)          ; dereference table -> waveform/direction sample
+0B77  32 37 43   LD (0x4337),A      ; cache sampled value
+```
+Init: `0x06A0 LD HL,0x0010 / LD (0x4335),HL` at algorithm load.
+
+- **Accumulator** = RAM word **0x4335** (lo) / 0x4336 (hi); dereferenced sample cached at **0x4337**.
+- **Step** = fixed **+1**. The LFO *rate* is set NOT by step magnitude but by **two cascaded
+  software reload dividers** — inner **0x4333** (reloaded from per-algo byte **0x418C**; coarse
+  reload 0x40 @0x0AF1) and outer **0x4332** (reloaded from **0x418B**). 0x418B/0x418C come from
+  the **RATE-knob handler @0x04F0** (`CP 0x10 / SUB 0x10 / CPL / INC A / INC A → 0x418B`) and the
+  per-algorithm `LDIR` @0x05A3 (record+0x4C, 3 bytes → 0x418C/D/E).
+- **Wrap** = `AND 7` on the high byte → 8-page / 0x800-byte window from base 0x0010.
+- **Depth** = param **0x402D** low nibble (clamped to per-algo cap 0x41E4), scaled by the 8×16
+  shift-add multiply **`sub_10d3h` @0x10D3** using depth word **0x418D/0x418E**.
+- **Output** → the routine walks the per-algorithm modulation list at **(0x41E2)** (stride 5),
+  applies the cached sample × depth, and stages `{target,value}` into the **0x40B0 de-zipper
+  queue** (head ptr 0x40D0). The de-zipper **`sub_071dh`** (list head 0x41FA) / **`sub_0883h`**
+  (head 0x4206) then converge each value toward target (−4/pass if bit7=0, −1 if bit7=1) and
+  commit to the WCS via the RMW writer **`sub_0ecch`/`sub_0e59h`** (plane 6, above).
+- **Paced by** the **foreground dispatcher** (`CALL 0x0AD2` @0x00EF every loop pass), self-rate-
+  limited by the cascaded dividers — **NOT** the ISR. ISR 0x02D3 re-confirmed as a pure ÷8 BPM
+  divider with no modulation role.
+- **Entry gating:** `0x0AD2 LD A,(0x418A)/OR A/JP m` (per-algo LFO-enable) + `0x0AD9
+  LD A,(0x402B)/AND 0x40/JP z` (user mod-enable, param 0x402B bit 6).
+
+**Waveform caveat** (🟡 open): the dereferenced "table" base is 0x0010 with `H AND 7`, so it
+reads low ROM/RAM 0x0010-0x07FF — which physically overlaps the U95 copyright banner/code bytes —
+and 0x4337 is XOR/sign-toggled downstream (~0x0C14) as a direction bit. So this behaves as a
+**triangle / up-down ramp generator** (the depth multiply, not a smooth amplitude LUT, shapes the
+output), unless a per-algorithm setup relocates the table base before `sub_0ad2h` runs (needs a
+trace of any writer of the 0x4335 *base* beyond the 0x06A0 init). A separate exponential rate→
+period table at **0x0D3F** (indexed by `0x0CFA`) maps the RATE param to a period and is
+complementary, not the phase index.
+
+**Per-algorithm record table (corrects the "0x3FFE pointer" framing):** there is **no live
+pointer at 0x3FFE**. `0x3FFE` is the **end boundary** of a **7-entry record table at 0x299A**,
+stride **0x0333** (records IDs 0-6 at 0x299A/0x2CCD/0x3000/0x3333/0x3666/0x3999/0x3CCC; table ends
+0x3FFF). Algorithm selected by **linear ID-scan `sub_0ab3h` @0x0AB3**; record base cached in RAM
+**0x4185**. Record layout (0x333 bytes): `[0]`=algo ID · `+0x4C` (3B) rate words → 0x418C · `+0x51`
+(11B) LFO/delay-range setup → 0x418F · `+0x5D` tagged modulation-list source · `+0x133` (0x80) WCS
+coeff block · `+0x233` (0x80) plane block → WCS 0x8300 / RAM 0x4100. Param block roles:
+**0x4000**=algo# · **0x402B bit6**=mod enable · **0x402C**=delay/size (feeds `sub_0953h` range
+calc) · **0x402D**=LFO rate/depth (low nibble depth, bit7 direction).
+
+*(Method note: resolved via an 8-agent verification+trace workflow — 2 adversarial U67 verifiers,
+5 independent U95 trace lenses, 1 synthesis. One lens (forward-from-curve-tables) initially
+concluded "no accumulator / host-side LFO" by searching only the curve-table read paths; it was
+overruled by re-disassembly in synthesis, but its 0x0D3F rate→period finding stands.)*
+
+---
+
+## Open after Phase 2 (updated)
+
+- ✅ **LFO phase accumulator** — `sub_0ad2h` @0x0AD2 (accumulator 0x4335, sample 0x4337). *(was ❓)*
+- ✅ **U67 microword field map** — 7 control/opcode/routing planes (0-6) + banner (7); no resident
+  offset/coeff value planes. *(was ❓)*
+- ✅ **Coefficient WCS plane** — plane 6 (0x8300). *(was ❓ "exact WCS window decode", now largely pinned)*
+- 🟡 **Fine sub-role split of U67 planes 0-6** — all control-domain; the per-plane → ARU-bit-field
+  mapping (banks/sections/routing) is not crisply resolved.
+- 🟡 **LFO waveform source** — confirm whether the 0x4335 base (0x0010, H&7) is an intentional
+  triangle/ramp over low ROM or relocated per algorithm.
+- ❓ **Literal PCM70-vs-PCM60 reverb-tap diff** — must be run **U95-WCS-source vs PCM60** (U67 has
+  no taps); PCM70's delay topology assembles at runtime from the per-algorithm record blocks.
+
+**Next:** **Phase 3 — 224XL** (Phase-0 integrity PASS, see roadmap §Phase 3 RESULTS).
 
 ---
 
 ### Artifacts
 - `PCM70_U95_slave_disasm_org0.asm` — full z80dasm of the slave (origin 0, addresses = file offsets).
 - `PCM70_phase0_analysis.py` — integrity / entropy / autocorrelation / string / table-scan scripts.
+- `tools/pcm60_decode.py` — PCM60 Rosetta microword decoder (verified: program 0 = 60 taps, 68..27137).
+- `tools/u67_planes.py`, `tools/u67_explore.py`, `tools/u95_wcs_source.py` — U67 plane field-map analysis.
