@@ -1,0 +1,14 @@
+3.5L is for switching operation to LARC, on a machine already running v3.50.
+
+Note:
+The firmware for the Lexicon 300 effect processor was upgraded several times during production, finishing with version 3.5. 
+
+This made the machine far more powerful and flexible, adding:
+DUAL MACHINE functionality with several new audio configurations.
+An extra LFO for modulation.
+A version of the Lexicon 224XL Rich Plate algorithm.
+Six new Split effect algorithms including chamber, delays, pitch shift and dither.
+Several more small enhancements and fixes.
+
+
+Unfortunately, Lexicon ran out of their v3.5 upgrade kits years ago, so many users have been stuck with v1.x or v2.x firmware. Just copying the ROMs is not enough - a custom GAL logic chip is required to complete the upgrade.

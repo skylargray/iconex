@@ -1,0 +1,20 @@
+Lexicon PCM-81
+
+chip: AM27c040
+
+sticker:
+~~~~~~~~~~~~~~
+ 350-12630
+ VERSION 1.00
+ HOST BD U55
+ PCM81
+ (c)LEXICON
+~~~~~~~~~~~~~~
+
+"1997 V1.31"
+"Nov 14 1997 08:13:53"
+"Setup Copyright 1994 by Lexicon Inc"
+
+
+Edward d-tech
+www.dtech.lv

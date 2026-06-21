@@ -1,0 +1,17 @@
+Firmware for the Lexicon 480L effect processor was upgraded several times during production, finishing with version 4.1. This made the machine far more powerful and flexible, adding:
+* Enhancements to existing programs (Ambience, Random Hall, Stereo Adjust).
+* New programs (Twin Delays, PONS adjust, Prime Time III and several more).
+* MIDI SysEx automation.
+* The ability to use the Classic Cart (not included), which contains 40 programs from the 224XL and other vintage Lexicons.
+* Several more small enhancements and fixes.
+
+Unfortunately, Lexicon ran out of their v4.1 upgrade kits years ago, so many users have been stuck with earlier firmware. Just copying the ROMs is not enough - two custom GAL logic chips are required to complete the upgrade.
+
+Important Note: 
+Majority of 480Ls with no problems at all. However, a small number of the very earliest units (those fitted with a Revision 1 Host PCB) cannot be upgraded beyond v3.0 firmware without some modifications.
+
+Identify revision:
+1. Turn off the unit and flip down the front panel.
+2. The Host card has the ribbon cable from the cartridge slot connected to it. Disconnect that ribbon and slide the Host card outwards - there is no need to remove it completely from the frame.
+3. The PCB will have "Rev.x" marked on it, where x is the revision level of the board. Alternatively, simply count the number of pins on the SOCKETS that the firmware EPROMs are fitted (not the EPROMs themselves, which may be smaller). Rev.1 cards have 28-pin sockets while all other revisions have 32-pin sockets.
+Refit the Host card and reconnect the cartridge slot ribbon.

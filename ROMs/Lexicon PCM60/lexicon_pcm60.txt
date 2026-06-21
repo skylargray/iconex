@@ -1,0 +1,13 @@
+Lexicon PCM 60
+
+The V1.0 version is 2732 ROMs.  The V2.0 version is 2764 ROMs
+
+1 - U32
+2 - U35
+3 - U38
+4 - U43
+
+
+The V1.0 Cary Roberts did.
+
+The V2.0 Michael Caloroso did.

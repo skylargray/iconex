@@ -1,0 +1,1008 @@
+# Lexicon 480L Service Manual — Chapter 6: Parts Lists
+
+Each table lists parts for one assembly, with columns: **Category**, **Part No.**, **Qty**, **Description**, and **Reference**. Blank reference cells reflect entries with no designator in the original manual.
+
+## Contents
+
+| § | Assembly |
+|---|---|
+| 6.1 | Misc Items |
+| 6.2 | Backplane |
+| 6.3 | Extender Board Option |
+| 6.4 | Chassis / Mechanical |
+| 6.5 | Fan Assembly |
+| 6.6 | Power Transformer Assembly |
+| 6.7 | HSP Board Rev. 2 |
+| 6.8 | HSP Board Rev. 3 |
+| 6.9 | Interface Adaptor Option |
+| 6.10 | LARC Display Board |
+| 6.11 | LARC Electronics Board |
+| 6.12 | LARC Mechanical |
+| 6.13 | LARC Panel Board |
+| 6.14 | LARC Shipping Kit |
+| 6.15 | Motherboard |
+| 6.16 | Host Processor Board (Rev. 2 and Higher) |
+| 6.17 | Host Processor Board (Rev. 1) |
+| 6.18 | Power Supply Board |
+| 6.19 | V1.23 Software Update |
+| 6.20 | V2.00 Software Update |
+| 6.21 | SME Option (+ Floppy, SCSI, Shipping Kit) |
+
+---
+
+## 6.1 Misc Items
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Cust Literature | 070-04737 | 1 | MANUAL,OWNER'S,480L | |
+| Cust Literature | 070-04988 | 1 | NOTICE,SOFT RELEASE,V1.23,480L | |
+| Cables/Cords | 680-00841 | 1 | CORD,POWER,PHILLIP #13E37-1 | |
+| Cables/Cords | 680-04734 | 1 | CABLE,10',RS-422,MNFRM/MNFRM | |
+| Sub-Assy | 750-04718 | 1 | CARTRIDGE,SRAM,8KX8 | |
+
+## 6.2 Backplane
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Carbon Flm Res | 202-00549 | 1 | RES,CF,5%,1/4W,10K OHM | R1 |
+| Fuses | 440-01877 | 2 | FUSE,5X20MM,SLO-BLO,1.25AMP | F1,2 |
+| PC Edge Conn | 500-03620 | 8 | CONN,EURO,C,ROW a+c,FEM | J4-7, 9-12 |
+| PC Mnt Conn | 510-03551 | 4 | CONN,D-SUB,9FC,MB,PC | J1-3,15 |
+| Electronic Hdwr | 600-02227 | 4 | FUSE CLIP,20MM,PC | F1,2 |
+| Spcr,Non-Insul | 635-04650 | 8 | SPCR,SWAGE,4-40X.429,1/4RD,BR | J1-3,15 MTG |
+| Spcr,Non-Insul | 635-04651 | 3 | SPCR,SWAGE,4-40X.469,1/4RD,BR | |
+| Bulk Wire | 670-01974 | 1 | WIRE,JMP,22AWG,0.1",NON-INSUL | W1 |
+| Cables/Cords | 680-04560 | 1 | CABLE,XITION/SCKT,26C,7.0" | P1 |
+| Cables/Cords | 680-04701 | 1 | CABLE ASSY,6C,18G,24",ST&T/HSG | E4-9 |
+| Cables/Cords | 680-04702 | 1 | CABLE ASSY,3C,22G,20",ST&T/HSG | E1-3 |
+| Sleeving | 690-04703 | 1 | SLEEVING,HEAT SHRINK,15",3/8ID | 6 & 3 COND |
+| Sleeving | 690-04704 | 1 | SLEEVING,HEAT SHRINK,4",3/8ID | 6COND |
+| PC Boards | 710-04364 | 1 | PC BD,BACKPLANE,M480L | |
+
+## 6.3 Extender Board Option
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| PC Edge Conn | 500-04557 | 2 | CONN,EURO,C,ROW a+c,MALE,RA | |
+| PC Edge Conn | 500-04903 | 2 | CONN,EURO,C,ROW a+c,FEM,RA | |
+| PC Mnt Conn | 510-01067 | 12 | CONN,POST,100X025,HDR,12MCG | |
+| PC Hdwr | 610-04904 | 2 | GUIDE/EJECTOR,EXTENDER BD | |
+| Bulk Wire | 670-01689 | 4 | WIRE,18AWG,16/30,BLK,6" | |
+| Bulk Wire | 670-01689 | 7 | WIRE,18AWG,16/30,BLK,4.5" | |
+| Bulk Wire | 670-01689 | 5 | WIRE,18AWG,16/30,BLK,3" | |
+| Bulk Wire | 670-01689 | 2 | WIRE,18AWG,16/30,BLK,2" | |
+
+## 6.4 Chassis / Mechanical
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Rocker Switch | 454-03900 | 1 | SW,ROCKER,1P1T,QDC,INTL LINE | CHASSIS INSERT |
+| Conn Hdwr | 527-00138 | 8 | CONN,D-SUB,JACKSOCKET,.150" | BACKPLANE |
+| Strain Rel | 530-02488 | 3 | TIE,CABLE,NYL,.14"X5 5/8" | XFORMER WIRING |
+| Strain Rel | 530-04719 | 2 | CLIP,WIRE HRNS,3/8"DIA,ADH BAK | |
+| Grommets | 540-00874 | 1 | GROMMET,9/16 OD,7/16 ID | PWR SW WIRING |
+| Grommets | 540-03483 | 4 | GROMMET,3/8 OD,7/32 ID,BLUE | FAN MTG |
+| Grommets | 540-04648 | 6 | BUSHING,.250ID/.312OD,BLK | INSERT, POT SHAFTS |
+| Feet | 541-00780 | 4 | BUMPER,FEET,3-M #SJ5023 | |
+| Knobs/Caps | 550-04665 | 1 | HANDLE,EXT W/ VINYL,BLK,1.7"L | FRONT PANEL |
+| Knobs/Caps | 550-04720 | 6 | KNOB,11MM,6MM/FLAT,BLK,WHT LN | ON SHAFT EXT |
+| Electronic Hdwr | 600-04526 | 6 | SPCR,D/D,.125/.236,7.600L,PVC | POT SHAFT EXT |
+| Electronic Hdwr | 600-04558 | 1 | CABINET LATCH,DOUBLE BALL | |
+| Electronic Hdwr | 600-04643 | 1 | LID SUPPORT,RH,6-9/16" | SIDE,WRAPAROUND |
+| Electronic Hdwr | 600-04646 | 10 | CARD GUIDE,4.5" | |
+| Electronic Hdwr | 600-04647 | 10 | CARD GUIDE,6" | |
+| Electronic Hdwr | 600-04657 | 1 | BEZEL,LED LIGHT BAR,HLMP-2899 | CHAS INSERT |
+| Lugs | 620-01999 | 1 | LUG,SOLDER,LCKNG,#6,.020THK | AC GND MTG |
+| Springs | 625-04405 | 1 | SPRING,6TURN,.06"ID,.5LEG | CART DOOR MTG |
+| Insul/Spacrs | 630-04690 | 1 | WSHR,1/4CLX2.75"OD,NEOPRENE | |
+| Insul/Spacrs | 630-04994 | 2 | WSHR,SHLDR,.359SHNK,1/4CL,FBR | XFORMER MTG |
+| Spcr,Non-Insul | 635-00949 | 4 | SPCR,#6CLX1/4,AL | FAN MTG |
+| Spcr,Non-Insul | 635-04406 | 2 | SPCR,SWAGE,.143CLX.125L,.281RD | SHIELD MTG |
+| Spcr,Non-Insul | 635-04413 | 1 | BSHG,SHDR,.15SHNK,4-40,STEEL | LID SUPPORT MTG |
+| Machine Screws | 640-01708 | 2 | SCRW,6-32X3/16,PNH,PH,ZN | MOTHERBOARD MTG |
+| Machine Screws | 640-01716 | 2 | SCRW,6-32X3/8,PNH,PH,ZN | SHIELD MTG |
+| Machine Screws | 640-02051 | 3 | SCRW,6-32X3/8,FH,100DEG,PH,ZN | HANDLE MTG (2), AC GND MTG (1) |
+| Machine Screws | 640-02288 | 4 | SCRW,6-32X1,PNH,PH,ZN | FAN MTG |
+| Machine Screws | 640-02715 | 12 | SCRW,4-40X1/4,FH,PH,ZN | XLR MTG |
+| Machine Screws | 640-02749 | 10 | SCRW,6-32X1/4,PNH,PH,SEMS,BLK | TOP & BOTTOM COVER MTG |
+| Machine Screws | 640-02811 | 8 | SCRW,8-32X7/16,PNH,PH,SEMS,BLK | RACK EAR MTG |
+| Machine Screws | 640-02812 | 11 | SCRW,4-40X3/8,PNH,PH,BLK | DIN CONN MTG (6), BACKPLANE (3), CORCOM (2) |
+| Machine Screws | 640-03087 | 6 | SCRW,6-32X3/8,PNH,PH,SEMS,BLK | XFORMER SUPPORT (4), HEATSINK TO CHASSIS MTG (2) |
+| Machine Screws | 640-03713 | 6 | SCRW,6-32X1/4,PNH,PH,SEMS,ZN | PWR SUP BD (4), LID SUP MTG (2) |
+| Machine Screws | 640-03957 | 1 | SCRW,6-32X3/16,TH,PH,BLK | "L" BRACKET MTG |
+| Machine Screws | 640-04339 | 1 | SCRW,4-40X1/4,PNH,PH,SEMS,ZN | LID SUPPORT MTG |
+| Machine Screws | 640-04691 | 1 | BOLT,CRG,1/4-20X3-1/4,SS | XFORMER HARDWARE |
+| Thrd-Form Scrw | 641-04556 | 2 | SCRW,TAP,F,6-32X3/8,FH,PH,ZN | LATCH AND HANDLE MTG |
+| Nuts | 643-01728 | 9 | NUT,6-32,KEP,ZN | KEYSTONE TO CHASSIS MTG (2), FAN MTG (4), HEATSINK TO CHASSIS MTG (2), "L" BRACKET MTG (1) |
+| Nuts | 643-01729 | 1 | NUT,6-32,HEX,SMALL,ZN | AC GND MTG |
+| Nuts | 643-01732 | 10 | NUT,4-40,KEP,ZN | DIN CONN MTG (6), CORCOM (2), CABLE MTG (2) |
+| Nuts | 643-04694 | 2 | NUT,1/4-20,HEX,ZN | XFORMER MTG |
+| Washers | 644-01735 | 2 | WSHR,FL,#6CLX3/8ODX1/32THK | LID SUPPORT MTG |
+| Washers | 644-01736 | 1 | WSHR,FL,#4CLX.218ODX.032THK | LID SUPPORT MTG |
+| Washers | 644-02379 | 4 | WSHR,FL,#6CLX3/8ODX.031THK,BLK | XFORMER SUPPORT |
+| Washers | 644-04414 | 8 | WSHR,FL,#6CLX.5"ODX.062THK | FAN MTG |
+| Washers | 644-04527 | 5 | WSHR,LOCK,SPLIT,1/4" | XFORMER MTG |
+| Washers | 644-04695 | 2 | WSHR,WAVE,.13OIDX.290ODX.01THK | FRONT PANEL MTG |
+| Washers | 644-04696 | 1 | WSHR,DIMPLE,1/4CLX2.75"OD,ZN | |
+| Washers | 644-05802 | 1 | WSHR,FL,3/8CLX1ODX.083THK | XFORMER MTG |
+| Threadls Fastnr | 650-02586 | 2 | FASTNR,NYLATCH,HN5G-52-1 | PCB RETAINER |
+| Threadls Fastnr | 650-02587 | 2 | FASTNR,NYLATCH,HN5P-52-4-1 | PCB RETAINER |
+| Threadls Fastnr | 650-03982 | 6 | POPRVT,5/32X1/4,12ODEG FLAT HD | CHASSIS INSERT MTG |
+| Threadls Fastnr | 650-04697 | 2 | ROLL,PIN,.125ODX.625LONG | FRONT PANEL MTG |
+| Threadls Fastnr | 650-04896 | 3 | POPRVT,5/32X1/8,REG PROT HD,AL | KEYSTONE MTG (2), "L" BRACKET MTG (1) |
+| Bulk Wire | 670-04528 | 1 | WIRE,.045"DIAX2.5",STEEL | CART DOOR MTG |
+| Cables/Cords | 680-04561 | 1 | CABLE,EDGE/SCKT,3.0" | RAM CART SOCKET |
+| Cables/Cords | 680-04698 | 1 | CABLE ASSY,2C,22G,20",ST&T/HSG | PILOT LIGHT ASSY |
+| Chassis/Mech | 700-03555 | 1 | FAN GUARD,3.25"MNT | FAN MTG |
+| Chassis/Mech | 700-04392 | 1 | CHASSIS,WRAPAROUND,M480L | |
+| Chassis/Mech | 700-04393 | 1 | CHASSIS,INSERT,FP,M480L | |
+| Chassis/Mech | 700-04395 | 2 | COVER,TOP/BOTTOM,M480L | |
+| Chassis/Mech | 700-04415 | 1 | GUIDE,RAM CART,M480L | CHASSIS INSERT |
+| Brackets | 701-00299 | 4 | BRACKET,KEYSTONE #617 | MTHBD TO CHASSIS INSERT MTG (3), MTHBD TO WRAPAROUND MTG (1) |
+| Brackets | 701-04396 | 2 | BRACKET,MTG,RACK | |
+| Brackets | 701-04699 | 1 | BRACKET,"L",3.872X1.29X.50 | HEATSINK TO CHASSIS INSERT |
+| Brackets | 701-04990 | 1 | SUPPORT,BRACKET,"C",XFORMER | XFORMER SUPPORT |
+| Panels | 702-04394 | 1 | PANEL,BAFFLE,FAN | CHASSIS INSERT |
+| Panels | 702-04397 | 1 | PANEL,FRONT,5.168X16.950X.29 | |
+| Panels | 702-04400 | 1 | PANEL,OVERLAY,CHASSIS,M480L | |
+| Panels | 702-04402 | 1 | PANEL,OVERLAY,SUB,M480L | |
+| Panels | 702-04404 | 1 | PANEL,OVERLAY,PWR SW,.89X3.70 | |
+| Panels | 702-04412 | 1 | DOOR,CARTRIDGE,RAM,M480L | |
+| Panels | 702-04520 | 1 | STRAP,RETAINER,PCB,.80X3.690 | |
+| PC Boards | 710-04407 | 1 | PC BD,DIGITAL SHIELD | |
+| Plastics | 720-03272 | 1 | TAPE,FOAM,SGL-STK,1/8THX3/4W,2.9" | PCB RETAINER |
+| Plastics | 720-03272 | 2 | TAPE,FOAM,SGL-STK,1/8THX3/4W,2.25" | BPL CABLE PROT |
+| Plastics | 720-03389 | 2 | VELCRO ARROWHEAD,PRESSURE SENS,3.0" | FILTER MTG |
+| Plastics | 720-03389 | 1 | VELCRO ARROWHEAD,PRESSURE SENS,1.5" | FILTER MTG |
+| Plastics | 720-03548 | 4 | TAPE,FOAM,1/16X1/2X3.4 | XFORMER SUPPORT |
+| Plastics | 720-04524 | 1 | AIR FILTER,3.376X3.400X.25,BLK | FOR FRONT PANEL |
+| Label/Nameplts | 740-04732 | 1 | LABEL,FUSE,480L FP INSERT | |
+
+## 6.5 Fan Assembly
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Fans/Motrs/Rely | 410-04684 | 1 | FAN,TUBE-AX,3.25X1,14CFM,24V | |
+| Cable Conn | 490-04685 | 2 | CONN,QDC,FEM,.110X.020 | |
+| Conn Hdwr | 527-04689 | 2 | CONN,QDC,FEM,HSG,.110X.020 | |
+
+## 6.6 Power Transformer Assembly
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Semiconductors | 360-01612 | 2 | SEMICOND,VARISTOR | AC CONN |
+| Fuses | 440-01624 | 1 | FUSE,3AG,SLO-BLO,3AMP,250V | CORCOM CONN |
+| Fuses | 440-01876 | 2 | FUSE,5X20MM,SLO-BLO,1.6AMP | CORCOM CONN |
+| Transformers | 470-04408 | 1 | XFORMER,POWER,TOROID,200VA | SIDE, WRAPAROUND |
+| Cable Conn | 490-04599 | 1 | CONN,AC,RFI,FUSE & VOLT CHNG | REAR, WRAPAROUND |
+| Cable Conn | 490-04685 | 6 | CONN,QDC,FEM,.110X.020 | SEC 1,2 |
+| Cable Conn | 490-04886 | 2 | CONN,QDC,FEM,.250X.032 | XFORMER WIRING |
+| Conn Hdwr | 527-04689 | 6 | CONN,QDC,FEM,HSG,.110X.020 | SEC 1,2 |
+| Conn Hdwr | 527-04888 | 2 | CONN,HSG,QDC,FEM,.250X.032 | XFORMER WIRING |
+| Strain Rel | 530-02489 | 1 | TIE,CABLE,NYL,.1"X4" | |
+| Lugs | 620-01999 | 1 | LUG,SOLDER,LCKNG,#6,.020THK | XFMR SHIELD LUG |
+| Bulk Wire | 670-01844 | 1 | WIRE,JMP,24AWG,BUSS WIRE,1/2" | CORCOM WIRING |
+| Pre-Cut Wire | 675-04686 | 1 | WIRE,16G,GRN,3.5",ST&T1/4X1/2 | AC GND WIRE |
+| Pre-Cut Wire | 675-04700 | 2 | WIRE,18G,BLK,18",QDCXST&T.3" | PWR SW WIRING |
+| Sleeving | 690-02061 | 7 | SLEEVING,SHRINK,1/8",1/2"L | CORCOM WIRING |
+| Sleeving | 690-04529 | 3 | SLEEVING,TEFLON,.04"ID | VAR MTG |
+
+## 6.7 HSP Board Rev. 2
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Carbon Flm Res | 202-00542 | 3 | RES,CF,5%,1/4W,4.7K OHM | R2,3,6 |
+| Electrolyt Cap | 240-02048 | 2 | CAP,ELEC,47uF,25V,AX | C61,62 |
+| Ceramic Cap | 245-03609 | 60 | CAP,CER,.1uF,50V,Z5U,AX | C1-60 |
+| Digital/CMOS IC | 330-03340 | 6 | IC,DIGITAL,74F157 | U10-12,37-39 |
+| Digital/CMOS IC | 330-03586 | 12 | IC,DIGITAL,74HCT244 | U1,2,16,17,29,41,56,57,72,74,85,87 |
+| Digital/CMOS IC | 330-03715 | 16 | IC,DIGITAL,74HCT374 | U22,24,46,48,53,54,73,75,79,80,86,88,106,107,114,115 |
+| Digital/CMOS IC | 330-03766 | 2 | IC,DIGITAL,MMU,64K,CMOS | U69,98 |
+| Digital/CMOS IC | 330-04041 | 3 | IC,DIGITAL,74F10 | U50,55,108 |
+| Digital/CMOS IC | 330-04042 | 17 | IC,DIGITAL,74AHCT374 | U61,63,70,71,76,78,83,84,90,92,99,100,104,111,113,118,119 |
+| Digital/CMOS IC | 330-04084 | 6 | IC,DIGITAL,74HCT175 | U30,58,59,82,109,117 |
+| Digital/CMOS IC | 330-04260 | 2 | IC,DIGITAL,74HCT04 | U20,51 |
+| Digital/CMOS IC | 330-04261 | 1 | IC,DIGITAL,74HCT00 | U42 |
+| Digital/CMOS IC | 330-04273 | 4 | IC,DIGITAL,74HCT74,ZYTREX | U7,34,43,81 |
+| Digital/CMOS IC | 330-04275 | 2 | IC,DIGITAL,74HCT139 | U6,33 |
+| Digital/CMOS IC | 330-04292 | 6 | IC,DIGITAL,74F32 | U8,21,35,45,101,116 |
+| Digital/CMOS IC | 330-04293 | 2 | IC,DIGITAL,74F74 | U28,102 |
+| Digital/CMOS IC | 330-04294 | 1 | IC,DIGITAL,74HCT138 | U105 |
+| Digital/CMOS IC | 330-04362 | 2 | IC,DIGITAL,ARU,18 BIT,CMOS,15M | U60,89 |
+| Digital/CMOS IC | 330-04511 | 4 | IC,DIGITAL,74AHCT244 | U23,25,47,49 |
+| Digital/CMOS IC | 330-04564 | 1 | IC,DIGITAL,74HCT08 | U110 |
+| Digital/CMOS IC | 330-04566 | 1 | IC,DIGITAL,74HCT27 | U44 |
+| Digital/CMOS IC | 330-04567 | 1 | IC,DIGITAL,74HCT32 | U19 |
+| Digital/CMOS IC | 330-04572 | 2 | IC,DIGITAL,74HCT245 | U3,18 |
+| Digital/CMOS IC | 330-04588 | 1 | IC,DIGITAL,74HCT03 | U52 |
+| Digital/CMOS IC | 330-04675 | 1 | IC,DIGITAL,74F08 | U15 |
+| Digital/CMOS IC | 330-04676 | 2 | IC,DIGITAL,74F161A | U9,36 |
+| Memory IC | 350-04282 | 2 | IC,SRAM,4364,8KX8,150NS,LPS | U5,32 |
+| Memory IC | 350-04434 | 10 | IC,DRAM,64KX4,120NS | U64-68,93-97 |
+| Memory IC | 350-04655 | 4 | IC,SRAM,2018,2KX8,35NS | U13,14,26,27 |
+| Memory IC | 350-04680 | 1 | IC,ROM,82S123,M480L,TIMING | U103 |
+| Memory IC | 350-04721 | 2 | IC,ROM,74S472,M480L,CONTROL | U62,91 |
+| Memory IC | 350-04722 | 2 | IC,ROM,74S472,M480L,COEF | U77,112 |
+| Microproc IC | 365-04284 | 2 | IC,uPROC,Z80,CMOS,4MHz | U4,31 |
+| Modules | 380-03956 | 1 | MOD,DLY LINE,5 TAP,30/150NS,LS | U40 |
+| Cable Conn | 490-02356 | 5 | CONN,JUMPER,.1X025,2FCG | W2,3,7,10,11 |
+| PC Edge Conn | 500-04557 | 2 | CONN,EURO,C,ROW a+c,MALE,RA | J1,2 |
+| PC Mnt Conn | 510-04687 | 5 | CONN,POST,100X025,HDR,3X2MCG | W1-15 |
+| Sockets | 520-00946 | 6 | IC SCKT,40 PIN,PC,LO-PRO | U4,31,60,69,89,98 |
+| Sockets | 520-01458 | 2 | IC SCKT,28 PIN,PC,LO-PRO | U5,32 |
+| Knobs/Caps | 550-04705 | 1 | HANDLE,"U",1.5" | |
+| Machine Screws | 640-03713 | 2 | SCRW,6-32X1/4,PNH,PH,SEMS,ZN | HANDLE MTG |
+| Threadls Fastnr | 650-04772 | 3 | POPRVT,1/8X3/16,REG PROT HD,AL | STFNR MTG |
+| Brackets | 701-04521 | 1 | BRACKET,STFNR,PC,.25X.44X12.15 | |
+
+## 6.8 HSP Board Rev. 3
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Carbon Flm Res | 202-00542 | 3 | RES,CF,5%,1/4W,4.7K OHM | R2,3,6 |
+| Electrolyt Cap | 240-02048 | 2 | CAP,ELEC,47uF,25V,AX | C61,62 |
+| Ceramic Cap | 245-03609 | 60 | CAP,CER,.1uF,50V,Z5U,AX | C1-60 |
+| Digital/CMOS IC | 330-03340 | 6 | IC,DIGITAL,74F157 | U10-12,37-39 |
+| Digital/CMOS IC | 330-03586 | 12 | IC,DIGITAL,74HCT244 | U1,2,16,17,29,41,56,57,72,74,85,87 |
+| Digital/CMOS IC | 330-03715 | 16 | IC,DIGITAL,74HCT374 | U22,24,46,48,53,54,73,75,79,80,86,88,106,107,114,115 |
+| Digital/CMOS IC | 330-03766 | 2 | IC,DIGITAL,MMU,64K,CMOS | U69,98 |
+| Digital/CMOS IC | 330-04041 | 3 | IC,DIGITAL,74F10 | U50,55,108 |
+| Digital/CMOS IC | 330-04042 | 17 | IC,DIGITAL,74AHCT374 | U61,63,70,71,76,78,83,84,90,92,99,100,104,111,113,118,119 |
+| Digital/CMOS IC | 330-04084 | 6 | IC,DIGITAL,74HCT175 | U30,58,59,82,109,117 |
+| Digital/CMOS IC | 330-04260 | 2 | IC,DIGITAL,74HCT04 | U20,51 |
+| Digital/CMOS IC | 330-04261 | 1 | IC,DIGITAL,74HCT00 | U42 |
+| Digital/CMOS IC | 330-04273 | 4 | IC,DIGITAL,74HCT74,ZYTREX | U7,34,43,81 |
+| Digital/CMOS IC | 330-04275 | 2 | IC,DIGITAL,74HCT139 | U6,33 |
+| Digital/CMOS IC | 330-04292 | 6 | IC,DIGITAL,74F32 | U8,21,35,45,101,116 |
+| Digital/CMOS IC | 330-04293 | 2 | IC,DIGITAL,74F74 | U28,102 |
+| Digital/CMOS IC | 330-04292 | 2 | IC,DIGITAL *(description illegible in source)* | U45,120 |
+| Digital/CMOS IC | 330-04294 | 1 | IC,DIGITAL,74HCT138 | U105 |
+| Digital/CMOS IC | 330-04362 | 2 | IC,DIGITAL,ARU,18 BIT,CMOS,15M | U60,89 |
+| Digital/CMOS IC | 330-04511 | 4 | IC,DIGITAL,74AHCT244 | U23,25,47,49 |
+| Digital/CMOS IC | 330-04564 | 1 | IC,DIGITAL,74HCT08 | U110 |
+| Digital/CMOS IC | 330-04566 | 1 | IC,DIGITAL,74HCT27 | U44 |
+| Digital/CMOS IC | 330-04572 | 2 | IC,DIGITAL,74HCT245 | U3,18 |
+| Digital/CMOS IC | 330-04588 | 1 | IC,DIGITAL,74HCT03 | U52 |
+| Digital/CMOS IC | 330-04675 | 1 | IC,DIGITAL,74F08 | U15 |
+| Digital/CMOS IC | 330-04676 | 2 | IC,DIGITAL,74F161A | U9,36 |
+| Memory IC | 350-04282 | 2 | IC,SRAM,4364,8KX8,150NS,LPS | U5,32 |
+| Memory IC | 350-04434 | 10 | IC,DRAM,64KX4,120NS | U64-68,93-97 |
+| Memory IC | 350-04655 | 4 | IC,SRAM,2018,2KX8,35NS | U13,14,26,27 |
+| Memory IC | 350-04680 | 1 | IC,ROM,82S123,M480L,TIMING | U103 |
+| Memory IC | 350-04721 | 2 | IC,ROM,74S472,M480L,CONTROL | U62,91 |
+| Memory IC | 350-04722 | 2 | IC,ROM,74S472,M480L,COEF | U77,112 |
+| Microproc IC | 365-04284 | 2 | IC,uPROC,Z80,CMOS,4MHz | U4,31 |
+| Modules | 380-03956 | 1 | MOD,DLY LINE,5 TAP,30/150NS,LS | U40 |
+| Cable Conn | 490-02356 | 5 | CONN,JUMPER,.1X025,2FCG | W2,3,7,10,11 |
+| PC Edge Conn | 500-04557 | 2 | CONN,EURO,C,ROW a+c,MALE,RA | J1,2 |
+| PC Mnt Conn | 510-04687 | 5 | CONN,POST,100X025,HDR,3X2MCG | W1-15 |
+| Sockets | 520-00946 | 6 | IC SCKT,40 PIN,PC,LO-PRO | U4,31,60,69,89,98 |
+| Sockets | 520-01458 | 2 | IC SCKT,28 PIN,PC,LO-PRO | U5,32 |
+| Knobs/Caps | 550-04705 | 1 | HANDLE,"U",1.5" | |
+| Machine Screws | 640-03713 | 2 | SCRW,6-32X1/4,PNH,PH,SEMS,ZN | HANDLE MTG |
+| Threadls Fastnr | 650-04772 | 3 | POPRVT,1/8X3/16,REG PROT HD,AL | STFNR MTG |
+| Brackets | 701-04521 | 1 | BRACKET,STFNR,PC,.25X.44X12.15 | |
+
+## 6.9 Interface Adaptor Option
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Cable Conn | 490-00141 | 1 | CONN,D-SUB,9MC,FB,SDR | |
+| PC Mnt Conn | 510-04933 | 6 | CONN,BNC,1FC,MB,PC | |
+| Conn Hdwr | 527-04998 | 1 | CONN,D-SUB,HOOD,9C,RND CA,RF1 | |
+| Strain Rel | 530-02489 | 1 | TIE,CABLE,NYL,.1"X4" | |
+| Strain Rel | 530-04882 | 1 | CLAMP,CABLE,3/8" | |
+| Lugs | 620-01999 | 1 | LUG,SOLDER,LCKNG,#6,.020THK | |
+| Insul/Spacrs | 630-02740 | 6 | SPCR,#4CLX.21,3/16 RD,NYL | PCB MTG |
+| Spcr,Non-Insul | 635-04885 | 2 | FASTNR,SWAGE,PCB,6-32X.065,SS | CABLE CLAMP & SOLDER LUG MTG |
+| Machine Screws | 640-01700 | 6 | SCRW,4-40X1/2,PNH,PH,SS | PCB MTG |
+| Machine Screws | 640-01710 | 2 | SCRW,6-32X1/4,PNH,PH,ZN | LUG, CLAMP |
+| Nuts | 643-04942 | 6 | NUT,1/2-28,HEX,BRASS/NI | BNC MTG |
+| Washers | 644-01739 | 1 | WSHR,INT STAR,#6 | CLAMP |
+| Washers | 644-04943 | 12 | WSHR,INT STAR,1/2" | BNC MTG |
+| Bulk Wire | 670-04932 | 1 | CABLE,24AWG,6TW-PR,FOIL SHLD,10' | |
+| Sleeving | 690-02522 | 2 | SLEEVING,SHRINK,3/8"IDX1" | |
+| PC Boards | 710-04874 | 1 | PC BD,INTERFACE ADAPTOR,M2400 | |
+| Label/Nameplts | 740-04884 | 1 | LABEL,INTERFACE ADAPTER | ENCLOSURE |
+| Purch Sub-Assy | 750-04978 | 1 | ENCLOSURE,PLYS,MODIFIED,480L | |
+
+## 6.10 LARC Display Board
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Ceramic Cap | 245-01651 | 4 | CAP,CER,.1uF,50V,80/20% | C1-4 |
+| Dsply/Ind/LED | 430-03413 | 6 | LED,DSPLY,4-CHAR,DL-1414 | U1-4 |
+| Dsply/Ind/LED | 430-04985 | 8 | LED,DSPLY,STICK,4 RED | CR1-32 |
+| Sockets | 520-02718 | 4 | SOCKET STRIP,MACH,20C,.100X020 | CR1-32 |
+| Bulk Wire | 670-03530 | 1 | CABLE,FLEX-JUMP,29C,1.5X0.1 | P3 |
+| PC Boards | 710-03393 | 1 | PC BD,DISPLAY BD,LARC | |
+
+## 6.11 LARC Electronics Board
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Potentiometers | 200-01445 | 6 | POT,SLD,PC,10K-U,25MM X 45MM | R23-28 |
+| Trim Resistors | 201-00439 | 1 | RES,TRM,ST,PC,25K,SA,CER | R9 |
+| Carbon Flm Res | 202-00502 | 1 | RES,CF,10%,1/2W,270 OHM | R22 |
+| Carbon Flm Res | 202-00514 | 2 | RES,CF,5%,1/4W,100 OHM | R12,13 |
+| Carbon Flm Res | 202-00523 | 1 | RES,CF,5%,1/4W,390 OHM | R20 |
+| Carbon Flm Res | 202-00524 | 2 | RES,CF,5%,1/4W,470 OHM | R10,30 |
+| Carbon Flm Res | 202-00529 | 3 | RES,CF,5%,1/4W,1K OHM | R6,14,29 |
+| Carbon Flm Res | 202-00534 | 1 | RES,CF,5%,1/4W,2.2K OHM | R3 |
+| Carbon Flm Res | 202-00538 | 3 | RES,CF,5%,1/4W,3.3K OHM | R1,4,31 |
+| Carbon Flm Res | 202-00542 | 3 | RES,CF,5%,1/4W,4.7K OHM | R15,18,19 |
+| Carbon Flm Res | 202-00549 | 2 | RES,CF,5%,1/4W,10K OHM | R8,11 |
+| Carbon Flm Res | 202-00556 | 1 | RES,CF,5%,1/4W,22K OHM | R21 |
+| Carbon Flm Res | 202-00563 | 2 | RES,CF,5%,1/4W,47K OHM | R7,17 |
+| Carbon Flm Res | 202-00564 | 1 | RES,CF,5%,1/4W,51K OHM | R2 |
+| Carbon Flm Res | 202-00571 | 1 | RES,CF,5%,1/4W,110K OHM | R5 |
+| Carbon Flm Res | 202-00580 | 1 | RES,CF,5%,1/4W,1M OHM | R16 |
+| Network Res | 205-03531 | 4 | RES,NET,SIP,2%,10KX5 | RP1-4 |
+| Electrolyt Cap | 240-00609 | 3 | CAP,ELEC,10uF,16V,RAD | C9,17,39 |
+| Electrolyt Cap | 240-00616 | 1 | CAP,ELEC,470uF,16V,AX | C41 |
+| Electrolyt Cap | 240-00619 | 1 | CAP,ELEC,1000uF,25V,AX | C36 |
+| Electrolyt Cap | 240-02048 | 1 | CAP,ELEC,47uF,25V,AX | C37 |
+| Tantalum Cap | 241-00652 | 1 | CAP,TANT,4.7uF,25V,RAD | C26 |
+| Ceramic Cap | 245-00585 | 2 | CAP,CER,18pF,50V,10% | C24,25 |
+| Ceramic Cap | 245-00590 | 1 | CAP,CER,150pF,500V,10% | C1 |
+| Ceramic Cap | 245-00594 | 5 | CAP,CER,.001uF,500V,10%,Z5F | C18,23,27,29,40 |
+| Ceramic Cap | 245-00598 | 15 | CAP,CER,.01uF,16V,80/20% | C2,4,10-16,19-22,34,38 |
+| Ceramic Cap | 245-01651 | 12 | CAP,CER,.1uF,50V,80/20% | C3,5-8,28,30-32,33,35,42 |
+| Inductors | 270-00779 | 10 | FERRITE,BEAD | FB1-10 |
+| Inductors | 270-03497 | 1 | INDUCTOR,300uH,1A,SWITCHING | L1 |
+| Diodes | 300-01024 | 1 | DIODE,1N746 | CR6 |
+| Diodes | 300-01029 | 4 | DIODE,1N914 AND 4148 | CR1-4 |
+| Diodes | 300-02401 | 1 | DIODE,BAR 35,SCHOTTKY,LOW VF | CR5 |
+| Diodes | 300-03498 | 1 | DIODE,SCHOTTKEY,POWER,3A | CR8 |
+| Diodes | 300-03546 | 1 | DIODE,BRIDGE,2A,200V | CR7 |
+| Transistors | 310-03438 | 1 | TRANSISTOR,IRFD9120,FET | Q1 |
+| Digital/CMOS IC | 330-00767 | 1 | IC,DIGITAL,4013,CMOS | U10 |
+| Digital/CMOS IC | 330-00768 | 1 | IC,DIGITAL,4049,CMOS | U6 |
+| Digital/CMOS IC | 330-03496 | 1 | IC,DIGITAL,CD4515,CMOS | U11 |
+| Linear IC | 340-00725 | 1 | IC,LINEAR,LM311 | U1 |
+| Linear IC | 340-03499 | 1 | IC,LINEAR,MC34060 OR TL494 | U12 |
+| Interface IC | 345-00751 | 1 | IC,INTER,75492,LED DRVR | U4 |
+| Interface IC | 345-02913 | 1 | IC,INTER,NE594,DSP DRVR,8-SEG | U7 |
+| Interface IC | 345-03207 | 1 | IC,INTER,uA9638,LINE DRVR | U3 |
+| Interface IC | 345-03208 | 1 | IC,INTER,uA9637A,LINE RCVR | U2 |
+| Converter IC | 355-02903 | 1 | IC,CONVERTER,ADC 0809 | U5 |
+| Microproc IC | 365-03526 | 1 | IC,uPROC,CDP1854 or IM6402 | U8 |
+| Microproc IC | 365-04066 | 1 | IC,uPROC,8749,LARC,V1.0A | U9 |
+| Crystals | 390-02210 | 1 | CRYSTAL,4.608 MHz | Y1 |
+| Fuses | 440-02466 | 1 | FUSE,1AG,FAST,1AMP,32V | F1 |
+| Cable Conn | 490-00998 | 1 | CONN,DIN,5FC,180DEG | J0 |
+| PC Mnt Conn | 510-03088 | 1 | CONN,POST,100X025,HDR,10MCG | W1 |
+| PC Mnt Conn | 510-03484 | 1 | CONN,DC POWER,PC,SMK S-G9314 | J2 |
+| PC Mnt Conn | 510-03549 | 1 | CONN,D-SUB,9MC,FB,PCRA | J1 |
+| Sockets | 520-00941 | 3 | IC SCKT,8 PIN,PC,LO-PRO | U1-3 |
+| Sockets | 520-00942 | 2 | IC SCKT,14 PIN,PC,LO-PRO | U4,10 |
+| Sockets | 520-00943 | 2 | IC SCKT,16 PIN,PC,LO-PRO | U6,12 |
+| Sockets | 520-00945 | 1 | IC SCKT,24 PIN,PC,LO-PRO | U11 |
+| Sockets | 520-00946 | 2 | IC SCKT,40 PIN,PC,LO-PRO | U8,9 |
+| Sockets | 520-01458 | 1 | IC SCKT,28 PIN,PC,LO-PRO | U5 |
+| Sockets | 520-02177 | 1 | IC SCKT,18 PIN,PC,LO-PRO | U7 |
+| Electronic Hdwr | 600-00871 | 2 | FUSE CLIP,1/4",PC | F1 |
+| Insul/Spacrs | 630-00953 | 2 | WSHR,FL,#6CLX3/80DX1/16,FBR | COMP SIDE ELECT BD TO ENCLOSURE |
+| Insul/Spacrs | 630-03544 | 2 | WSHR,FL,#6CLX3/8ODX.032,FBR | SUB-PNL TO CIRC SIDE ELECT BD |
+| Machine Screws | 640-01701 | 2 | SCRW,4-40X1/4,PNH,PH,ZN | DE-9 TO ELECT PCB MTG |
+| Nuts | 643-01732 | 2 | NUT,4-40,KEP,ZN | DE-9 TO ELECT PCB MTG |
+| Pre-Cut Wire | 675-02884 | 3 | WIRE,24G,WHT,1.5",ST&T1/4X1/4 | P1 TO J0 |
+| Pre-Cut Wire | 675-03722 | 1 | WIRE,24G,WHT,2",ST&T1/4X1/4 | P1-1 TO J0-4 |
+
+## 6.12 LARC Mechanical
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Conn Hdwr | 527-00138 | 2 | CONN,D-SUB,JACKSOCKET,.150" | DE-9 TO CHASSIS BRKT MTG |
+| Grommets | 540-03532 | 1 | GUARD,DUST,LARC | |
+| Knobs/Caps | 550-03388 | 6 | KNOB,SLIDE POT,WHITE | |
+| Knobs/Caps | 550-03415 | 1 | BUTTON,.57X.47,"PROG" LEG,BLU | |
+| Knobs/Caps | 550-03416 | 1 | BUTTON,.57X.47,"REG" LEG,BLU | |
+| Knobs/Caps | 550-03417 | 1 | BUTTON,.57X.47,"0" LEG,WHT | |
+| Knobs/Caps | 550-03418 | 1 | BUTTON,.57X.47,"1" LEG,WHT | |
+| Knobs/Caps | 550-03419 | 1 | BUTTON,.57X.47,"2" LEG,WHT | |
+| Knobs/Caps | 550-03420 | 1 | BUTTON,.57X.47,"3" LEG,WHT | |
+| Knobs/Caps | 550-03421 | 1 | BUTTON,.57X.47,"4" LEG,WHT | |
+| Knobs/Caps | 550-03422 | 1 | BUTTON,.57X.47,"5" LEG,WHT | |
+| Knobs/Caps | 550-03423 | 1 | BUTTON,.57X.47,"6" LEG,WHT | |
+| Knobs/Caps | 550-03424 | 1 | BUTTON,.57X.47,"7" LEG,WHT | |
+| Knobs/Caps | 550-03425 | 1 | BUTTON,.57X.47,"8" LEG,WHT | |
+| Knobs/Caps | 550-03426 | 1 | BUTTON,.57X.47,"9" LEG,WHT | |
+| Knobs/Caps | 550-03427 | 1 | BUTTON,.57X.47,"VAR" LEG,WHT | |
+| Knobs/Caps | 550-03428 | 1 | BUTTON,.57X.47,"BANK" LEG,WHT | |
+| Knobs/Caps | 550-03429 | 1 | BUTTON,.57X.47,"STO" LEG,WHT | |
+| Knobs/Caps | 550-03431 | 1 | BUTTON,.57X.47,"MUTE" LEG,WHT | |
+| Knobs/Caps | 550-03433 | 1 | BUTTON,.57X.47,"2nd F" LEG,WHT | |
+| Knobs/Caps | 550-03434 | 1 | BUTTON,.57X.47,"PAGE" LEG,WHT | |
+| Knobs/Caps | 550-04724 | 1 | BUTTON,.57X.47,"MACH" LEG,WHT | |
+| Knobs/Caps | 550-04725 | 1 | BUTTON,.57X.47,"CTRL" LEG,WHT | |
+| PC Hdwr | 610-02269 | 2 | HARDWARE,PC,RICHCO #MB-3-156 | DISPLAY BD TO PANEL BD |
+| Spcr,Non-Insul | 635-01655 | 2 | SPCR,6-32X7/16,1/4HEX,AL | ELECT BD TO CASE MTG |
+| Spcr,Non-Insul | 635-03541 | 2 | SPCR,#6CLX.355,1/4RD,BR/N | SUB-PNL TO PNL BD MTG |
+| Machine Screws | 640-02378 | 4 | SCRW,6-32X7/16,TH,PH,BLK | PCB TO CASE MTG |
+| Machine Screws | 640-02746 | 6 | SCRW,2-M3X.5MMX.175L,PNH,PH,ZN | R23-28 MTG |
+| Machine Screws | 640-02812 | 2 | SCRW,4-40X3/8,PNH,PH,BLK | DIN TO CHASSIS BRKT MTG |
+| Machine Screws | 640-03713 | 2 | SCRW,6-32X1/4,PNH,PH,SEMS,ZN | CONN BRKT TO PNL BD MTG |
+| Thrd-Form Scrw | 641-03543 | 2 | SCRW,TAP,F,4-40X1/4,PNH,PH,ZN | DSPLY BD MTG |
+| Nuts | 643-01733 | 2 | NUT,4-40,HEX,SMALL,ZN | DIN TO CHASSIS BRKT MTG |
+| Washers | 644-01736 | 2 | WSHR,FL,#4CLX.218ODX.032THK | DSPLY BD MTG |
+| Washers | 644-01737 | 2 | WSHR,LOCK,SPLIT,#4 | DIN TO CHASSIS BRKT MTG |
+| Washers | 644-01747 | 6 | WSHR,INT STAR,#4 | |
+| Washers | 644-02379 | 4 | WSHR,FL,#6CLX3/8ODX.031THK,BLK | PCB TO CASE MTG |
+| Washers | 644-02716 | 2 | WSHR,FL,#4CLX.312ODX.03THK | DIN TO CHASSIS BRKT MTG |
+| Cables/Cords | 680-03525 | 1 | CABLE,50',LARC | |
+| Chassis/Mech | 700-03391 | 1 | ENCLOSURE,BOTTOM,LARC | |
+| Chassis/Mech | 700-03392 | 1 | ENCLOSURE,TOP,LARC | |
+| Chassis/Mech | 700-03448 | 1 | CHASSIS,BRACKET,LARC | |
+| Panels | 702-03374 | 1 | PANEL,SUB,LARC | |
+| Panels | 702-03375 | 1 | PANEL,OVERLAY,LARC | |
+| Panels | 702-03545 | 1 | PROTECTIVE COVER,LARC | |
+| Lens/Plate/Panl | 703-03410 | 1 | LENS,DISPLAY,LARC | |
+| Plastics | 720-03548 | 2 | TAPE,FOAM,1/16X1/2X3.4 | BUMPER FEET |
+
+## 6.13 LARC Panel Board
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Carbon Flm Res | 202-00509 | 8 | RES,CF,5%,1/4W,47 OHM | R5-12 |
+| Carbon Flm Res | 202-00529 | 4 | RES,CF,5%,1/4W,1K OHM | R1-4 |
+| Electrolyt Cap | 240-00609 | 1 | CAP,ELEC,10uF,16V,RAD | C1 |
+| Ceramic Cap | 245-01651 | 4 | CAP,CER,.1uF,50V,80/20% | C2-5 |
+| Diodes | 300-01023 | 8 | DIODE,1N283 | CR1-8 |
+| Dsply/Ind/LED | 430-03413 | 6 | LED,DSPLY,4-CHAR,DL-1414 | U1-6 |
+| Psh But Switch | 453-03440 | 26 | SW,PBM,1P1T,TANG,PC | SW1-16,18-22,26-30 |
+| Sockets | 520-02718 | 4 | SOCKET STRIP,MACH,20C,.100X020 | U1-6 |
+| Knobs/Caps | 550-03390 | 6 | BUTTON,.57X.47,WHT | SW1-6 |
+| Spcr,Non-Insul | 635-03542 | 2 | SPCR,SWAGE,#6CLX.594,1/4RD,BR | PNL BD TO ELECT BD MTG |
+| Bulk Wire | 670-02837 | 1 | CABLE,FLEX-JUMP,19C,1.5X0.1 | P2 (USE 10 OF 19 PINS) |
+| Bulk Wire | 670-03530 | 1 | CABLE,FLEX-JUMP,29C,1.5X0.1 | P2 |
+
+## 6.14 LARC Shipping Kit
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Cust Literature | 070-03759 | 1 | INSTR,PANEL MOUNT,LARC | |
+| Insul/Spacrs | 630-00953 | 2 | WSHR,FL,#6CLX3/80DX1/16,FBR | |
+| Spcr,Non-Insul | 635-03720 | 2 | SPCR,6-32X1/2,1/4HEX,BR/N | |
+
+## 6.15 Motherboard
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Potentiometers | 200-04559 | 6 | POT,RTY,PC,10K-A,1/8"/FLAT | R103,104,144,145,156,191 |
+| Trim Resistors | 201-00159 | 4 | RES,TRM,ST,PC,100K,SA,CER | R121,127,146,149 |
+| Trim Resistors | 201-01619 | 3 | RES,TRM,ST,PC,500 OHM,SA,CER | R32,214,224 |
+| Carbon Flm Res | 202-00505 | 2 | RES,CF,5%,1/4W,10 OHM | R72,74 |
+| Carbon Flm Res | 202-00510 | 8 | RES,CF,5%,1/4W,51 OHM | R164,165,183,184,199,200,221,222 |
+| Carbon Flm Res | 202-00512 | 2 | RES,CF,5%,1/4W,75 OHM | R56,67 |
+| Carbon Flm Res | 202-00515 | 3 | RES,CF,5%,1/4W,150 OHM | R70,168,203 |
+| Carbon Flm Res | 202-00518 | 8 | RES,CF,5%,1/4W,220 OHM | R1,2,4-6,58,69,239 |
+| Carbon Flm Res | 202-00525 | 15 | RES,CF,5%,1/4W,510 OHM | R8-17,36,37,44,77,122 |
+| Carbon Flm Res | 202-00529 | 11 | RES,CF,5%,1/4W,1K OHM | R24-28,30,33,71,73,185,223 |
+| Carbon Flm Res | 202-00533 | 13 | RES,CF,5%,1/4W,2K OHM | R22,23,42,43,75,76,117,123,147,151,182,209,217 |
+| Carbon Flm Res | 202-00535 | 4 | RES,CF,5%,1/4W,2.4K OHM | R3,7,34,35 |
+| Carbon Flm Res | 202-00538 | 6 | RES,CF,5%,1/4W,3.3K OHM | R18,19,175,176,225,226 |
+| Carbon Flm Res | 202-00555 | 9 | RES,CF,5%,1/4W,20K OHM | R21,29,49,52,60,63,148,150,R204 |
+| Carbon Flm Res | 202-00557 | 3 | RES,CF,5%,1/4W,24K OHM | R31,53,65 |
+| Carbon Flm Res | 202-00570 | 4 | RES,CF,5%,1/4W,100K OHM | R40,41,119,125 |
+| Carbon Flm Res | 202-00580 | 11 | RES,CF,5%,1/4W,1M OHM | R95-98,120,126,136-139,186 |
+| Carbon Flm Res | 202-01497 | 2 | RES,CF,5%,1/4W,2M OHM | R212,213 |
+| Carbon Flm Res | 202-02650 | 1 | RES,CF,5%,1/2W,750 OHM | R20 |
+| Metal Flm Res | 203-00450 | 6 | RES,MF,1%,1/8W,100 OHM | R50,51,61,62,169,205 |
+| Metal Flm Res | 203-00457 | 16 | RES,MF,1%,1/8W,1.50K OHM | R100,102,118,124,142,143,157,161,171,172,174,192,196,207,208,211 |
+| Metal Flm Res | 203-00471 | 22 | RES,MF,1%,1/8W,10.0K OHM | R38,39,57,68,78,79,88-90,128,129,131,154,155,166,167,177,189,190,201,202,215 |
+| Metal Flm Res | 203-00472 | 2 | RES,MF,1%,1/8W,10.2K OHM | R153,188 |
+| Metal Flm Res | 203-00476 | 2 | RES,MF,1%,1/8W,12.1K OHM | R54,64 |
+| Metal Flm Res | 203-00480 | 4 | RES,MF,1%,1/8W,15.0K OHM | R99,101,140,141 |
+| Metal Flm Res | 203-00482 | 2 | RES,MF,1%,1/8W,20.0K OHM | R160,195 |
+| Metal Flm Res | 203-01137 | 4 | RES,MF,1%,1/8W,4.12K OHM | R48,55,59,66 |
+| Metal Flm Res | 203-01229 | 4 | RES,MF,1%,1/8W,6.98K OHM | R108,110,113,116 |
+| Metal Flm Res | 203-01230 | 4 | RES,MF,1%,1/8W,8.25K OHM | R107,109,112,115 |
+| Metal Flm Res | 203-01491 | 6 | RES,MF,1%,1/8W,4.22K OHM | R84-87,158,193 |
+| Metal Flm Res | 203-01495 | 2 | RES,MF,1%,1/8W,33.2K OHM | R162,197 |
+| Metal Flm Res | 203-01996 | 14 | RES,MF,1/2%,1/8W,3.01K OHM | R105,106,111,114,170,178-181,206,216,218-220 |
+| Metal Flm Res | 203-02291 | 4 | RES,MF,1%,1/8W,5.49K OHM | R159,194,236,238 |
+| Metal Flm Res | 203-02701 | 2 | RES,MF,1%,1/8W,13.3K OHM | R163,198 |
+| Metal Flm Res | 203-04562 | 8 | RES,MF,1%,1W,33.2 OHM,FP | R45,46,80,82,91,92,130,132 |
+| Network Res | 205-01133 | 4 | RES,NET,DIP,1%,10KX8 | RP1-4 |
+| Electrolyt Cap | 240-00613 | 17 | CAP,ELEC,22uF,25V,RAD | C29,41,42,47,49,110,112,116,118,174,177,153,154,189,190,213,216 |
+| Electrolyt Cap | 240-00614 | 12 | CAP,ELEC,47uF,16V,RAD | C12,16,32,38,44,51,93,95,113,119,125,127 |
+| Electrolyt Cap | 240-01262 | 2 | CAP,ELEC,330uF,25V,RAD | C27,28 |
+| Electrolyt Cap | 240-03574 | 2 | CAP,ELEC,3300uF,35V,RAD,LO-PRO | C15,26 |
+| Electrolyt Cap | 240-03901 | 1 | CAP,ELEC,1000uF,35V,RAD,LO-PRO | C4 |
+| Tantalum Cap | 241-00652 | 14 | CAP,TANT,4.7uF,25V,RAD | C81,82,84,86,129,133,135,139,161,162,168,197,199,206 |
+| PCRB/PP Cap | 244-00660 | 4 | CAP,MYL,.01uF,100V,10%,RAD | C94,96,126,128 |
+| PCRB/PP Cap | 244-01151 | 2 | CAP,PP,1000pF,2.5% | C166,202 |
+| PCRB/PP Cap | 244-01171 | 4 | CAP,PP,5100pF,2.5% | C97,102,103,108 |
+| PCRB/PP Cap | 244-02342 | 8 | CAP,MYL,.68uF,50V,10%,RAD | C36,37,159,160,195,196,209,210 |
+| PCRB/PP Cap | 244-04585 | 10 | CAP,PP,100pF,50V,2.5%,RAD | C144,145,147-151,184,185,187 |
+| PCRB/PP Cap | 244-04586 | 4 | CAP,PP,240pF,50V,2.5%,RAD | C98,100,104,106 |
+| PCRB/PP Cap | 244-04587 | 8 | CAP,PP,510pF,50V,2.5%,RAD | C61,62,66,67,71,72,76,77 |
+| Ceramic Cap | 245-00590 | 12 | CAP,CER,150pF,500V,10% | C58,59,88-90,120-122,141,142,181,182 |
+| Ceramic Cap | 245-00594 | 1 | CAP,CER,.001uF,500V,10%,Z5F | C180 |
+| Ceramic Cap | 245-03609 | 77 | CAP,CER,.1uF,50V,Z5U,AX | C1-3,5-11,13,14,17-25,30,31,33-35,39,46,53-57,60,63,65,68,70,73,75,78,91,92,99,101,105,107,109,111,114,115,117,123,124,134,140,146,152,156,158,169,171,175,176,178,179,186,188,192,194,204,205,208,214,215,217,218 |
+| Ceramic Cap | 245-03610 | 17 | CAP,CER,.01uF,100V,Z5U,AX | C40,45,48,52,80,83,85,87,130,132,136,138,163,165,198,201,221 |
+| Ceramic Cap | 245-03867 | 7 | CAP,CER,10pF,100V,COG,10%,AX | C43,50,131,137,170,207,222 |
+| Ceramic Cap | 245-03868 | 12 | CAP,CER,33pF,100V,COG,10%,AX | C155,157,191,193,229-236 |
+| Ceramic Cap | 245-03869 | 4 | CAP,CER,100pF,100V,COG,10%,AX | C172,173,211,212 |
+| Ceramic Cap | 245-03871 | 2 | CAP,CER,1000pF,100V,X7R,10%,AX | C167,203 |
+| Inductors | 270-00779 | 16 | FERRITE,BEAD | FB1-16 |
+| Inductors | 270-03899 | 1 | INDUCTOR,2.2mH,LINE CHOKE | L1 |
+| Diodes | 300-01029 | 12 | DIODE,1N914 AND 4148 | CR1,8,9,13,23-30 |
+| Diodes | 300-01030 | 7 | DIODE,1N4004 AND 4005 | CR2,5-7,10-12 |
+| Diodes | 300-01154 | 1 | DIODE,1N751,ZENER,5.1V | CR20 |
+| Diodes | 300-02401 | 4 | DIODE,BAR 35,SCHOTTKY,LOW VF | CR18,19,21,22 |
+| Diodes | 300-03546 | 2 | DIODE,BRIDGE,2A,200V | CR3,4 |
+| Transistors | 310-01646 | 2 | TRANSISTOR,2N4403 | Q4,5 |
+| Transistors | 310-01647 | 5 | TRANSISTOR,2N4401 | Q1-3,11,13 |
+| Transistors | 310-04289 | 4 | TRANSISTOR,J105 | Q6-9 |
+| Transistors | 310-04582 | 2 | XISTOR,NPD5566 | Q10,12 |
+| Digital/CMOS IC | 330-03715 | 1 | IC,DIGITAL,74HCT374 | U14 |
+| Digital/CMOS IC | 330-03768 | 2 | IC,DIGITAL,CMU,16 BITS,CMOS | U34,35 |
+| Digital/CMOS IC | 330-04260 | 2 | IC,DIGITAL,74HCT04 | U20,33 |
+| Digital/CMOS IC | 330-04261 | 1 | IC,DIGITAL,74HCT00 | U25 |
+| Digital/CMOS IC | 330-04273 | 2 | IC,DIGITAL,74HCT74,ZYTREX | U15,16 |
+| Digital/CMOS IC | 330-04570 | 2 | IC,DIGITAL,74HCT165 | U26,28 |
+| Digital/CMOS IC | 330-04573 | 1 | IC,DIGITAL,74HCT393 | U5 |
+| Digital/CMOS IC | 330-04589 | 3 | IC,DIGITAL,74HCT14 | U2,11,13 |
+| Digital/CMOS IC | 330-04672 | 6 | IC,DIGITAL,74HC595 | U18,19,21-24 |
+| Digital/CMOS IC | 330-04674 | 1 | IC,DIGITAL,74HC4538 | U27 |
+| Linear IC | 340-00725 | 5 | IC,LINEAR,LM311 | U10,60,61,69,70 |
+| Linear IC | 340-00742 | 1 | IC,LINEAR,7805 (LM 340 T-5) | U1 |
+| Linear IC | 340-00745 | 1 | IC,LINEAR,7815 (LM 340 T-15) | U7 |
+| Linear IC | 340-00747 | 1 | IC,LINEAR,7915 (LM 320 T-15) | U17 |
+| Linear IC | 340-03328 | 10 | IC,LINEAR,NE5534 | U30,32,37,39,41,43,56,58,64,66 |
+| Linear IC | 340-03587 | 2 | IC,LINEAR,OP-37 | U51,53 |
+| Linear IC | 340-03858 | 2 | IC,LINEAR,RC4560NB | U59,68 |
+| Linear IC | 340-04433 | 6 | IC,LINEAR,LM833 | U48,49,54,55,62,63 |
+| Linear IC | 340-04678 | 2 | IC,LINEAR,LM211H | U44,46 |
+| Linear IC | 340-04681 | 1 | IC,LINEAR,TL288CP | U67 |
+| SS SW IC | 346-03329 | 8 | IC,SS SWITCH,SD5000N | U36,38,40,42,50,52,57,65 |
+| Memory IC | 350-04868 | 1 | IC,ROM,27C64,TIMING,M480L | U6 |
+| Converter IC | 355-04590 | 4 | DAC,PCM53KP-I | U29,31,45,47 |
+| Semiconductors | 360-01612 | 1 | SEMICOND,VARISTOR | VR3 |
+| Hybrid Circuits | 370-04426 | 4 | HYBRID,LINE AMP,LLA5200 | OPA1-4 |
+| Opto Isltor IC | 375-02247 | 2 | IC,OPTO-ISOLATOR,6N 138 | U8,9 |
+| Opto Isltor IC | 375-04591 | 3 | IC,OPTO-ISOLATOR,HCPL2630 | U3,4,12 |
+| Modules | 380-04512 | 6 | MOD,LPF,9P,20.0KHz | LPF1-6 |
+| Dsply/Ind/LED | 430-04642 | 4 | LED,T1,RED,RA BLOCK | CR14-17 |
+| Dsply/Ind/LED | 430-04656 | 1 | LED,RED,LIGHT BAR,HLMP-2685 | DS1 |
+| Fuses | 440-01877 | 2 | FUSE,5X20MM,SLO-BLO,1.25AMP | F1,2 |
+| Cable Conn | 490-02356 | 5 | CONN,JUMPER,.1X025,2FCG | W1-4,13 |
+| PC Mnt Conn | 510-02534 | 4 | CONN,XLR,3MC,PCRA | J4-7 |
+| PC Mnt Conn | 510-02535 | 2 | CONN,XLR,3FC,PCRA | J8,9 |
+| PC Mnt Conn | 510-02671 | 4 | CONN,POST,100X025,HDR,3MC,GOLD | W1-4 |
+| PC Mnt Conn | 510-03711 | 1 | CONN,POST,100X025,HDR,26MC,LOK | P5 |
+| PC Mnt Conn | 510-03922 | 3 | CONN,POST,100X025,HDR,6MCG | TP2,3,6 |
+| PC Mnt Conn | 510-03961 | 1 | CONN,POST,100X025,HDR,2MCG | W13 |
+| PC Mnt Conn | 510-04286 | 3 | CONN,CIRC DIN,5FC@18ODEG,PCRA | J1-3 |
+| PC Mnt Conn | 510-04639 | 8 | CONN,QDC MALE,PCRA,.110"X.020" | P1-4,6-9 |
+| Sockets | 520-00941 | 7 | IC SCKT,8 PIN,PC,LO-PRO | U3,4,12,30,32,58,66 |
+| Sockets | 520-00943 | 9 | IC SCKT,16 PIN,PC,LO-PRO | U36,38,40,42,50,52,57,65,DS1 |
+| Sockets | 520-00945 | 4 | IC SCKT,24 PIN,PC,LO-PRO | U29,31,45,47 |
+| Sockets | 520-00946 | 2 | IC SCKT,40 PIN,PC,LO-PRO | U34,35 |
+| Sockets | 520-01458 | 1 | IC SCKT,28 PIN,PC,LO-PRO | U6 |
+| Electronic Hdwr | 600-01668 | 1 | BUSS BAR,2C,.7X14,.3 OFF,PVF/N | |
+| Electronic Hdwr | 600-02227 | 4 | FUSE CLIP,20MM,PC | F1,2 |
+| Insul/Spacrs | 630-00952 | 3 | INSUL,SEMI,BUSHING,TO-220 | U1,7,17 |
+| Insul/Spacrs | 630-01853 | 3 | INSUL,SEMI,SIL RUB,TO-220 | U1,7,17 |
+| Thrd-Form Scrw | 641-02827 | 6 | SCRW,TAP,F,2-56X3/16,PNH,PH,ZN | J4-9 |
+| Thrd-Form Scrw | 641-04021 | 3 | SCRW,TAP,SW,4-40X1/4,PNH,PH,ZN | U1,7,17 |
+| Threadls Fastnr | 650-03970 | 2 | POPRVT,1/8X1/8,REG PROT HD,SS | HEATSINK BRKT MTG |
+| Bulk Wire | 670-01974 | 8 | WIRE,JMP,22AWG,0.1",NON-INSUL | W5-12 |
+| Bulk Wire | 670-04918 | 4 | WIRE,JMP,22AWG,0.4",TEF,WHT | R227,229,231,233 |
+| Brackets | 701-04162 | 1 | BRACKET,HEATSINK,M70 | |
+| PC Boards | 710-04371 | 1 | PC BD,MOTHERBD,M480L | |
+| Plastics | 720-03571 | 4 | TAPE,KAPTON,1/2" | C229-236 |
+
+## 6.16 Host Processor Board (Rev. 2 and Higher)
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Carbon Flm Res | 202-00505 | 6 | RES,CF,5%,1/4W,10 OHM | R35,37,38,42,50,51 |
+| Carbon Flm Res | 202-00510 | 3 | RES,CF,5%,1/4W,51 OHM | R39,43,47 |
+| Carbon Flm Res | 202-00512 | 3 | RES,CF,5%,1/4W,75 OHM | R40,44,48 |
+| Carbon Flm Res | 202-00516 | 3 | RES,CF,5%,1/4W,180 OHM | R1,5,9 |
+| Carbon Flm Res | 202-00517 | 6 | RES,CF,5%,1/4W,200 OHM | R16-19,54,62 |
+| Carbon Flm Res | 202-00525 | 3 | RES,CF,5%,1/4W,510 OHM | R33,63,64 |
+| Carbon Flm Res | 202-00529 | 10 | RES,CF,5%,1/4W,1K OHM | R14,24-30,55,59 |
+| Carbon Flm Res | 202-00533 | 2 | RES,CF,5%,1/4W,2K OHM | R53,56 |
+| Carbon Flm Res | 202-00538 | 9 | RES,CF,5%,1/4W,3.3K OHM | R10,12,13,36,41,45,46,49,52 |
+| Carbon Flm Res | 202-00543 | 6 | RES,CF,5%,1/4W,5.1K OHM | R2-4,6-8 |
+| Carbon Flm Res | 202-00549 | 5 | RES,CF,5%,1/4W,10K OHM | R11,31,32,57,58 |
+| Carbon Flm Res | 202-00570 | 2 | RES,CF,5%,1/4W,100K OHM | R15,61 |
+| Metal Flm Res | 203-00488 | 1 | RES,MF,1%,1/8W,37.4K OHM | R21 |
+| Metal Flm Res | 203-01495 | 1 | RES,MF,1%,1/8W,33.2K OHM | R20 |
+| Metal Flm Res | 203-02352 | 1 | RES,MF,1%,1/8W,24.9K OHM | R60 |
+| Metal Flm Res | 203-03345 | 2 | RES,MF,1%,1/8W,3.4K OHM | R22,23 |
+| Network Res | 205-01590 | 1 | RES,NET,SIP,2%,2.2KX9 | U5 |
+| Electrolyt Cap | 240-02048 | 2 | CAP,ELEC,47uF,25V,AX | C25,26 |
+| Tantalum Cap | 241-00652 | 1 | CAP,TANT,4.7uF,25V,RAD | C23 |
+| Tantalum Cap | 241-00654 | 2 | CAP,TANT,22uF,16V,RAD | C24,50 |
+| PCRB/PP Cap | 244-01488 | 1 | CAP,MYL,.22uF,100V,10%,RAD | C52 |
+| Ceramic Cap | 245-01164 | 1 | CAP,CER,10pF,50V,10% | C10 |
+| Ceramic Cap | 245-03609 | 63 | CAP,CER,.1uF,50V,Z5U,AX | C1-9,11-22,27-49,51,53-66,68,75,77,79 |
+| Ceramic Cap | 245-03610 | 1 | CAP,CER,.01uF,100V,Z5U,AX | C76 |
+| Ceramic Cap | 245-03868 | 3 | CAP,CER,33pF,100V,COG,10%,AX | C71,73,74 |
+| Ceramic Cap | 245-03869 | 3 | CAP,CER,100pF,100V,COG,10%,AX | C70,72,81 |
+| Ceramic Cap | 245-03870 | 1 | CAP,CER,150pF,100V,COG,10%,AX | C80 |
+| Ceramic Cap | 245-03871 | 2 | CAP,CER,1000pF,100V,X7R,10%,AX | C67,69 |
+| Variable Cap | 246-04649 | 1 | CAP,TRIM,4-27pF,VAR,PCRA | C78 |
+| Inductors | 270-00779 | 8 | FERRITE,BEAD | FB1-8 |
+| Inductors | 270-04706 | 1 | INDUCTOR,1.2uHy,SHIELDED | L1 |
+| Diodes | 300-01029 | 14 | DIODE,1N914 AND 4148 | CR5,6,10-17,19-22 |
+| Diodes | 300-01030 | 1 | DIODE,1N4004 AND 4005 | CR8 |
+| Diodes | 300-02401 | 3 | DIODE,BAR 35,SCHOTTKY,LOW VF | CR7,9,18 |
+| Diodes | 300-02507 | 1 | DIODE,VARACTOR,MV209 | VRC1,2 |
+| Transistors | 310-01007 | 1 | TRANSISTOR,2N3904 | Q2 |
+| Transistors | 310-01008 | 1 | TRANSISTOR,2N3906 | Q1 |
+| Transistors | 310-01647 | 3 | TRANSISTOR,2N4401 | Q4-6 |
+| Transistors | 310-02517 | 1 | TRANSISTOR,2N5910 | Q3 |
+| Digital/CMOS IC | 330-00694 | 3 | IC,DIGITAL,74LS03 | U11,37,47 |
+| Digital/CMOS IC | 330-00698 | 1 | IC,DIGITAL,74LS14 | U97 |
+| Digital/CMOS IC | 330-00767 | 1 | IC,DIGITAL,4013,CMOS | U46 |
+| Digital/CMOS IC | 330-01298 | 1 | IC,DIGITAL,MC4044 | U92 |
+| Digital/CMOS IC | 330-03586 | 8 | IC,DIGITAL,74HCT244 | U15,18-20,26,30,32,93 |
+| Digital/CMOS IC | 330-03715 | 10 | IC,DIGITAL,74HCT374 | U58,59,61-64,72,73,85,86 |
+| Digital/CMOS IC | 330-04040 | 1 | IC,DIGITAL,74F04 | U103 |
+| Digital/CMOS IC | 330-04084 | 2 | IC,DIGITAL,74HCT175 | U12,16 |
+| Digital/CMOS IC | 330-04260 | 2 | IC,DIGITAL,74HCT04 | U9,48 |
+| Digital/CMOS IC | 330-04261 | 2 | IC,DIGITAL,74HCT00 | U49,96 |
+| Digital/CMOS IC | 330-04271 | 2 | IC,DIGITAL,74HCT273 | U60,78 |
+| Digital/CMOS IC | 330-04273 | 1 | IC,DIGITAL,74HCT74,ZYTREX | U10 |
+| Digital/CMOS IC | 330-04274 | 1 | IC,DIGITAL,74HCT132 | U98 |
+| Digital/CMOS IC | 330-04292 | 1 | IC,DIGITAL,74F32 | U101 |
+| Digital/CMOS IC | 330-04293 | 2 | IC,DIGITAL,74F74 | U91,100 |
+| Digital/CMOS IC | 330-04294 | 5 | IC,DIGITAL,74HCT138 | U22,31,87,88,95 |
+| Digital/CMOS IC | 330-04563 | 1 | IC,DIGITAL,74HCT02 | U51 |
+| Digital/CMOS IC | 330-04564 | 2 | IC,DIGITAL,74HCT08 | U21,50 |
+| Digital/CMOS IC | 330-04565 | 1 | IC,DIGITAL,74HCT11 | U27 |
+| Digital/CMOS IC | 330-04567 | 1 | IC,DIGITAL,74HCT32 | U25 |
+| Digital/CMOS IC | 330-04568 | 1 | IC,DIGITAL,74HCT148 | U17 |
+| Digital/CMOS IC | 330-04569 | 2 | IC,DIGITAL,74HCT157 | U94,99 |
+| Digital/CMOS IC | 330-04570 | 1 | IC,DIGITAL,74HCT165 | U28 |
+| Digital/CMOS IC | 330-04571 | 1 | IC,DIGITAL,74HCT174 | U44 |
+| Digital/CMOS IC | 330-04572 | 2 | IC,DIGITAL,74HCT245 | U29,33 |
+| Digital/CMOS IC | 330-04573 | 1 | IC,DIGITAL,74HCT393 | U13 |
+| Digital/CMOS IC | 330-04640 | 2 | IC,DIGITAL,74HCT85 | U74,75 |
+| Digital/CMOS IC | 330-04644 | 1 | IC,DIGITAL,MC1648 | U107 |
+| Digital/CMOS IC | 330-04672 | 6 | IC,DIGITAL,74HC595 | U56,57,70,71,83,84 |
+| Digital/CMOS IC | 330-04673 | 12 | IC,DIGITAL,74HC597 | U52-55,65-67,69,79-82 |
+| Digital/CMOS IC | 330-04674 | 1 | IC,DIGITAL,74HC4538 | U36 |
+| Digital/CMOS IC | 330-04676 | 3 | IC,DIGITAL,74F161A | U104-106 |
+| Digital/CMOS IC | 330-04677 | 1 | IC,DIGITAL,74F253 | U102 |
+| Digital/CMOS IC | 330-04892 | 2 | IC,DIGITAL,74HCT74,RCA | U8,76 |
+| Linear IC | 340-01363 | 1 | IC,LINEAR,LM339 | U45 |
+| Interface IC | 345-03207 | 2 | IC,INTER,uA9638,LINE DRVR | U1,2 |
+| Interface IC | 345-03208 | 2 | IC,INTER,uA9637A,LINE RCVR | U3,4 |
+| Memory IC | 350-04709 | 1 | IC,PAL,16P8A,M480L,MEM,V2.10 (for Rev. 1 Host) | U24 |
+| Memory IC | 350-04710 | 2 | IC,SRAM,43256,150NS,LPS | U38,39 |
+| Memory IC | 350-05824 | 1 | IC,PAL,16P28A,MEM,V3.00 (for Rev. 3 Host) | U41 |
+| Memory IC | 350-04867 | 1 | IC,ROM,27C64,HOST,M480L,V1.00 | U68 |
+| Memory IC | 350-04920 | 1 | IC,ROM,27512,M480L,V1.23-1 | U40 |
+| Memory IC | 350-04921 | 1 | IC,ROM,27512,M480L,V1.23-2 | U41 |
+| Memory IC | 350-04922 | 1 | IC,ROM,27512,M480L,V1.23-3 | U42 |
+| Memory IC | 350-05800 | 1 | IC,PAL,16P8A,M480L,DTACK,V2.00 | U23 |
+| Memory IC | 350-05801 | 1 | IC,PAL,16R8A,M480L,PEAK,V1.00 | U77 |
+| Microproc IC | 365-04593 | 2 | IC,uPROC,DUART,MC68681 | U6,7 |
+| Microproc IC | 365-04594 | 1 | IC,uPROC,MC68008 | U34 |
+| Crystals | 390-04595 | 1 | CRYSTAL OSC,14.112 MHz | U89 |
+| Crystals | 390-04596 | 1 | CRYSTAL OSC,15.360 MHz | U90 |
+| Crystals | 390-04597 | 1 | CRYSTAL OSC,16.000 MHz | U14 |
+| Crystals | 390-04645 | 1 | CRYSTAL,3.6864MHz | Y1 |
+| Dsply/Ind/LED | 430-04642 | 4 | LED,T1,RED,RA BLOCK | CR1-4 |
+| Batteries | 460-04598 | 2 | BATTERY,LITH,3V,FLAT | BT1,2 |
+| Cable Conn | 490-02356 | 2 | CONN,JUMPER,.1X025,2FCG | W3,4 |
+| PC Edge Conn | 500-04557 | 2 | CONN,EURO,C,ROW a+c,MALE,RA | P1,2 |
+| PC Mnt Conn | 510-02671 | 4 | CONN,POST,100X025,HDR,3MC,GOLD | W2-4; TP1 |
+| PC Mnt Conn | 510-03922 | 1 | CONN,POST,100X025,HDR,6MCG | TP4 |
+| PC Mnt Conn | 510-03961 | 3 | CONN,POST,100X025,HDR,2MCG | W1; TP2,3 |
+| PC Mnt Conn | 510-04638 | 1 | CONN,HDR,PCRA,30MC,LOK | J1 |
+| Sockets | 520-00946 | 2 | IC SCKT,40 PIN,PC,LO-PRO | U6,7 |
+| Sockets | 520-01361 | 3 | IC SCKT,20 PIN,PC,LO-PRO | U23,24,77 |
+| Sockets | 520-01458 | 4 | IC SCKT,28 PIN,PC,LO-PRO | U35,38,39,68 |
+| Sockets | 520-04688 | 1 | IC SCKT,48 PIN,PC,LO-PRO | U34 |
+| Sockets | 520-04999 | 4 | IC SCKT,32 PIN,PC,MACH,TIN | U40-43 |
+| Knobs/Caps | 550-04705 | 1 | HANDLE,"U",1.5" | |
+| Machine Screws | 640-03713 | 2 | SCRW,6-32X1/4,PNH,PH,SEMS,ZN | HANDLE MTG |
+| Threadls Fastnr | 650-04772 | 3 | POPRVT,1/8X3/16,REG PROT HD,AL | STFNR |
+| Bulk Wire | 670-01974 | 2 | WIRE,JMP,22AWG,0.1",NON-INSUL | W2,5 |
+| Brackets | 701-04523 | 1 | BRACKET,STFNR,PC,.25X.44X9.65 | |
+| PC Boards | 710-04378 | 1 | PC BD,HOST PROC BD,M480L,REV 3 | |
+| Plastics | 720-02751 | 1 | TAPE,FOAM,DBL-STK,1/8THX3/4W | |
+
+## 6.17 Host Processor Board (Rev. 1)
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Carbon Flm Res | 202-00505 | 6 | RES,CF,5%,1/4W,10 OHM | R35,37,38,42,50,51 |
+| Carbon Flm Res | 202-00510 | 3 | RES,CF,5%,1/4W,51 OHM | R39,43,47 |
+| Carbon Flm Res | 202-00512 | 3 | RES,CF,5%,1/4W,75 OHM | R40,44,48 |
+| Carbon Flm Res | 202-00517 | 6 | RES,CF,5%,1/4W,200 OHM | R5-8,23,31 |
+| Carbon Flm Res | 202-00525 | 3 | RES,CF,5%,1/4W,510 OHM | R21,33,34 |
+| Carbon Flm Res | 202-00529 | 16 | RES,CF,5%,1/4W,1K OHM | R1-4,11-14,16-19,25,28,62,63 |
+| Carbon Flm Res | 202-00533 | 2 | RES,CF,5%,1/4W,2K OHM | R22,26 |
+| Carbon Flm Res | 202-00538 | 10 | RES,CF,5%,1/4W,3.3K OHM | R30,36,41,45,46,49,53-56 |
+| Carbon Flm Res | 202-00543 | 3 | RES,CF,5%,1/4W,5.1K OHM | R64-66 |
+| Carbon Flm Res | 202-00549 | 3 | RES,CF,5%,1/4W,10K OHM | R20,24,27 |
+| Carbon Flm Res | 202-00570 | 2 | RES,CF,5%,1/4W,100K OHM | R32,61 |
+| Metal Flm Res | 203-00456 | 4 | RES,MF,1%,1/8W,1.00K OHM | R57-60 |
+| Metal Flm Res | 203-00488 | 1 | RES,MF,1%,1/8W,37.4K OHM | R10 |
+| Metal Flm Res | 203-01495 | 1 | RES,MF,1%,1/8W,33.2K OHM | R9 |
+| Metal Flm Res | 203-02352 | 1 | RES,MF,1%,1/8W,24.9K OHM | R29 |
+| Metal Flm Res | 203-02656 | 1 | RES,MF,1%,1/8W,182K OHM | R15 |
+| Network Res | 205-01590 | 1 | RES,NET,SIP,2%,2.2KX9 | U5 |
+| Electrolyt Cap | 240-02048 | 2 | CAP,ELEC,47uF,25V,AX | C26,27 |
+| Tantalum Cap | 241-00652 | 2 | CAP,TANT,4.7uF,25V,RAD | C24,35 |
+| Tantalum Cap | 241-00654 | 1 | CAP,TANT,22uF,16V,RAD | C25 |
+| PCRB/PP Cap | 244-01488 | 1 | CAP,MYL,.22uF,100V,10%,RAD | C53 |
+| Ceramic Cap | 245-02105 | 2 | CAP,CER,5pF,500V,10%,NPO | C10,11 |
+| Ceramic Cap | 245-03609 | 63 | CAP,CER,.1uF,50V,Z5U,AX | C1-9,12-23,28-34,36-52,55,57-72,74 |
+| Ceramic Cap | 245-03610 | 1 | CAP,CER,.01uF,100V,Z5U,AX | C75 |
+| Ceramic Cap | 245-03868 | 3 | CAP,CER,33pF,100V,COG,10%,AX | C78,80,82 |
+| Ceramic Cap | 245-03869 | 3 | CAP,CER,100pF,100V,COG,10%,AX | C77,79,81 |
+| Ceramic Cap | 245-03870 | 1 | CAP,CER,150pF,100V,COG,10%,AX | C73 |
+| Ceramic Cap | 245-03871 | 2 | CAP,CER,1000pF,100V,X7R,10%,AX | C54,56 |
+| Variable Cap | 246-04649 | 1 | CAP,TRIM,4-27pF,VAR,PCRA | C76 |
+| Inductors | 270-00779 | 7 | FERRITE,BEAD | FB1-7 |
+| Inductors | 270-04706 | 1 | INDUCTOR,1.2uHy,SHIELDED | L1 |
+| Diodes | 300-01029 | 15 | DIODE,1N914 AND 4148 | CR5,6,10,12-23 |
+| Diodes | 300-01030 | 1 | DIODE,1N4004 AND 4005 | CR8 |
+| Diodes | 300-02401 | 3 | DIODE,BAR 35,SCHOTTKY,LOW VF | CR7,9,11 |
+| Diodes | 300-02507 | 1 | DIODE,VARACTOR,MV209 | VRC1,2 |
+| Transistors | 310-01007 | 1 | TRANSISTOR,2N3904 | Q2 |
+| Transistors | 310-01008 | 1 | TRANSISTOR,2N3906 | Q1 |
+| Transistors | 310-01647 | 3 | TRANSISTOR,2N4401 | Q4-6 |
+| Transistors | 310-02517 | 1 | TRANSISTOR,2N5910 | Q3 |
+| Digital/CMOS IC | 330-00694 | 3 | IC,DIGITAL,74LS03 | U11,47,50 |
+| Digital/CMOS IC | 330-00698 | 1 | IC,DIGITAL,74LS14 | U100 |
+| Digital/CMOS IC | 330-00767 | 1 | IC,DIGITAL,4013,CMOS | U49 |
+| Digital/CMOS IC | 330-01298 | 1 | IC,DIGITAL,MC4044 | U96 |
+| Digital/CMOS IC | 330-03586 | 8 | IC,DIGITAL,74HCT244 | U20-22,31,32,37,67,97 |
+| Digital/CMOS IC | 330-03715 | 8 | IC,DIGITAL,74HCT374 | U61,62,64,66,75,76,89,90 |
+| Digital/CMOS IC | 330-04040 | 1 | IC,DIGITAL,74F04 | U106 |
+| Digital/CMOS IC | 330-04084 | 2 | IC,DIGITAL,74HCT175 | U14,17 |
+| Digital/CMOS IC | 330-04260 | 3 | IC,DIGITAL,74HCT04 | U9,27,51 |
+| Digital/CMOS IC | 330-04261 | 2 | IC,DIGITAL,74HCT00 | U15,99 |
+| Digital/CMOS IC | 330-04271 | 4 | IC,DIGITAL,74HCT273 | U28,63,65,81 |
+| Digital/CMOS IC | 330-04273 | 1 | IC,DIGITAL,74HCT74,ZYTREX | U10 |
+| Digital/CMOS IC | 330-04274 | 1 | IC,DIGITAL,74HCT132 | U52 |
+| Digital/CMOS IC | 330-04292 | 1 | IC,DIGITAL,74F32 | U104 |
+| Digital/CMOS IC | 330-04293 | 2 | IC,DIGITAL,74F74 | U95,113 |
+| Digital/CMOS IC | 330-04294 | 5 | IC,DIGITAL,74HCT138 | U26,33,91,92,98 |
+| Digital/CMOS IC | 330-04563 | 1 | IC,DIGITAL,74HCT02 | U54 |
+| Digital/CMOS IC | 330-04564 | 3 | IC,DIGITAL,74HCT08 | U25,53,112 |
+| Digital/CMOS IC | 330-04565 | 1 | IC,DIGITAL,74HCT11 | U29 |
+| Digital/CMOS IC | 330-04567 | 2 | IC,DIGITAL,74HCT32 | U12,44 |
+| Digital/CMOS IC | 330-04568 | 1 | IC,DIGITAL,74HCT148 | U19 |
+| Digital/CMOS IC | 330-04569 | 3 | IC,DIGITAL,74HCT157 | U102,103,111 |
+| Digital/CMOS IC | 330-04570 | 1 | IC,DIGITAL,74HCT165 | U30 |
+| Digital/CMOS IC | 330-04571 | 1 | IC,DIGITAL,74HCT174 | U48 |
+| Digital/CMOS IC | 330-04572 | 2 | IC,DIGITAL,74HCT245 | U35,36 |
+| Digital/CMOS IC | 330-04573 | 1 | IC,DIGITAL,74HCT393 | U16 |
+| Digital/CMOS IC | 330-04640 | 4 | IC,DIGITAL,74HCT85 | U77-80 |
+| Digital/CMOS IC | 330-04644 | 1 | IC,DIGITAL,MC1648 | U110 |
+| Digital/CMOS IC | 330-04672 | 6 | IC,DIGITAL,74HC595 | U59,60,73,74,87,88 |
+| Digital/CMOS IC | 330-04673 | 12 | IC,DIGITAL,74HC597 | U55-58,69-72,83-86 |
+| Digital/CMOS IC | 330-04674 | 1 | IC,DIGITAL,74HC4538 | U45 |
+| Digital/CMOS IC | 330-04676 | 3 | IC,DIGITAL,74F161A | U107-109 |
+| Digital/CMOS IC | 330-04677 | 1 | IC,DIGITAL,74F253 | U105 |
+| Digital/CMOS IC | 330-04892 | 1 | IC,DIGITAL,74HCT74,RCA | U8 |
+| Digital/CMOS IC | 330-04926 | 1 | IC,DIGITAL,74HC08 | U101 |
+| Interface IC | 345-03207 | 2 | IC,INTER,uA9638,LINE DRVR | U1,2 |
+| Interface IC | 345-03208 | 2 | IC,INTER,uA9637A,LINE RCVR | U3,4 |
+| Memory IC | 350-04282 | 1 | IC,SRAM,4364,8KX8,150NS,LPS | U38 |
+| Memory IC | 350-04708 | 1 | IC,PAL,16P8A,M480L,DTACK | U23 |
+| Memory IC | 350-04709 | 1 | IC,PAL,16P8A,M480L,MEM,V2.10 | U24 |
+| Memory IC | 350-04710 | 1 | IC,SRAM,43256,150NS,LPS | U39 |
+| Memory IC | 350-04867 | 1 | IC,ROM,27C64,M480L,HOST,V1.00 | U68 |
+| Memory IC | 350-04920 | 1 | IC,ROM,27512,M480L,V1.23-1 | U40 |
+| Memory IC | 350-04921 | 1 | IC,ROM,27512,M480L,V1.23-2 | U41 |
+| Memory IC | 350-04922 | 1 | IC,ROM,27512,M480L,V1.23-3 | U42 |
+| Microproc IC | 365-04593 | 2 | IC,uPROC,DUART,MC68681 | U6,7 |
+| Microproc IC | 365-04594 | 1 | IC,uPROC,MC68008 | U34 |
+| Crystals | 390-04595 | 1 | CRYSTAL OSC,14.112 MHz | U93 |
+| Crystals | 390-04596 | 1 | CRYSTAL OSC,15.360 MHz | U94 |
+| Crystals | 390-04597 | 1 | CRYSTAL OSC,16.000 MHz | U18 |
+| Crystals | 390-04645 | 1 | CRYSTAL,3.6864MHz | Y1 |
+| Dsply/Ind/LED | 430-04642 | 4 | LED,T1,RED,RA BLOCK | CR1-4 |
+| Batteries | 460-04598 | 2 | BATTERY,LITH,3V,FLAT | BT1,2 |
+| Cable Conn | 490-02356 | 9 | CONN,JUMPER,.1X025,2FCG | W9-11,13-15,17,18,20 |
+| PC Edge Conn | 500-04557 | 2 | CONN,EURO,C,ROW a+c,MALE,RA | P1,2 |
+| PC Mnt Conn | 510-02671 | 10 | CONN,POST,100X025,HDR,3MC,GOLD | W9-11,13-15,17,18,20; TP3 |
+| PC Mnt Conn | 510-03922 | 1 | CONN,POST,100X025,HDR,6MCG | TP4 |
+| PC Mnt Conn | 510-03961 | 3 | CONN,POST,100X025,HDR,2MCG | W1-3 |
+| PC Mnt Conn | 510-04638 | 1 | CONN,HDR,PCRA,30MC,LOK | J1 |
+| Sockets | 520-00946 | 2 | IC SCKT,40 PIN,PC,LO-PRO | U6,7 |
+| Sockets | 520-01361 | 2 | IC SCKT,20 PIN,PC,LO-PRO | U23,24 |
+| Sockets | 520-01458 | 7 | IC SCKT,28 PIN,PC,LO-PRO | U38-43,68 |
+| Sockets | 520-04688 | 1 | IC SCKT,48 PIN,PC,MACH,TIN | U34 |
+| Knobs/Caps | 550-04705 | 1 | HANDLE,"U",1.5" | |
+| Electronic Hdwr | 600-01668 | 1 | BUSS BAR,2C,.7X14,.3 OFF,PVF/N | |
+| Machine Screws | 640-03713 | 2 | SCRW,6-32X1/4,PNH,PH,SEMS,ZN | HANDLE MTG |
+| Threadls Fastnr | 650-04772 | 3 | POPRVT,1/8X3/16,REG PROT HD,AL | STFNR |
+| Bulk Wire | 670-01974 | 1 | WIRE,JMP,22AWG,0.1",NON-INSUL | W4 |
+| Brackets | 701-04523 | 1 | BRACKET,STFNR,PC,.25X.44X9.65 | |
+
+## 6.18 Power Supply Board
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Trim Resistors | 201-00424 | 2 | RES,TRM,ST,PC,100 OHM,SA,CER | R5,11 |
+| Carbon Flm Res | 202-00501 | 2 | RES,CF,5%,1/2W,150 OHM | R13,14 |
+| Carbon Flm Res | 202-00505 | 3 | RES,CF,5%,1/4W,10 OHM | R12,16,17 |
+| Carbon Flm Res | 202-00510 | 2 | RES,CF,5%,1/4W,51 OHM | R15,19 |
+| Carbon Flm Res | 202-00531 | 1 | RES,CF,5%,1/4W,1.5K OHM | R4 |
+| Carbon Flm Res | 202-00542 | 2 | RES,CF,5%,1/4W,4.7K OHM | R1,2 |
+| Metal Flm Res | 203-00464 | 1 | RES,MF,1%,1/8W,4.99K OHM | R3 |
+| Metal Flm Res | 203-01996 | 4 | RES,MF,1/2%,1/8W,3.01K OHM | R7-10 |
+| Metal Flm Res | 203-02655 | 1 | RES,MF,1%,1/8W,6.04K OHM | R6 |
+| Wirewound Res | 204-04574 | 1 | RES,WW,5%,7W,.02 OHM | R18 |
+| Electrolyt Cap | 240-01262 | 1 | CAP,ELEC,330uF,25V,RAD | C12 |
+| Electrolyt Cap | 240-03574 | 1 | CAP,ELEC,3300uF,35V,RAD,LO-PRO | C13 |
+| Electrolyt Cap | 240-04579 | 1 | CAP,3300uF,63V,ELEC,LO PRO,RAD | C4 |
+| Tantalum Cap | 241-00652 | 1 | CAP,TANT,4.7uF,25V,RAD | C7 |
+| PCRB/PP Cap | 244-00660 | 1 | CAP,MYL,.01uF,100V,10%,RAD | C1 |
+| PCRB/PP Cap | 244-00662 | 1 | CAP,MYL,.1uF,5%,RAD | C2 |
+| PCRB/PP Cap | 244-01171 | 1 | CAP,PP,5100pF,2.5% | C9 |
+| PCRB/PP Cap | 244-04901 | 1 | CAP,MYL,.022uF,100V,10%,RAD | C8 |
+| Ceramic Cap | 245-03609 | 6 | CAP,CER,.1uF,50V,Z5U,AX | C3,6,10,14-16 |
+| Ceramic Cap | 245-03610 | 1 | CAP,CER,.01uF,100V,Z5U,AX | C5 |
+| Ceramic Cap | 245-03868 | 1 | CAP,CER,33pF,100V,COG,10%,AX | C11 |
+| Inductors | 270-00779 | 1 | FERRITE,BEAD | FB1 |
+| Inductors | 270-04592 | 1 | INDUCTOR,SWITCHING,100uH,12A | L1 |
+| Diodes | 300-01029 | 1 | DIODE,1N914 AND 4148 | CR2 |
+| Diodes | 300-04580 | 1 | DIODE,BRIDGE,10A,200V | CR1 |
+| Diodes | 300-04583 | 1 | DIODE,SCHOTTKY,16A,MBR1645 | CR4 |
+| Diodes | 300-04584 | 1 | DIODE,ZENER,16V,1N4745A | CR3 |
+| Diodes | 300-04748 | 1 | DIODE,ZENER,Z5.6,1% | CR5 |
+| Transistors | 310-01007 | 1 | TRANSISTOR,2N3904 | Q2 |
+| Transistors | 310-04581 | 1 | XISTOR,MOSFET,12A,80V,PNP | Q1 |
+| SCR | 320-01013 | 1 | TRANSISTOR,2N 6400-6401 | U2 |
+| Linear IC | 340-04679 | 1 | IC,LINEAR,SG3526,SW REG | U1 |
+| Fuses | 440-02680 | 1 | FUSE,5X20MM,SLO-BLO,6.3AMP | F1 |
+| Cable Conn | 490-04887 | 2 | CONN,QDC,MALE,.250X.032 | XFORMER WIRING |
+| PC Mnt Conn | 510-00826 | 1 | CONN,POST,156X045,HDR,4MCG,LOK | P3 SYNC CONN |
+| PC Mnt Conn | 510-01481 | 1 | CONN,POST,156X045,HDR,6MCG,LOK | P4 POWER CONN |
+| PC Mnt Conn | 510-03989 | 1 | CONN,POST,156X045,HDR,2MCG,LOK | P1 FAN OR PILOT LIGHT CONN |
+| Conn Hdwr | 527-04889 | 2 | CONN,HSG,QDC,MALE,.250X.032 | XFORMER WIRING |
+| Electronic Hdwr | 600-02227 | 2 | FUSE CLIP,20MM,PC | F1 |
+| Insul/Spacrs | 630-00952 | 3 | INSUL,SEMI,BUSHING,TO-220 | CR4,Q1,U2 MTG |
+| Insul/Spacrs | 630-04658 | 1 | INSUL,WSHR,SIL RUB,1ODX.255ID | L1 |
+| Insul/Spacrs | 630-04659 | 3 | INSUL,SEMI,SIL RUB,HP,TO-220 | CR4,Q1,U2 MTG |
+| Spcr,Non-Insul | 635-01454 | 3 | SPCR,SWAGE,6-32X5/8,1/4RD,BR/N | |
+| Machine Screws | 640-04692 | 1 | BOLT,10-32X1.5",HH,NYLON | L1 |
+| Thrd-Form Scrw | 641-04021 | 3 | SCRW,TAP,SW,4-40X1/4,PNH,PH,ZN | CR4,Q1,U2 MTG |
+| Nuts | 643-04693 | 1 | NUT,10-32,HEX,NYL | L1 |
+| Threadls Fastnr | 650-03970 | 2 | POPRVT,1/8X1/8,REG PROT HD,SS | HEATSINK MTG |
+| Pre-Cut Wire | 675-02891 | 1 | WIRE,18G,GRN,7",ST&T1/4X0 | |
+| Pre-Cut Wire | 675-02891 | 1 | WIRE,18G,GRN,8",ST&T1/4X0 | |
+| Brackets | 701-04522 | 1 | BRACKET,HEATSINK,"U",.75X.75X4 | |
+| PC Boards | 710-04513 | 1 | PC BD,PWR SUPPLY BD,5V,12A | |
+
+## 6.19 V1.23 Software Update
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Cust Literature | 070-04987 | 1 | INSTR,SOFT-UP,RETRO,V1.23,M480 | |
+| Cust Literature | 070-04988 | 1 | NOTICE,SOFT RELEASE,V1.23,M480 | |
+| Memory IC | 350-04709 | 1 | IC,PAL,16P8A,M480L,MEM,V2.10 (for Rev. 1 Host) | U24 |
+| Memory IC | 350-05824 | 1 | IC,PAL,16P8A,M480L,MEM,V.3.00 (for Rev. 3 Host) | |
+| Memory IC | 350-04920 | 1 | IC,ROM,27512,M480L,V1.23-1 | U40 |
+| Memory IC | 350-04921 | 1 | IC,ROM,27512,M480L,V1.23-2 | U41 |
+| Memory IC | 350-04922 | 1 | IC,ROM,27512,M480L,V1.23-3 | U42 |
+| Tools | 780-01925 | 1 | TOOL,IC EXTRACTOR | |
+
+## 6.20 V2.00 Software Update
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Cust Literature | 070-06206 | 1 | INSTR,SOFT-UP,RETRO,V2.00,M480 | |
+| Cust Literature | 070-04487 | 1 | NOTICE,SOFT RELEASE,V2.00,M480 | |
+| Memory IC | 350-04710 | 1 | IC,SRAM,43256,150NS,LPS (for Rev. 1 Host) | U24 |
+| Memory IC | 350-06406 | 1 | IC,ROM,27512,M480L,V.2.00-1 | U40 |
+| Memory IC | 350-06407 | 1 | IC,ROM,27512,M480L,V2.00-2 | U41 |
+| Memory IC | 350-06408 | 1 | IC,ROM,27512,M480L,V2.00-3 | U42 |
+| Memory IC | 350-06409 | 1 | IC,ROM,27512,M480L,V2.00-4 | U43 |
+| Tools | 780-01925 | 1 | TOOL,IC EXTRACTOR | |
+
+## 6.21 SME Option
+
+### M480 SME Board
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Carbon Flm Res | 202-00505 | 9 | RES,CF,5%,1/4W,10 OHM | R1,8-15 |
+| Carbon Flm Res | 202-00525 | 2 | RES,CF,5%,1/4W,510 OHM | R4,7 |
+| Carbon Flm Res | 202-00529 | 1 | RES,CF,5%,1/4W,1K OHM | R2 |
+| Carbon Flm Res | 202-00549 | 3 | RES,CF,5%,1/4W,10K OHM | R3,5,6 |
+| Network Res | 205-05638 | 1 | RES,NET,SIP,2%,10KX9 | U114 |
+| Network Res | 205-05639 | 3 | RES,NET,SIP,2%,330/470X8 | U6,46,86 |
+| Network Res | 205-05834 | 1 | RES,NET,SIP,2%,150X9 | U166 |
+| Electrolyt Cap | 240-02048 | 1 | CAP,ELEC,47uF,25V,AX | C88 |
+| Ceramic Cap | 245-03609 | 42 | CAP,CER,.1uF,50V,Z5U,AX | C1,2,21,58,77-87,89-115 |
+| Ceramic Cap | 245-05835 | 72 | CAP,CER,.33uF,50V,Z5U,AX | C3-20,22-57,59-76 |
+| Digital/CMOS IC | 330-00674 | 1 | IC,DIGITAL,7438 | U167 |
+| Digital/CMOS IC | 330-00698 | 1 | IC,DIGITAL,74LS14 | U179 |
+| Digital/CMOS IC | 330-00716 | 5 | IC,DIGITAL,74LS283 | U127-129,139,140 |
+| Digital/CMOS IC | 330-03340 | 9 | IC,DIGITAL,74F157 | U108,122,126,138,148,151,162,172,175 |
+| Digital/CMOS IC | 330-03586 | 5 | IC,DIGITAL,74HCT244 | U25,65,101,106,113 |
+| Digital/CMOS IC | 330-03611 | 1 | IC,DIGITAL,74HC273 | U91 |
+| Digital/CMOS IC | 330-03715 | 12 | IC,DIGITAL,74HCT374 | U92-95,119,120,131,135,137,143,144,152 |
+| Digital/CMOS IC | 330-04040 | 2 | IC,DIGITAL,74F04 | U133,164 |
+| Digital/CMOS IC | 330-04042 | 5 | IC,DIGITAL,74AHCT374 | U150,153,154,158,174 |
+| Digital/CMOS IC | 330-04084 | 1 | IC,DIGITAL,74HCT175 | U103 |
+| Digital/CMOS IC | 330-04291 | 5 | IC,DIGITAL,74F244 | U67,88,97,99,105 |
+| Digital/CMOS IC | 330-04292 | 4 | IC,DIGITAL,74F32 | U130,132,145,146 |
+| Digital/CMOS IC | 330-04293 | 2 | IC,DIGITAL,74F74 | U177,U134 |
+| Digital/CMOS IC | 330-04294 | 4 | IC,DIGITAL,74HCT138 | U27,104,107,168 |
+| Digital/CMOS IC | 330-04511 | 2 | IC,DIGITAL,74AHCT244 | U160,170 |
+| Digital/CMOS IC | 330-04564 | 3 | IC,DIGITAL,74HCT08 | U112,147,181 |
+| Digital/CMOS IC | 330-04567 | 2 | IC,DIGITAL,74HCT32 | U121,163 |
+| Digital/CMOS IC | 330-04572 | 1 | IC,DIGITAL,74HCT245 | U87 |
+| Digital/CMOS IC | 330-04676 | 2 | IC,DIGITAL,74F161A | U161,171 |
+| Digital/CMOS IC | 330-04758 | 1 | IC,DIGITAL,74LS05 | U124 |
+| Digital/CMOS IC | 330-04892 | 6 | IC,DIGITAL,74HCT74,RCA | U123,136,142,165,176,180 |
+| Digital/CMOS IC | 330-05836 | 4 | IC,DIGITAL,74AHCT373 | U89,98,159,169 |
+| Digital/CMOS IC | 330-05837 | 3 | IC,DIGITAL,74HCT646 | U90,96,100 |
+| Digital/CMOS IC | 330-05838 | 3 | IC,DIGITAL,74LS590 | U109-111 |
+| Digital/CMOS IC | 330-05839 | 3 | IC,DIGITAL,74LS592 | U1-3 |
+| Digital/CMOS IC | 330-05840 | 1 | IC,DIGITAL,uPD71071,DMA CTL | U155 |
+| Digital/CMOS IC | 330-05931 | 2 | IC,DIGITAL,74F139 | U4,5 |
+| Memory IC | 350-04655 | 2 | IC,SRAM,2018,2KX8,35NS | U149,173 |
+| Memory IC | 350-05825 | 72 | IC,DRAM,256KX1,120NS,DIP | U7-24,28-45,47-64,68-85 |
+| Memory IC | 350-05841 | 1 | IC,SRAM,43256,100NS | U26 |
+| Memory IC | 350-06214 | 1 | IC,PAL,16P8A,M480SME,MEM,V1.00 | U102 |
+| Memory IC | 350-06215 | 1 | IC,PAL,16R8A,M480SME,CLK,V1.00 | U125 |
+| Memory IC | 350-06216 | 1 | IC,PAL,16R8A,M480SME,RAM,V1.00 | U178 |
+| Microproc IC | 365-05842 | 1 | IC,uPROC,Z80,CMOS,8MHz | U66 |
+| Cable Conn | 490-02356 | 7 | CONN,JUMPER,.1X025,2FCG | W3,6,12-15,22 |
+| PC Edge Conn | 500-04557 | 2 | CONN,EURO,C,ROW a+c,MALE,RA | P1,2 |
+| PC Mnt Conn | 510-03961 | 20 | CONN,POST,100X025,HDR,2MCG | W1-6,10-23 |
+| Sockets | 520-00942 | 1 | IC SCKT,14 PIN,PC,LO-PRO | U177 |
+| Sockets | 520-00943 | 72 | IC SCKT,16 PIN,PC,LO-PRO | U7-24,28-45,47-64,68-85 |
+| Sockets | 520-00946 | 1 | IC SCKT,40 PIN,PC,LO-PRO | U66 |
+| Sockets | 520-01361 | 3 | IC SCKT,20 PIN,PC,LO-PRO | U102,125,178 |
+| Sockets | 520-01458 | 1 | IC SCKT,28 PIN,PC,LO-PRO | U26 |
+| Sockets | 520-04425 | 2 | IC SCKT,24 PINX.3",PC,LO-PRO | U149,173 |
+| Sockets | 520-04688 | 1 | IC SCKT,48 PIN,PC,MACH,TIN | U155 |
+| Knobs/Caps | 550-04705 | 1 | HANDLE,"U",1.5" | |
+| Machine Screws | 640-03713 | 2 | SCRW,6-32X1/4,PNH,PH,SEMS,ZN | |
+| Threadls Fastnr | 650-04772 | 2 | POPRVT,1/8X3/16,REG PROT HD,AL | STFNR |
+| Brackets | 701-05843 | 1 | BRACKET,STFNR,PC,.25X.44X8.25 | |
+| PC Boards | 710-05816 | 1 | PC BD,SME BD,M480L | |
+| Plastics | 720-02751 | 1 | TAPE,FOAM,DBL-STK,1/8THX3/4W | |
+
+### M480 SME Floppy Option
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Ceramic Cap | 245-00585 | 2 | CAP,CER,18pF,50V,10% | C116,117 |
+| Digital/CMOS IC | 330-05779 | 1 | IC,DIGITAL,74F240 | U157 |
+| Interface IC | 345-05845 | 1 | IC,INTER,82072,FLOP CTL | U156 |
+| Crystals | 390-05847 | 1 | CRYSTAL,24.000 MHZ | Y1 |
+| PC Mnt Conn | 510-05848 | 1 | CONN,POST,100X025,HDR,34MC,PCR | J1 |
+| Sockets | 520-00946 | 1 | IC SCKT,40 PIN,PC,LO-PRO | U156 |
+
+### M480 SME SCSI Option
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Carbon Flm Res | 202-00549 | 1 | RES,CF,5%,1/4W,10K OHM | R16 |
+| Network Res | 205-05638 | 1 | RES,NET,SIP,2%,10KX9 | U182 |
+| Network Res | 205-05844 | 3 | RES,NET,SIP,2%,220/330X8 | U116-118 |
+| Interface IC | 345-05846 | 1 | IC,INTER,5380,SCSI | U115 |
+| PC Mnt Conn | 510-02692 | 1 | CONN,POST,100X025,HDR,50MC,PCR | J1 |
+| Sockets | 520-00946 | 1 | IC SCKT,40 PIN,PC,LO-PRO | U115 |
+
+### M480 SME Shipping Kit
+
+| Category | Part No. | Qty | Description | Reference |
+|---|---|---|---|---|
+| Cust Literature | 070-06333 | 1 | INSTR,UPDATE,SME,M480L | |
+| Cust Literature | 070-06405 | 1 | NOTICE,SOFT REL,V2.00/SME,M480 | |
+| Shipping Mat | 730-01926 | 1 | BAG,PINK,ANTI-STAT,15X18 | |
+| Shipping Mat | 730-06217 | 1 | BOX,PP TOP,LOCK END,16X16X3 | |
+| Shipping Mat | 730-06218 | 1 | INSERT,FOAM,16X16X3 | |
+| Shipping Mat | 730-06411 | 1 | BAG,CONDUCTIVE,15X18X.004 | |
+| Label/Nameplts | 740-03170 | 1 | LABEL,CAUTION STATIC SENSITIVE | |
