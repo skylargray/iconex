@@ -4,7 +4,7 @@
 For each program id writes, under tools/harness/224xl/golden/:
   <id>_meta.json  - {power_up_id, n_active, nsamp, trace_window, imp}
   <id>_wcs.bin    - the raw 512-byte WCS image
-  <id>_fields.json- decoded active-step fields (layer-1 parity reference)
+  <id>_fields.json- decoded active-step fields, keys: s,offset,coeff,ZERO,b3,XFER,WA,RA
   <id>_esum.bin   - nsamp x int64 LE per-sample energy (layer-2 parity)
   <id>_steps.bin  - trace_window x n_active x 8 int64 LE probe records (layer-2)
 
@@ -48,7 +48,8 @@ def export(power_up_id):
             f.write(struct.pack("<8q", *rec))
 
     meta = dict(power_up_id=power_up_id, n_active=len(prog),
-                nsamp=NSAMP, trace_window=TRACE_WINDOW, imp=IMP)
+                nsamp=NSAMP, trace_window=TRACE_WINDOW, imp=IMP,
+                n_step_records=TRACE_WINDOW * len(prog))   # records in <id>_steps.bin
     with open(os.path.join(GOLD, f"{tag}_meta.json"), "w") as f:
         json.dump(meta, f)
     print(f"exported golden for 0x{tag}: {len(prog)} active steps, {NSAMP} samples")
