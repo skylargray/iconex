@@ -621,10 +621,22 @@ reg, DMEM pos−offset). *Open:* exact RA/XFER bit split, the 2 extra mult LSBs 
   0x3F4D; decoded for all 10, validated byte-identical to the firmware load). All 20 programs now have
   name + delays + gains. *(Phase 3 / 224XL is now essentially complete.)*
 - ✅ **microword control/routing field — DECODED** (signal graph extractable per program; see above).
-- 🟡 **toward a full reconstruction:** remaining for a parameter-controllable C++ model — (1) empirical
-  parameter→coefficient transfer functions (sweep LARC knob msgs in `boot_xl`, diff the WCS image);
-  (2) damping/multiband-decay filter taps (now visible *in* the decoded graph); (3) modulation/LFO
-  (the DEP param); (4) exact RA/XFER split + arithmetic quirks for bit-exactness (else float is fine).
+**RESULTS — parameter sweep + modulation engine (2026-06, `tools/param_sweep.py`, doc
+`docs/reference/224/224XL_param_sweep.md`).** Empirically swept the LARC sliders in `boot_xl` and
+diffed the WCS → **param→coefficient/delay transfer tables**. CONCERT's 6 params (NVS2 labels @0x9CDE
+`LOW MID XOV HFD DEP PDL`) each control a coherent coeff group: **LOW/MID** = per-band decay (MID = 16
+allpass coeffs), **XOV** = a clean linear crossover-coeff pair (Δ16), **HFD** = HF-damping input
+filter, **DEP** = input diffusion (8 coeffs), **PDL** = predelay (operates on the **delay** steps 42/94,
+not a coeff: `21839→147` samples). Curves are monotonic/piecewise-linear → directly implementable. The
+224's multiband-decay architecture is now explicit (was a reconstruction gap). **Modulation engine
+found:** independent of any knob the firmware continuously modulates 4 tank taps — pairs (56,57)+(107,
+108), delay ±~47 samples + tracking interpolation coeff = the Concert Hall modulated tank (480L's
+"LFO→which taps", answered). Slider path: `0x3c00-05` → `0x85f2` (type-scale) → `0x3CF4` group table →
+WCS, de-zippered. *Open:* LFO rate/waveform; full-program batch sweep; sub-0x20 slider range.
+
+- 🟡 **toward a full reconstruction:** remaining for a parameter-controllable C++ model — (1) batch the
+  param sweep over all 20 programs (method proven on CONCERT); (2) decode the LFO rate/waveform driving
+  the 4 modulated taps; (3) exact RA/XFER split + arithmetic quirks for bit-exactness (else float is fine).
 - 🟡 sample→ms at the 224 sample rate (cosmetic; absolute-delay base cancels in the offsets).
 - ✅ **tooling reusable for the family:** `tools/z80emu.py` + `tools/boot_xl.py` (boot-the-real-firmware
   + name capture) + the hook pattern carry straight to **M300 / 480L** — run their real loaders the
