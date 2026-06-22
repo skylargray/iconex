@@ -19,7 +19,6 @@
 #include "../core/types.hpp"       // Sample, SampleRate
 #include "../core/platform.hpp"    // SGDSP_INLINE, SGDSP_NOINLINE, SGDSP_ASSERT
 #include <cstdint>
-#include <array>
 
 namespace sgdsp::reverb
 {
@@ -52,15 +51,21 @@ SGDSP_INLINE AruAccum aruSat16(AruAccum x) noexcept
     return x;
 }
 
-// One multiply-accumulate step: acc + ((x * coeff) >> 7), saturated.
-// Uses arithmetic right shift (floor toward -inf) to match Python `(x*coeff)//128`.
-// NOTE: C++20 guarantees arithmetic shift on signed; on MSVC/GCC/Clang it already
-// holds in C++17. Do NOT replace with `/ 128` (truncates toward zero on negatives).
-SGDSP_INLINE AruAccum aruMac(AruAccum acc, AruWord x, int coeff) noexcept
+// The ARU product term: (x * coeff) >> 7. Arithmetic right shift floors toward -inf to
+// match Python `(x*coeff)//128`. NOTE: C++20 guarantees arithmetic shift on signed; on
+// MSVC/GCC/Clang it already holds in C++17. Do NOT use `/ 128` (truncates toward zero on
+// negatives). This is the SINGLE source of the product term, shared by aruMac and the
+// datapath so the unit test (via aruMac) and executeSample cannot drift.
+SGDSP_INLINE AruAccum aruProd(AruWord x, int coeff) noexcept
 {
     SGDSP_ASSERT(coeff >= -127 && coeff <= 127);   // 7-bit sign-magnitude coefficient
-    const AruAccum prod = (static_cast<AruAccum>(x) * coeff) >> ArithProfile::kCoeffShift;
-    return aruSat16(acc + prod);
+    return (static_cast<AruAccum>(x) * coeff) >> ArithProfile::kCoeffShift;
+}
+
+// One multiply-accumulate step: acc + product, saturated.
+SGDSP_INLINE AruAccum aruMac(AruAccum acc, AruWord x, int coeff) noexcept
+{
+    return aruSat16(acc + aruProd(x, coeff));
 }
 
 // Per-step probe record (mirrors aru_datapath.run_trace tuple field order).
@@ -202,12 +207,13 @@ private:
             AruWord dab;
             if (st.xfer) { dmem_[addr] = res_; dab = res_; }
             else         { dab = dmem_[addr]; }
-            if (i == firstActive_) dab += in;     // additive input == reference at sample 0
+            if (i == firstActive_) dab += in;     // additive injection: equals the reference's
+                                                  // dab=imp at sample 0 (DM/RES are 0 there) and
+                                                  // generalizes to continuous input on the float path
             R_[st.wa] = dab;
             const AruWord raccIn = R_[st.ra];
             if (st.zero) acc_ = 0;
-            const AruAccum prod = (static_cast<AruAccum>(raccIn) * st.coeff)
-                                  >> ArithProfile::kCoeffShift;
+            const AruAccum prod = aruProd(raccIn, st.coeff);
             acc_ = aruSat16(acc_ + prod);
             int64_t resVal = kProbeResSentinel;
             if (st.xfer) {
