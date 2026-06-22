@@ -25,9 +25,12 @@ loop +0.976, diffusion gains). decode **cross-validated against the 224X Service
 Manual** (WCS@0x4000–0x41FF, offset=position−microword=delay, 100 steps, 34.13 kHz, 16×6-bit sign-mag
 mult + saturation + dual-rank shift register — all confirmed). **v8.2.1 = the operational 224XL
 firmware** (the serial port is the **LARC** UI, not a diagnostic terminal; `DIAGNOSTICS` = power-up
-self-test banner): emulator now boots it through the LARC `0xC8` handshake to the main loop and drives
-the LARC display (captured `224XL V8.2 DIAGNOSTICS…`). record→name reachable — next: model the DSP
-power-up self-test so it loads programs, then inject PROG keypresses to capture WCS+name per program.
+self-test banner): emulator now boots it **end-to-end** — past the DSP power-up self-test (ARU
+signature test `0x0A1D`; modeled via ISR serial + active-low ARU latch + self-tests-pass) to normal
+operation, loads each program, and transmits its name to the LARC. **record→name mapping SOLVED** for
+all 20 programs (CONCERT HALL … DARK CHAMBER), **cross-checked 20/20** against the NVS3 directory; the
+record-array scan stride is fixed (firmware page-wrap walk). Gains decoded for all 20; delays for the
+10 FE-path marquee reverbs. See `docs/reference/224/224XL_record_name_map.md` + `tools/boot_xl.py`.
 **Microcode→firmware divergence:** original-224 **OTP = static mask-ROM microcode** (1 hall ×16 param
 frames, 0.3–562 ms, Concert Hall ancestor); 224X/XL = **SBC-loaded WCS firmware**. See §5 RESULTS.
 
@@ -549,18 +552,58 @@ ROMs, not operational firmware, record→name needs an operational ROM dump." Th
 serial port is the **LARC** user interface, not a diagnostic terminal, and v8.2.1 is the operational
 firmware. Superseded by the "Operational boot via the LARC" results above.)*
 
+**RESULTS — record→name mapping SOLVED + POST blocker cleared (2026-06, `tools/boot_xl.py` +
+`tools/harvest_xl.py`).** The v8.2.1 firmware now boots **end-to-end in the emulator** to normal
+operation, loads each program, and transmits its name to the LARC — the record→name mapping is
+recovered **authoritatively from the firmware itself** and **independently cross-checked 20/20**
+against the NVS3 directory. Full table: `docs/reference/224/224XL_record_name_map.md` (+ `.json`).
+
+*The POST blocker (`DIAG ERROR TYPE E32 C=55 B=FF BIT1 ADDR=3FFF`) — root-caused + cleared.* The
+failing test is the **ARU signature self-test** `0x0A1D-0x0B64` (writes 0x55→port 0x07, reads port
+0x02 expecting 0x55; the stub returned 0xFF). POST errors are **NOT silently non-fatal**: the error
+handler (`0x0217`='H', `0x021D`='E') displays then **blocks** at `0x0286: CALL 0x02AD; JP z,0x0286`
+awaiting LARC input. The signature test mixes inverted/non-inverted hardware taps that genuinely need
+real silicon (the §8 caveat). Three models get the **real firmware** to normal op (all in `boot_xl.py`):
+1. **ISR-driven 8251 serial** — fire `cpu.interrupt()` every ~64 ins when `IFF1 & (tx_en|rx_pending)`.
+   TX handler `0x04E8` walks `0x3C14` flag bits; writes 8251 cmd 0x26 (TxEN off)+`0x3C14=0x80` when
+   done; wait routine `0x0627` spins on `0x3C14==0x80`. Handshake (reset→0x0089) stays POLLED, IFF1=0.
+2. **Active-low ARU data latch** — ports 0x06(lo)/0x07(hi) read back COMPLEMENTED (proven by the
+   loopback test `0x099A`: write {0x55,0x55}→expect {0xAA,0xAA}); 0x03 bit0=busy→return ready.
+3. **Suppress POST errors** — patch `mem[0x0217]=mem[0x021D]=0xC9` (RET) = model "DSP self-tests pass"
+   (on real HW the handler is never called; all POST RAM writes happen regardless of pass/fail).
+Boot: reset→handshake→`0x0089 JP 0x0703`(POST)→`0x0930 JP 0x00CC`→`LD A,(0xB800);JP 0x813b`(normal op).
+Normal op `0x813b`: `0x3DF8=0xFFFF`(DIP marker), `LD A,(0xB800);CALL 0x13B6`(load), main loop `0x8169`.
+
+*The 20-program map (record array @0xB800; selector ID = record's first byte):* loading ID via the
+patched power-up (`0x8160 LD A,(0xB800)` → `LD A,id`) makes the firmware display each name. **Result:**
+0x01 CONCERT HALL (B1P1) · 0x02 PLATE (B3P1) · 0x81 INVERSE ROOM (B2P6) · 0x08 CHAMBER (B2P3) · 0x10
+CD PLATE B (B3P4) · 0x20 BRIGHT HALL (B1P2) · 0x40 SMALL ROOM (B2P2) · 0x05 DARK HALL (B1P3) · 0x21 CD
+PLATE A (B3P3) · 0x06 HALL/HALL (B5P1) · 0x0A PLATE/PLATE (B5P2) · 0x12 PLATE/HALL (B5P3) · 0x0C
+CHORUS&ECHO (B4P1) · 0x14 RES CHORDS (B4P2) · 0x24 M BAND DELAY (B4P3) · 0x22 PLATE/CHORUS (B5P4) ·
+0x11 RICH PLATE (B3P5) · 0x80 RICH CHAMBER (B2P4) · 0x42 RICH SPLIT (B5P5) · 0x41 DARK CHAMBER (B2P5).
+(rec20 ID=0xFF = array terminator.) The firmware-authoritative names **corrected** an earlier static
+name-table read — INVERSE ROOM, RICH PLATE, RICH SPLIT, DARK CHAMBER were missed by the table-walk.
+
+*Record-array scan FIXED (the "0x2AA misaligns past rec 2" open item).* The firmware's own walk (SBC
+`0x1343`): `HL=0xB800; +0x2AA; if (L==0xFE) HL+=2` — a +2 page-wrap fix every ~3 records. Correct
+bases: B800 BAAA BD54 C000 C2AA C554 C800 CAAA CD54 D000 D2AA D554 D800 DAAA DD54 E000 E2AA E554 E800
+EAAA ED54. Program lookup `0x13B6→0x133E` matches record-first-byte==selector ID.
+
+*Delays + gains.* **Coefficient gains decoded for all 20 records** (sign-mag/127; see results doc).
+**Delays decoded for the 10 FE-path records** (`recbase+0x30==0xFE`): the marquee reverbs CONCERT/
+BRIGHT/DARK HALL, INVERSE ROOM, RICH PLATE/CHAMBER/SPLIT, DARK CHAMBER, PLATE/CHORUS, PLATE — full
+tap maps (allpass pairs, recirc loop, output line). **The other 10 (non-FE) records use B55B's second
+build path `0xB65A`** (does NOT use the `0x3cf1` offset buffer) — their delays are the one remaining
+decode (CHAMBER, CD PLATE A/B, SMALL ROOM, HALL/HALL, PLATE/PLATE, PLATE/HALL + the 3 non-reverb
+effects CHORUS&ECHO/RES CHORDS/M BAND DELAY).
+
 **OPEN / NEXT (Phase 3 cont.):**
-- 🟡 **record→name labels — reachable, not blocked.** Next step: model the DSP power-up self-test
-  ports (X-register/DMEM/WCS) so v8.2.1 passes self-test → loads the power-up program → then inject
-  LARC PROG keypresses (`→0x3c11`) and capture WCS + the DL-1414 ASCII name per program. (22 names
-  already decoded @0xA001: CONCERT/BRIGHT/DARK HALL, RICH CHAMBER, ROOM, SMALL ROOM, CHAMBER, PLATE,
-  CD PLATE A/B, SMALL PLATE, CHORUS&ECHO, RES CHORDS, M BAND DELAY, HALL/HALL, PLATE/PLATE, PLATE/HALL,
-  PLATE/CHORUS, SIZE GATE, SIZE 1/2 — pending only the record↔name link.)
-- 🟡 **all 21 records** — records 0/1/2 fully decoded (delays + gains); the @0xB800 array's exact
-  boundaries for 3–20 need the real scan routine (the inferred 0x2AA stride misaligns past rec 2).
+- 🟡 **non-FE record delays** — decode B55B's `0xB65A` path (where it writes the delay structure for
+  the 10 non-FE records) OR un-pack the firmware's loaded WCS image @0x4000 (offset+coeff+control).
 - 🟡 sample→ms at the 224 sample rate (cosmetic; absolute-delay base cancels in the offsets).
-- ✅ **tooling reusable for the family:** `tools/z80emu.py` + the hook pattern carry straight to
-  **M300 / 480L** — run their real loaders the same way to recover delays + gains.
+- ✅ **tooling reusable for the family:** `tools/z80emu.py` + `tools/boot_xl.py` (boot-the-real-firmware
+  + name capture) + the hook pattern carry straight to **M300 / 480L** — run their real loaders the
+  same way to recover names + delays + gains.
 - ❓ Hardware behavioral validation (the §8 ARU-quirks caveat) remains the final confirmation.
 
 ### Phase 4 — M300: the 480-family algorithms in Lexichip form
