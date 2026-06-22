@@ -18,8 +18,10 @@ now closed** — U67 = 7 control planes + banner, coefficient = WCS plane 6; LFO
 memory/bank map + ARU port interface (0x00-0x07) decoded; **datapath variant CONFIRMED** (2 mult
 bits via NVS4 0xB4F0 packer + dedicated shift-register port 0x05); **program-record bytecode VM +
 microword build mechanism DECODED** (interpreter 0xAA9F, step-builder 0xB55B: offset = ptr−writeptr,
-ring-buffer wrap, sign-magnitude+2-bit coeff). Remaining: emulate the build → numeric tap map +
-topology validation. See §5 RESULTS blocks + `docs/reference/PCM70/PCM70_phase2_results.md`.
+ring-buffer wrap, sign-magnitude+2-bit coeff); **build EMULATED on real firmware** (`tools/z80emu.py`)
+→ **sane reverb tap map validated** (61 distinct taps, allpass pairs + output-tap ramp, ~100-step
+program). Remaining: lock absolute delays (globals) + record→name mapping + coeff lanes. See §5
+RESULTS blocks + `docs/reference/PCM70/PCM70_phase2_results.md`.
 
 ---
 
@@ -422,15 +424,50 @@ page-lo/len}`; 22 entries + 0xFF terminator) → per-program NVS2/NVS3 code (pag
 the 21×682-byte record array @0xB800 → interpreter expands → image @0x41xx → ARU via the
 0x00/0x02/0x01/0x03 strobes; knob moves rewrite only affected coeff bytes via the 0x3CF4 group table.
 
-**OPEN / NEXT (Phase 3 cont.):**
-- ❓ **Emulate the build** (interpreter 0xAA9F + step-builder 0xB55B + packers 0xB4F0/0xB4FF +
-  ring-buffer wrap 0xB683 + the helper multiplies 0x120B/0x11FB/0x1130/0x1137/0x11CA) on a real
-  record to produce the numeric microword image, then read offsets (delay = −offset) and validate a
-  sane reverb tap map — pinning the exact step count and the Concert Hall figure-eight topology.
-- ❓ Map the record→program correspondence (which of the 21 @0xB800 records is which named program)
-  via the 0xA446 directory; verify physical NVS→window jumper order vs the schematic ROM-select decode.
-- Then: adapt `tools/pcm60_decode.py` for the emulated 224XL image (sign-magnitude + 2-bit coeff,
-  ring-buffer offsets) and carry the decoder up toward M300 / 480L.
+*Build emulation + reverb tap map ✅ (the validation — ran the ACTUAL firmware build code).*
+A pure-Python Z80 emulator (`tools/z80emu.py`, self-tested: the ROM's `0x120B` shift-add multiply
+and `0x0B714` subtract give correct results incl. carry) executes the real step-builder `0xB55B` and
+the interpreter `0xAA9F` on a program record (`tools/aru224_emulate.py`). The step-builder writes a
+128-word offset buffer (downward from 0x3F4D); decoded (delay = −offset) it yields a **sane reverb
+tap map** for every record tried:
+
+| Record | active steps | distinct taps | range (samp) | allpass pairs | recirc-loop tap | output multi-tap line |
+|---|---|---|---|---|---|---|
+| @0xB800 (rec 0) | ~104 | 63 | 128 … 12353 | 25 | 6008 ×4 | 5-tap run @step13 |
+| @0xBAAA (rec 1) | ~99 | 61 | 128 … 12353 | 16 | 706 ×6 | — |
+| @0xBD54 (rec 2) | ~107 | 59 | 16 … 12353 | 14 | 4097 ×11 | **17-tap line** 3327→8867 (Δ312–439, incommensurate) |
+
+Structure recovered (the Concert Hall figure-eight signature): input/diffuser **allpass pairs**
+(small paired taps 80/81, 208/209, 242/243, 616/617 …), a **recirculating loop** referenced by one
+heavily-reused fixed tap (rec 2: 4097 ×11), a spread of long delays, and a terminal **monotonic
+multi-tap output delay line** (rec 2: 3327, 3659, 3975, 4332, 4770, 5094, 5533, 5901, 6281, 6670,
+6982, 7367, 7762, 8100, 8497, 8867 — incommensurate Δ312–439, the dense output taps of a reverb).
+The **`−1` (0xFFFF) fill** after the program puts the **active length at 99–107 steps — empirically
+confirming the ~100-step prediction**. This **validates the 224XL microword field map** (offset lane
+→ delay) and the build mechanism end-to-end. (The directory-globals 0x3CCE/0x3CCF only set the
+ring-buffer *base*, which cancels in offset = ptr − write_ptr, so the *relative* topology — pairs,
+loop, output line, step count — is exact even with them seeded 0.) Tooling: `tools/z80emu.py`,
+`tools/aru224_emulate.py` (`show_tap_map`).
+
+**OPEN / NEXT (Phase 3 cont.) — needs a boot-init emulation harness:** the engine resolves program
+number → record via **RAM tables built at boot** (`sub at 0x8000` searches a 36×2 key table at
+`0x2067`; 20-byte program headers at `0x20AF` via `sub_80aeh`); the ROM directory `0xA446` is reached
+only through a computed pointer (no direct operand ref anywhere), so record→name and the coeff lanes
+cannot be read by static trace. To finish:
+- 🟡 **Build the RAM program tables** — boot `tools/z80emu.py` from reset with IN-port stubs that pass
+  POST, or replicate the `0x20AF`/`0x2067` init from the `0xA446` directory in Python — then drive
+  `CALL 0x8000` per program number to get **record→name** (which @0xB800 record = Concert Hall /
+  Plate / …). 22 names decoded (0xA001, 12-char): CONCERT/BRIGHT/DARK HALL, RICH CHAMBER, ROOM,
+  SMALL ROOM, CHAMBER, PLATE, CD PLATE A/B, SMALL PLATE, CHORUS&ECHO, RES CHORDS, M BAND DELAY,
+  HALL/HALL, PLATE/PLATE, PLATE/HALL, PLATE/CHORUS, SIZE GATE, SIZE 1/2.
+- 🟡 **Decode coeff lanes → gains** — run the full build incl. interpreter resolve + packers
+  (0xB4F0/0xB4FF), capture coeff bytes in the final 0x41xx image, un-pack sign-magnitude + 2-bit →
+  per-tap gains (delays already in hand).
+- 🟡 sample→ms at the 224 rate; absolute-delay lock (cosmetic — the ring base cancels in offsets).
+- ✅ tooling reusable for the family: `tools/z80emu.py` carries forward to **M300 / 480L** (run their
+  real loaders the same way). Adapt `tools/pcm60_decode.py` field table for the 2-bit-extended coeff
+  if a static decode is wanted.
+- ❓ Hardware behavioral validation (the §8 ARU-quirks caveat) remains the final confirmation.
 
 ### Phase 4 — M300: the 480-family algorithms in Lexichip form
 Crossing into the Lexichip generation, but now fluent in ARU microcode. The M300 carries
