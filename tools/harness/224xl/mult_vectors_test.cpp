@@ -52,6 +52,9 @@ int main()
     check("sat from big acc",    aruMac(32000, 1000, 126), 32767);
     check("sat negative rail",   aruMac(-32000, 1000, -126), -32768);
 
+    // negative coefficient, non-saturating: (1000 * -64) >> 7 = -500
+    check("neg coeff of 1000",   aruMac(0, 1000, -64), -500);
+
     // accumulate then saturate (sat applied to acc+prod each step)
     check("accumulate then add", aruMac(100, 1000, 64), 600);   // 100 + 500
 
