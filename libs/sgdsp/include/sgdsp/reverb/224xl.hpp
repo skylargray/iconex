@@ -42,7 +42,9 @@ struct ArithProfile
     // shift, the operand20 = sign_extend(x,17)<<3 alignment.
 };
 
-// Saturate to the 16-bit result/accumulator rails (reference sat16).
+// Saturate to the result/accumulator rails (reference sat16). NOTE: the "16" in the
+// name reflects the first-cut 16-bit rails; revisit the name if ArithProfile is
+// retargeted to the 20-bit hardware accumulator.
 SGDSP_INLINE AruAccum aruSat16(AruAccum x) noexcept
 {
     if (x > ArithProfile::kSatMax) return ArithProfile::kSatMax;
@@ -56,6 +58,7 @@ SGDSP_INLINE AruAccum aruSat16(AruAccum x) noexcept
 // holds in C++17. Do NOT replace with `/ 128` (truncates toward zero on negatives).
 SGDSP_INLINE AruAccum aruMac(AruAccum acc, AruWord x, int coeff) noexcept
 {
+    SGDSP_ASSERT(coeff >= -127 && coeff <= 127);   // 7-bit sign-magnitude coefficient
     const AruAccum prod = (static_cast<AruAccum>(x) * coeff) >> ArithProfile::kCoeffShift;
     return aruSat16(acc + prod);
 }
