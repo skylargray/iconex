@@ -38,10 +38,43 @@ Curves are monotonic / piecewise-linear (XOV is exactly linear in Δ16) — dire
 lookup or linear map from a 0..1 parameter. The 224's multiband decay architecture is explicit: LOW/MID
 = per-band reverb time, XOV = the band split, HFD = HF damping, DEP = diffusion, PDL = predelay.
 
+## All 20 programs (batch sweep)
+
+Swept every program (`tools/batch_sweep.py` → `224XL_param_sweep_<id>.json`). The 6-param reverb
+template is consistent across the hall/room/plate family; effects programs differ. `Nc` = N coeff
+steps controlled, `+Nd` = N delay steps (the predelay param). Modulation breadth varies widely.
+
+| id | program | #mod taps | per-param (coeff[/delay] steps) |
+|---|---|---|---|
+| 0x01 | CONCERT HALL | 4 | 2 · 16 · 4 · 4 · 8 · +2d |
+| 0x20 | BRIGHT HALL | 4 | 2 · 16 · 4 · 4 · 8 · +2d |
+| 0x05 | DARK HALL | 8 | 2 · 16 · 4 · 4 · 8 · +2d |
+| 0x40 | SMALL ROOM | 8 | 2 · 16 · 4 · 4 · 8 · +2d |
+| 0x02 | PLATE | 2 | 2 · 20 · 4 · 4 · 8 · +2d |
+| 0x08 | CHAMBER | 4 | 2 · 4 · 4 · 4 · 8 · +1d |
+| 0x10 | CD PLATE B | 16 | 4 · 8 · 8 · 8 · 2 · +2d |
+| 0x21 | CD PLATE A | 18 | 3 · 9 · 6 · 6 · 6 · +2d |
+| 0x80 | RICH CHAMBER | 2 | 1 · 19 · 2 · 4 · 2 · +2d |
+| 0x41 | DARK CHAMBER | 2 | 1 · 19 · 2 · 4 · 2 · +4d |
+| 0x06 | HALL/HALL | 4 | 1 · 8 · 2 · 2 · 3 · +1d |
+| 0x0a | PLATE/PLATE | 4 | 1 · 10 · 2 · 2 · 4 · +1d |
+| 0x12 | PLATE/HALL | 4 | 1 · 10 · 2 · 2 · 4 · +1d |
+| 0x22 | PLATE/CHORUS | 10 | 1 · 10 · 2 · 2 · 2 · +1d |
+| 0x0c | CHORUS&ECHO | 12 | 4 · 18 (chorus-specific params) |
+| 0x81 | INVERSE ROOM | 0 | 2 · 2 · 4 · 2 · 2 · +2d |
+| 0x11 | RICH PLATE | 0 | 1 · 6 · 2 · 2 · 2 · +2d |
+| 0x42 | RICH SPLIT | 0 | 1 · 4 · 2 · 2 · 2 · +1d |
+| 0x14 | RES CHORDS | 0 | (effect — minimal coeff params) |
+| 0x24 | M BAND DELAY | 0 | (effect — minimal coeff params) |
+
+Modulation depth/breadth tracks program character: halls 2–4 taps, rooms/dark halls 8, CD plates &
+chorus programs 10–18, and the inverse/resonant/rich-dense programs none. The LFO driving the modulated
+taps is fully characterized in `docs/reference/224/224XL_modulation_lfo.md`.
+
 ## Status / next
 
-- ✅ Method proven on CONCERT; `param_sweep.py` runs any program (`python tools/param_sweep.py <id>`).
-  A full pass over all 20 programs is a batch job (~10 min each) for the reconstruction phase.
+- ✅ Full param sweep over all 20 programs (`224XL_param_sweep_<id>.json`).
+- ✅ LFO/modulation engine decoded + validated (`224XL_modulation_lfo.md`): triangle, rate `0x3cd3`,
+  depth `0x3cd4` (~bound×10 samples), main-loop paced, anti-phase pairs.
 - 🟡 Sweep the range below 0x20 for the full bidirectional curve; some params wrap at 0xFF (slider
   clamp) — useful range is below the wrap.
-- 🟡 Decode the LFO rate/waveform driving the 4 modulated taps (the modulation engine internals).

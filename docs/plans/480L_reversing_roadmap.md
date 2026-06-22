@@ -632,11 +632,21 @@ not a coeff: `21839→147` samples). Curves are monotonic/piecewise-linear → d
 found:** independent of any knob the firmware continuously modulates 4 tank taps — pairs (56,57)+(107,
 108), delay ±~47 samples + tracking interpolation coeff = the Concert Hall modulated tank (480L's
 "LFO→which taps", answered). Slider path: `0x3c00-05` → `0x85f2` (type-scale) → `0x3CF4` group table →
-WCS, de-zippered. *Open:* LFO rate/waveform; full-program batch sweep; sub-0x20 slider range.
+WCS, de-zippered. **Batch-swept all 20 programs** (`224XL_param_sweep_<id>.json`); the 6-param reverb
+template is consistent across the hall/room/plate family (PDL always a delay-only param).
 
-- 🟡 **toward a full reconstruction:** remaining for a parameter-controllable C++ model — (1) batch the
-  param sweep over all 20 programs (method proven on CONCERT); (2) decode the LFO rate/waveform driving
-  the 4 modulated taps; (3) exact RA/XFER split + arithmetic quirks for bit-exactness (else float is fine).
+**LFO/modulation engine DECODED + validated** (`docs/reference/224/224XL_modulation_lfo.md`, engine
+`0xAD5C-0xAE9B`). The firmware continuously modulates per-program tap pairs (anti-phase): **triangle**
+wave, paced by the main loop (`0x816F→0x8281→0xAD5C`), rate = cascaded ÷8 × `0x3cd3` (CONCERT=32),
+**depth = `0x3cd4`** (delay swing ≈ bound×10 samples — validated by poking: 2/4/8 → 19/41/81), enable
+`0x3ccd` bit6. Each modulated tap = a fractional delay + allpass interpolation coeff (`0xAE72` math).
+Modulation breadth varies by program (halls 2–4 taps, rooms 8, CD plates/chorus 10–18, inverse/rich-
+dense 0). This answers the 480L "LFO→which taps + rate/depth" mechanism.
+
+- 🟡 **toward a full reconstruction:** the data is now in hand (signal graph + per-program param tables
+  + modulation). Remaining: (1) write the header-only C++17 ARU core per `480L_rom_to_plugin_guide.md`
+  and validate bit-against the emulator; (2) exact RA/XFER split + arithmetic quirks for bit-exactness
+  (else float is fine); (3) optional: sub-0x20 slider range for full bidirectional param curves.
 - 🟡 sample→ms at the 224 sample rate (cosmetic; absolute-delay base cancels in the offsets).
 - ✅ **tooling reusable for the family:** `tools/z80emu.py` + `tools/boot_xl.py` (boot-the-real-firmware
   + name capture) + the hook pattern carry straight to **M300 / 480L** — run their real loaders the

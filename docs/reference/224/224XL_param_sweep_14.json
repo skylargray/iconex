@@ -1,0 +1,126 @@
+{
+ "power_up_id": 20,
+ "modulated_steps": [],
+ "params": [
+  {
+   "param": 0,
+   "coeff_steps": [
+    124
+   ],
+   "delay_steps": [],
+   "coeff_table": {
+    "124": [
+     124,
+     124,
+     124,
+     124,
+     92,
+     60,
+     28,
+     0
+    ]
+   },
+   "delay_table": {}
+  },
+  {
+   "param": 1,
+   "coeff_steps": [
+    119
+   ],
+   "delay_steps": [],
+   "coeff_table": {
+    "119": [
+     124,
+     124,
+     124,
+     124,
+     92,
+     60,
+     28,
+     0
+    ]
+   },
+   "delay_table": {}
+  },
+  {
+   "param": 2,
+   "coeff_steps": [
+    114
+   ],
+   "delay_steps": [],
+   "coeff_table": {
+    "114": [
+     124,
+     124,
+     124,
+     124,
+     92,
+     60,
+     28,
+     0
+    ]
+   },
+   "delay_table": {}
+  },
+  {
+   "param": 3,
+   "coeff_steps": [
+    74
+   ],
+   "delay_steps": [],
+   "coeff_table": {
+    "74": [
+     124,
+     124,
+     124,
+     124,
+     92,
+     60,
+     28,
+     0
+    ]
+   },
+   "delay_table": {}
+  },
+  {
+   "param": 4,
+   "coeff_steps": [
+    69
+   ],
+   "delay_steps": [],
+   "coeff_table": {
+    "69": [
+     124,
+     124,
+     124,
+     124,
+     92,
+     60,
+     28,
+     0
+    ]
+   },
+   "delay_table": {}
+  },
+  {
+   "param": 5,
+   "coeff_steps": [
+    64
+   ],
+   "delay_steps": [],
+   "coeff_table": {
+    "64": [
+     124,
+     124,
+     124,
+     124,
+     92,
+     60,
+     28,
+     0
+    ]
+   },
+   "delay_table": {}
+  }
+ ]
+}
