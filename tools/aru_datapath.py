@@ -96,7 +96,7 @@ def run_trace(prog, ra_pick, nsamp=4000, imp=20000, trace_window=64):
     steps         : flat list of per-step probe tuples for samples n < trace_window,
                     each = (n, s, addr, dab, racc_in, prod, acc, res) where
                     res = the RES value after this step if XFER else INT64_MIN sentinel.
-    Mirrors run() bit-for-bit (floor division, sat16, additive impulse at first active step).
+    Mirrors run() bit-for-bit (floor division, sat16, injected impulse at first active step of sample 0).
     """
     SENT = -(1 << 63)
     R = [0, 0, 0, 0]
