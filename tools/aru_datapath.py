@@ -89,6 +89,54 @@ def decay_metric(out):
                 blown=any(o >= 32767 * len([1]) for o in out[-50:]))
 
 
+def run_trace(prog, ra_pick, nsamp=4000, imp=20000, trace_window=64):
+    """Instrumented twin of run(). Returns (esum_list, steps).
+
+    esum_list[n]  : per-sample output energy, identical to run().
+    steps         : flat list of per-step probe tuples for samples n < trace_window,
+                    each = (n, s, addr, dab, racc_in, prod, acc, res) where
+                    res = the RES value after this step if XFER else INT64_MIN sentinel.
+    Mirrors run() bit-for-bit (floor division, sat16, additive impulse at first active step).
+    """
+    SENT = -(1 << 63)
+    R = [0, 0, 0, 0]
+    ACC = 0
+    RES = 0
+    DM = [0] * (DMASK + 1)
+    pos = 0
+    esum_list = []
+    steps = []
+    for n in range(nsamp):
+        pos = (pos + 1) & DMASK
+        esum = 0
+        for st in prog:
+            addr = (pos - st['offset']) & DMASK
+            if st['XFER']:
+                DM[addr] = RES
+                dab = RES
+            else:
+                dab = DM[addr]
+            if n == 0 and st is prog[0]:
+                dab = imp
+            R[st['WA']] = dab
+            ra = ra_pick(st)
+            racc_in = R[ra]
+            if st['ZERO']:
+                ACC = 0
+            prod = (racc_in * st['coeff']) // 128
+            ACC = sat16(ACC + prod)
+            if st['XFER']:
+                RES = sat16(ACC)
+                esum += abs(RES)
+                res_val = RES
+            else:
+                res_val = SENT
+            if n < trace_window:
+                steps.append((n, st['s'], addr, dab, racc_in, prod, ACC, res_val))
+        esum_list.append(esum)
+    return esum_list, steps
+
+
 if __name__ == '__main__':
     prog = load_microcode(0x01)
     print(f"CONCERT: {len(prog)} active steps")
