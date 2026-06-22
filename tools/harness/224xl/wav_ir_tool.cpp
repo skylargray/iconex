@@ -3,6 +3,12 @@
 //   process mode: wav_ir_tool wav <in.wav> <out.wav>  -> filters a mono 16-bit WAV
 // Stereo out (L/R duplicated in the first cut). For ears + spectrogram/EDC, not for
 // bit-exact checks (that is diff_harness). Loads CONCERT from the generated header.
+//
+// NOTE (first cut): the CONCERT tank SUSTAINS rather than decays under the current
+// reference arithmetic (ArithProfile) - the result-register shift / coeff denominator
+// that set loop gain/decay are OPEN items (see design spec section 8). This tool is
+// integer-exact-faithful to tools/aru_datapath.py; a cleanly decaying IR follows once
+// that arithmetic is tuned. The IR here is non-silent and bounded, for routing/level checks.
 #include "sgdsp/reverb/224xl.hpp"
 #include "sgdsp/reverb/224xl_programs.hpp"
 #include <cstdio>

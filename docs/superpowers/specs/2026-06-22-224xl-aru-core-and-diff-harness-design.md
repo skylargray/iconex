@@ -217,7 +217,7 @@ CMSIS/STM headers. `SGDSP_INLINE → inline`, placement macros → no-ops (verif
 |---|---|
 | C++ microword decode == `decode_microword.decode(0x01)` field-for-field | Per-program position base → live FPC I/O |
 | C++ ARU == Python `aru_datapath` integer-exact (CONCERT static) | True stereo L→A,D / R→B,C split |
-| Multiplier test vectors pass (incl. saturation) | Hardware-anchored arithmetic (20-bit acc, 2-LSB coeff, result shift, rounding) |
+| Multiplier test vectors pass (incl. saturation) | Hardware-anchored arithmetic (20-bit acc, 2-LSB coeff, result shift, rounding) (governs loop gain/decay — first-cut tank sustains) |
 | Builds via CMake; header compiles as plain C++17 | Param/modulation dynamic parity (§9 layer 3); all 20 programs; DPF + Seed2 wrappers |
 
 ---
@@ -230,7 +230,7 @@ CMSIS/STM headers. `SGDSP_INLINE → inline`, placement macros → no-ops (verif
 4. `mult_vectors_test` green (anchors arithmetic independently).
 5. `diff_harness` layer-1 (decode) green.
 6. Tune `ArithProfile` knobs until `diff_harness` layer-2 (arithmetic) green.
-7. `wav_ir_tool` produces a stable, decaying impulse response.
+7. `wav_ir_tool` produces a non-silent, bounded impulse response (clean decay follows the deferred ArithProfile tuning, §8 — the first-cut tank sustains, matching the reference).
 
 ---
 

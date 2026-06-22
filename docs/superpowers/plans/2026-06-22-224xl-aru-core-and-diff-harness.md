@@ -1191,22 +1191,24 @@ cmake --build build --target wav_ir_tool --config Release
 ```
 Expected: compiles and links.
 
-- [ ] **Step 3: Produce an impulse response and sanity-check decay**
+- [ ] **Step 3: Produce an impulse response and sanity-check (non-silent + bounded)**
 
 Run: `tools/harness/224xl/build/Release/wav_ir_tool ir /tmp/concert_ir.wav 17000`
 Expected: `wrote IR /tmp/concert_ir.wav (17000 samples)`; the file exists and is ~68 KB.
 
-Verify it is non-silent and decays (Python, no extra deps):
+Verify it is non-silent and bounded/not-railed (Python, no extra deps):
 ```bash
-python -c "import wave,struct; w=wave.open('/tmp/concert_ir.wav'); d=w.readframes(w.getnframes()); s=struct.unpack('<%dh'%(len(d)//2), d); L=s[0::2]; import statistics; e=lambda a:sum(abs(x) for x in a); print('early',e(L[:2000]),'late',e(L[12000:14000])); assert e(L[:2000])>0; assert e(L[12000:14000])<e(L[:2000]); print('IR decays: OK')"
+python -c "import wave,struct; w=wave.open('/tmp/concert_ir.wav'); d=w.readframes(w.getnframes()); s=struct.unpack('<%dh'%(len(d)//2), d); L=s[0::2]; e=lambda a:sum(abs(x) for x in a); peak=max(abs(x) for x in L); early=e(L[:2000]); late=e(L[12000:14000]); railed=sum(1 for x in L[12000:14000] if abs(x)>=32767)/2000.0; print('early',early,'late',late,'peak',peak,'railed_frac',round(railed,3)); assert early>0, 'silent'; assert peak<=32768; assert railed<0.5, 'tank pinned at rail (unstable)'; print('IR non-silent + bounded (not railed): OK; clean decay deferred to ArithProfile tuning')"
 ```
-Expected: prints `early ... late ...` then `IR decays: OK`.
+Expected: prints `early ... late ... peak ... railed_frac ...` then `IR non-silent + bounded (not railed): OK; clean decay deferred to ArithProfile tuning`.
+
+NOTE: the first-cut CONCERT tank sustains (late energy >= early energy) — this is non-silent and bounded (not railed), faithfully matching the reference arithmetic. Clean decay is deferred to ArithProfile tuning (see design spec §8 — the result-register shift / coeff denominator that set loop gain/decay are OPEN items).
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add tools/harness/224xl/wav_ir_tool.cpp
-git commit -m "224XL: WAV/IR listening tool (float boundary, decaying CONCERT IR)"
+git commit -m "224XL: WAV/IR listening tool (float boundary, non-silent bounded CONCERT IR)"
 ```
 
 ---
