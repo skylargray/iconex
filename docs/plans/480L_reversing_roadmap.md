@@ -16,9 +16,10 @@ Phase 2 ✅ **complete** (PCM70 live-update + coefficient encoding decoded; **bo
 now closed** — U67 = 7 control planes + banner, coefficient = WCS plane 6; LFO phase accumulator
 = `sub_0ad2h`@0x0AD2/0x4335) · Phase 3 (224XL) **in progress** — Phase-0 integrity PASS; flat
 memory/bank map + ARU port interface (0x00-0x07) decoded; **datapath variant CONFIRMED** (2 mult
-bits via NVS4 0xB4F0 packer + dedicated shift-register port 0x05); microword field map 🟡 (4-byte
-step, ~100 steps). Remaining: decode a full program record + validate topology. See §5 RESULTS
-blocks + `docs/reference/PCM70/PCM70_phase2_results.md`.
+bits via NVS4 0xB4F0 packer + dedicated shift-register port 0x05); **program-record bytecode VM +
+microword build mechanism DECODED** (interpreter 0xAA9F, step-builder 0xB55B: offset = ptr−writeptr,
+ring-buffer wrap, sign-magnitude+2-bit coeff). Remaining: emulate the build → numeric tap map +
+topology validation. See §5 RESULTS blocks + `docs/reference/PCM70/PCM70_phase2_results.md`.
 
 ---
 
@@ -387,32 +388,49 @@ directly into the window.
   NVS4 0xB4FF/0xB531 — the family's sign-in-MSB idiom); **opcode field only ~2 bits** (NVS4 0xB63C
   `AND 3`) vs PCM60's 4-bit nibble.
 
-*Microword field map 🟡 (MEDIUM — hypothesis, needs a decoded program record to confirm):*
-- **Width = 4 bytes / 32 bits per step** (PCM60-family geometry); staged as 4-byte records in the
-  0x41xx RAM image; the 16-bit port-6/7 pair is the *bus transfer* width, so 1 step = 2 transfers.
-- **Step count ≈ 100** (NVS4 step counter base 0x10 @0xB55B; SUB 0x10 → 0-based). Per-program block
-  = one of **21 records × 682 bytes**; ~100×4=400 B microcode + ~280 B trailing coeff/param.
-- **Lane hypothesis:** `{offset_lo, offset_hi (16-bit signed 2's-comp; delay = −offset, computed by
-  NVS4 0xB714 = target − write_ptr), coeff (sign-magnitude + 2-bit mult extension), control (~2-bit
-  opcode)}` — i.e. the PCM60 `{off-lo, coeff, off-hi, ctrl}` lineage with the 224XL coeff extension.
+*Program record format = a packed-bytecode VM (✅ DECODED, byte-grounded; corrects the earlier
+"raw 4-byte record" assumption).* A program record is **not** a flat microword array — it is a
+**tagged bytecode** that the NVS3 interpreter expands into the microword image. Disassembled at the
+correct base (`tools/disrange.py`, `tools/aru224_records.py`):
+- Record header carries 13 ring-buffer/range bytes (recbase+0x33 → RAM 0x3CD8, via the interpreter
+  @0xAA23). Bytecode stream starts at recbase+0x35 (or +0x44 if recbase+0x30==0xFE).
+- **Interpreter loop @0xAA9F:** reads a **TAG** byte = `opcode(bits4-5)<<4 | count(bits0-3)`;
+  terminator `0xFF`. Per group it records `{dest_lo, dest_hi, tag}` into a **group table @0x3CF4**
+  (for later real-time knob updates), then dispatches:
+  - op `0x00` (0xAB26): `count` × index-byte → resolver.
+  - op `0x10` (0xAAE8): entries with a **bit-7 flag** selecting an extra literal.
+  - op `0x20` (0xAACD): `count` × `{index, literal, literal}`.
+- **Resolver @0xAB0C:** `index = byte & 0x7F`; computes `0x4003 + index*4` and writes that **pointer**
+  into the image — i.e. the image is *linked* to 4-byte coefficient slots in the **0x4003-0x41FF RAM
+  table** (the same region the ARU latch image lives in → a self-referential link table).
 
-*Program selection / load path 🟡:* program# → 5-byte directory @NVS3 0xA446 (lookup SBC3
-0x1398) → picks per-program NVS2 control routine + the 0xB800 coeff record + NVS8 param record →
-NVS3 interpreter (0xAA9F) walks a packed bytecode definition, NVS4 0xB55B/0xB4F0 build each step,
-image copied to 0x41xx, clocked out via the 0x00/0x02/0x01/0x03 strobe sequence; knob moves rewrite
-only the affected coeff bytes in real time (NVS4 0xB000).
+*Microword build mechanism (✅ DECODED — confirms the field map).*
+- **Offset/delay** = 16-bit **`offset = pointer − write_ptr`** via `0xB714` (`HL=HL−BC`); **delay =
+  −offset** — the exact PCM60 `U38:U32` semantics. Step-builder `0xB55B` walks the delay structure
+  with **ring-buffer wrap** against bounds at **0x3CD8/0x3CDA/0x3CDC/0x3CDE** (the delay-RAM extent
+  = the MMU equivalent), and scales addresses via the shift-register multiply `0xB6FA` (`<<4`).
+- **Coefficient = sign-magnitude across 2 bytes** (packers 0xB4F0/0xB4FF, byte-confirmed):
+  - HI byte (`0xB4FF`): `bit7 = SIGN`, `bits6:0 = 7-bit magnitude`.
+  - LO byte (`0xB4F0`): `bits7:2 = (~coarse) << 2`, `bits1:0 = 2 LSBs` from a companion fetch — the
+    **"two multiplier bits at once"** packed into the low byte. Extractors 0xB54D (`>>2`)/0xB552 (`>>3`).
+  - Fetch `0xB510`: `A = (recbase + 0xC0AA + DE)` — the coefficient source is record-relative.
+- **Step count** seed = 0x10 at 0xB55B (`SUB 0x10` → 0-based index); the build terminates on the
+  bytecode `0xFF`, so step count is **data-driven per program** (≈100, to confirm by emulation).
+
+*Program selection path ✅:* program# → 5-byte directory @0xA446 (`{flags, group, sub, page-hi,
+page-lo/len}`; 22 entries + 0xFF terminator) → per-program NVS2/NVS3 code (page-hi 0x96-0xB0) +
+the 21×682-byte record array @0xB800 → interpreter expands → image @0x41xx → ARU via the
+0x00/0x02/0x01/0x03 strobes; knob moves rewrite only affected coeff bytes via the 0x3CF4 group table.
 
 **OPEN / NEXT (Phase 3 cont.):**
-- ❓ **Decode a full 682-byte program record** (e.g. from the 0xB800 array): run its raw fields
-  through the NVS4 0xB4F0/0xB4FF packers, lay out as 4×N, validate lane 0/1 offsets as a sane reverb
-  tap map (delay = −offset) and lane 2/3 coeffs against the alphabet — this confirms the lane
-  assignment **and** pins the exact step count (where offsets stop being sane = end of step array).
-- ❓ **Disassemble the NVS1 engine (0x8000) + NVS3 interpreter (0xAA9F)** end-to-end to fix
-  lane→ARU-pin mapping (currently inferred) and resolve the 100-vs-~147 step-count ambiguity.
-- ❓ Decode the 5-byte NVS3 directory (0xA446) semantics; verify physical NVS→window jumper order
-  vs the schematic ROM-select decode (NVS4-7 form one continuous record array, could be permuted).
-- Then: decode the ~100-step program and validate against the Concert Hall figure-eight topology;
-  adapt `tools/pcm60_decode.py` for the 4-byte 224XL word with the 2-bit-extended sign-magnitude coeff.
+- ❓ **Emulate the build** (interpreter 0xAA9F + step-builder 0xB55B + packers 0xB4F0/0xB4FF +
+  ring-buffer wrap 0xB683 + the helper multiplies 0x120B/0x11FB/0x1130/0x1137/0x11CA) on a real
+  record to produce the numeric microword image, then read offsets (delay = −offset) and validate a
+  sane reverb tap map — pinning the exact step count and the Concert Hall figure-eight topology.
+- ❓ Map the record→program correspondence (which of the 21 @0xB800 records is which named program)
+  via the 0xA446 directory; verify physical NVS→window jumper order vs the schematic ROM-select decode.
+- Then: adapt `tools/pcm60_decode.py` for the emulated 224XL image (sign-magnitude + 2-bit coeff,
+  ring-buffer offsets) and carry the decoder up toward M300 / 480L.
 
 ### Phase 4 — M300: the 480-family algorithms in Lexichip form
 Crossing into the Lexichip generation, but now fluent in ARU microcode. The M300 carries
