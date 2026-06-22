@@ -14,6 +14,7 @@ import boot_xl as B
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(REPO, "libs", "sgdsp", "include", "sgdsp", "reverb", "224xl_programs.hpp")
 
+# values must be valid C++ identifier fragments (no spaces); used as k<NAME>_WCS
 NAMES = {0x01: "CONCERT_HALL"}  # extend as more programs are brought up
 
 
@@ -56,4 +57,5 @@ def emit(ids):
 
 if __name__ == '__main__':
     ids = [int(a, 16) for a in sys.argv[1:]] or [0x01]
+    ids = list(dict.fromkeys(ids))   # de-dup, preserve order (avoid duplicate C++ definitions)
     emit(ids)
