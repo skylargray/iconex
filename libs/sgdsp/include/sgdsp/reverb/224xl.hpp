@@ -144,8 +144,9 @@ public:
         outL = o; outR = o;   // first cut: mono datapath duplicated; FPC L/R split deferred
     }
 
-    // Instrumented twin for the diff harness. Records up to maxProbes per-step
-    // probes (caller sizes the buffer); returns the per-sample energy in esumOut.
+    // Instrumented twin for the diff harness. Records one probe per active step into
+    // `probes` (caller MUST size it >= activeStepCount()); writes the probe count to
+    // *nProbesOut and the per-sample energy to *esumOut.
     SGDSP_NOINLINE AruWord processFixedTraced(AruWord in, Probe* probes, int* nProbesOut,
                                               int64_t* esumOut) noexcept
     {
@@ -190,6 +191,7 @@ private:
     SGDSP_INLINE AruWord executeSample(AruWord in, Probe* probes, int* nProbes,
                                        int64_t* esumOut = nullptr) noexcept
     {
+        SGDSP_ASSERT(dmem_ != nullptr);   // prepare() must connect external DMEM before processing
         pos_ = (pos_ + 1) & kDmemMask;
         int np = 0;
         int64_t esum = 0;

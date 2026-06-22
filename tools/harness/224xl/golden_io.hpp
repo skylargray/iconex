@@ -4,6 +4,7 @@
 // sufficient for the flat, generator-produced shapes (no general JSON needed).
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -36,6 +37,9 @@ inline std::vector<int64_t> readI64(const std::string& path)
 // One decoded field record from <id>_fields.json (flat objects, integer values).
 struct Field { int s, offset, coeff, ZERO, b3, XFER, WA, RA; };
 
+// PRECONDITION: each object has all 8 keys present in order (s,offset,coeff,ZERO,b3,XFER,WA,RA).
+// The exporter (tools/export_golden_224.py) guarantees this fixed shape; a missing/reordered
+// key would shift values silently rather than error. Safe only against that generator's output.
 // Scan flat JSON like [{"s":0,"offset":123,"coeff":-7,"ZERO":0,"b3":0,"XFER":1,"WA":0,"RA":1}, ...].
 inline std::vector<Field> readFields(const std::string& path)
 {

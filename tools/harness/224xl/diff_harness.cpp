@@ -80,6 +80,11 @@ int main(int argc, char** argv)
         }
         if (n < traceWindow) {
             for (int k = 0; k < np; ++k) {
+                if (gIdx + 8 > stepsGold.size()) {
+                    std::printf("L2 FAIL: golden steps exhausted at sample %d "
+                                "(core emitted more probes than golden recorded)\n", n);
+                    ++l2fail; break;
+                }
                 const Probe& p = probes[k];
                 const int64_t* g = &stepsGold[gIdx];
                 gIdx += 8;
