@@ -602,10 +602,29 @@ firmware's own load. Decoder unified in `tap_map` (reads the fixed 128-entry tab
 non-FE reverbs show sane structure: CHAMBER 45 taps / loop 4097, CD PLATE B 70 taps, SMALL ROOM 65
 taps, etc.; RES CHORDS is sparse (11 taps) as a resonant-chord effect should be.
 
+**RESULTS — ARU microword CONTROL/ROUTING field DECODED (2026-06, 4-angle workflow + adversarial
+reconcile; `tools/decode_microword.py`, full map `docs/reference/224/224XL_microword_fieldmap.md`).**
+The 32-bit microword is now fully decoded → the verified delay+gain tap list becomes an actual **signal
+graph**. Per step S at `0x4000+S*4+lane` (storage active-low; lane2/lane3 mixed-polarity quirk):
+**lanes 0–1 = OFST** (active-low, delay=offset); **lane3 = COEFF** (raw, `bit6:0`=mag/127, `bit7`=CSIGN
+active-low — proven by image gain-match 77 vs ≤50 for alternatives, incl. the `+0.976` feedback=`0x7C`
+appearing 16×); **lane2 = CONTROL** (complemented): `bit7`=ZERO (clear accum), `bit6`=PROTECT/MAC-enable,
+`bits5:2`=RA/XFER phase (XFER when=0xF; RA/XFER split not separable from SW alone — §8), `bits1:0`=WA
+(register-file write addr; 3=pass-through). **Validated:** CONCERT decodes to a coherent reverb graph —
+pre-delay → symmetric allpass diffusers (e.g. `-0.591,-0.126,-0.591`) → recirculating tank (4-step MAC
+blocks `[-c,-small,-c,+0.976]`, ZERO opens / XFER closes) → multi-tap output. Execution model = the
+manual's ARU (4×16 register file WA/RA, 16×6 saturating multiplier+CSIGN, 20-bit accumulator, result
+reg, DMEM pos−offset). *Open:* exact RA/XFER bit split, the 2 extra mult LSBs (collapsed in the image).
+
 **OPEN / NEXT (Phase 3 cont.):**
 - ✅ **non-FE record delays — DONE** (B55B `0xB65A` = pre-built table at recbase+0xA7..0x2A7 copied to
   0x3F4D; decoded for all 10, validated byte-identical to the firmware load). All 20 programs now have
   name + delays + gains. *(Phase 3 / 224XL is now essentially complete.)*
+- ✅ **microword control/routing field — DECODED** (signal graph extractable per program; see above).
+- 🟡 **toward a full reconstruction:** remaining for a parameter-controllable C++ model — (1) empirical
+  parameter→coefficient transfer functions (sweep LARC knob msgs in `boot_xl`, diff the WCS image);
+  (2) damping/multiband-decay filter taps (now visible *in* the decoded graph); (3) modulation/LFO
+  (the DEP param); (4) exact RA/XFER split + arithmetic quirks for bit-exactness (else float is fine).
 - 🟡 sample→ms at the 224 sample rate (cosmetic; absolute-delay base cancels in the offsets).
 - ✅ **tooling reusable for the family:** `tools/z80emu.py` + `tools/boot_xl.py` (boot-the-real-firmware
   + name capture) + the hook pattern carry straight to **M300 / 480L** — run their real loaders the
