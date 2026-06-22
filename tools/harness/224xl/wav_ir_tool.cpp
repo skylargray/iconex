@@ -31,7 +31,7 @@ struct WavHeader {
 };
 #pragma pack(pop)
 
-static void writeStereoWav(const std::string& path, const std::vector<int16_t>& interleaved,
+static bool writeStereoWav(const std::string& path, const std::vector<int16_t>& interleaved,
                            uint32_t sr)
 {
     WavHeader h;
@@ -39,10 +39,13 @@ static void writeStereoWav(const std::string& path, const std::vector<int16_t>& 
     h.dataSize = (uint32_t)(interleaved.size() * sizeof(int16_t));
     h.chunkSize = 36 + h.dataSize;
     FILE* f = std::fopen(path.c_str(), "wb");
-    if (!f) { std::printf("ERROR: cannot open %s\n", path.c_str()); return; }
-    std::fwrite(&h, sizeof(h), 1, f);
-    std::fwrite(interleaved.data(), sizeof(int16_t), interleaved.size(), f);
+    if (!f) { std::printf("ERROR: cannot open %s\n", path.c_str()); return false; }
+    const bool okH = std::fwrite(&h, sizeof(h), 1, f) == 1;
+    const bool okD = std::fwrite(interleaved.data(), sizeof(int16_t),
+                                 interleaved.size(), f) == interleaved.size();
     std::fclose(f);
+    if (!okH || !okD) { std::printf("ERROR: short write to %s\n", path.c_str()); return false; }
+    return true;
 }
 
 // Read a mono 16-bit PCM WAV's samples (skips to 'data'); returns float [-1,1].
@@ -54,8 +57,19 @@ static std::vector<float> readMonoWav(const std::string& path, uint32_t& srOut)
     WavHeader h;
     if (std::fread(&h, sizeof(h), 1, f) != 1) { std::fclose(f); return out; }
     srOut = h.sampleRate;
-    std::vector<int16_t> pcm(h.dataSize / sizeof(int16_t));
-    if (!pcm.empty()) std::fread(pcm.data(), sizeof(int16_t), pcm.size(), f);
+    // dataSize comes from an untrusted file; cap it to avoid a huge allocation on a
+    // malformed header, and resize to what was actually read on a short/truncated file.
+    uint32_t dataSize = h.dataSize;
+    const uint32_t kMaxData = 256u * 1024 * 1024;   // 256 MB sanity cap for a dev tool
+    if (dataSize > kMaxData) {
+        std::printf("WARNING: dataSize %u exceeds cap; clamping to %u\n", dataSize, kMaxData);
+        dataSize = kMaxData;
+    }
+    std::vector<int16_t> pcm(dataSize / sizeof(int16_t));
+    if (!pcm.empty()) {
+        const size_t got = std::fread(pcm.data(), sizeof(int16_t), pcm.size(), f);
+        pcm.resize(got);   // truncated file -> process only what was actually read
+    }
     std::fclose(f);
     const int ch = h.numChannels ? h.numChannels : 1;
     out.reserve(pcm.size() / ch);
@@ -90,12 +104,13 @@ int main(int argc, char** argv)
     if (mode == "ir") {
         const std::string outPath = argv[2];
         const int nsamp = (argc > 3) ? std::atoi(argv[3]) : 34130; // ~1 s
+        if (nsamp <= 0) { std::printf("ERROR: nsamp must be > 0\n"); return 2; }
         for (int n = 0; n < nsamp; ++n) {
             Sample inS = (n == 0) ? 0.61f : 0.0f;   // ~20000/32768 impulse
             Sample l, r; core.process(inS, l, r);
             pushOut(l, r);
         }
-        writeStereoWav(outPath, outBuf, sr);
+        if (!writeStereoWav(outPath, outBuf, sr)) return 1;
         std::printf("wrote IR %s (%d samples)\n", outPath.c_str(), nsamp);
     } else if (mode == "wav") {
         if (argc < 4) { std::printf("usage: wav_ir_tool wav <in.wav> <out.wav>\n"); return 2; }
@@ -103,7 +118,7 @@ int main(int argc, char** argv)
         core.prepare(sr ? sr : 34130, dmem);
         core.loadProgram(programs::kCONCERT_HALL_WCS);
         for (float x : in) { Sample l, r; core.process(x, l, r); pushOut(l, r); }
-        writeStereoWav(argv[3], outBuf, sr ? sr : 34130);
+        if (!writeStereoWav(argv[3], outBuf, sr ? sr : 34130)) return 1;
         std::printf("wrote %s (%zu frames)\n", argv[3], in.size());
     } else {
         std::printf("unknown mode '%s'\n", mode.c_str());
