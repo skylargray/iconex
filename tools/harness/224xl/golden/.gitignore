@@ -1,0 +1,3 @@
+# Generated golden artifacts (reproducible via tools/export_golden_224.py)
+*.bin
+*.json
