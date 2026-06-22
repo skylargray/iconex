@@ -19,12 +19,12 @@ add_executable(mult_vectors_test mult_vectors_test.cpp)
 target_include_directories(mult_vectors_test PRIVATE "${SGDSP_INCLUDE}")
 
 # --- Re-enabled in Task 6 (diff_harness) and Task 7 (wav_ir_tool) ---
-# add_executable(diff_harness diff_harness.cpp)
-# target_include_directories(diff_harness PRIVATE "${SGDSP_INCLUDE}" "${CMAKE_CURRENT_SOURCE_DIR}")
+add_executable(diff_harness diff_harness.cpp)
+target_include_directories(diff_harness PRIVATE "${SGDSP_INCLUDE}" "${CMAKE_CURRENT_SOURCE_DIR}")
 #
 # add_executable(wav_ir_tool wav_ir_tool.cpp)
 # target_include_directories(wav_ir_tool PRIVATE "${SGDSP_INCLUDE}" "${CMAKE_CURRENT_SOURCE_DIR}")
 
 enable_testing()
 add_test(NAME mult_vectors COMMAND mult_vectors_test)
-# add_test(NAME diff_concert COMMAND diff_harness "${CMAKE_CURRENT_SOURCE_DIR}/golden" 01)
+add_test(NAME diff_concert COMMAND diff_harness "${CMAKE_CURRENT_SOURCE_DIR}/golden" 01)
