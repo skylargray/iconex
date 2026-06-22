@@ -19,9 +19,10 @@ memory/bank map + ARU port interface (0x00-0x07) decoded; **datapath variant CON
 bits via NVS4 0xB4F0 packer + dedicated shift-register port 0x05); **program-record bytecode VM +
 microword build mechanism DECODED** (interpreter 0xAA9F, step-builder 0xB55B: offset = ptr−writeptr,
 ring-buffer wrap, sign-magnitude+2-bit coeff); **build EMULATED on real firmware** (`tools/z80emu.py`)
-→ **sane reverb tap map validated** (61 distinct taps, allpass pairs + output-tap ramp, ~100-step
-program). Remaining: lock absolute delays (globals) + record→name mapping + coeff lanes. See §5
-RESULTS blocks + `docs/reference/PCM70/PCM70_phase2_results.md`.
+→ **complete reverb algorithm recovered** for the first 3 program records: delay tap map (61 taps,
+allpass pairs, 17-tap output line, ~100 steps) **+ coefficient gains** (sign-mag/127: allpass −½,
+loop +0.976, diffusion gains). record→name labelling blocked (operational cold-boot ROM absent from
+this dump — diagnostic SBC only). See §5 RESULTS + `docs/reference/PCM70/PCM70_phase2_results.md`.
 
 ---
 
@@ -449,24 +450,43 @@ ring-buffer *base*, which cancels in offset = ptr − write_ptr, so the *relativ
 loop, output line, step count — is exact even with them seeded 0.) Tooling: `tools/z80emu.py`,
 `tools/aru224_emulate.py` (`show_tap_map`).
 
-**OPEN / NEXT (Phase 3 cont.) — needs a boot-init emulation harness:** the engine resolves program
-number → record via **RAM tables built at boot** (`sub at 0x8000` searches a 36×2 key table at
-`0x2067`; 20-byte program headers at `0x20AF` via `sub_80aeh`); the ROM directory `0xA446` is reached
-only through a computed pointer (no direct operand ref anywhere), so record→name and the coeff lanes
-cannot be read by static trace. To finish:
-- 🟡 **Build the RAM program tables** — boot `tools/z80emu.py` from reset with IN-port stubs that pass
-  POST, or replicate the `0x20AF`/`0x2067` init from the `0xA446` directory in Python — then drive
-  `CALL 0x8000` per program number to get **record→name** (which @0xB800 record = Concert Hall /
-  Plate / …). 22 names decoded (0xA001, 12-char): CONCERT/BRIGHT/DARK HALL, RICH CHAMBER, ROOM,
+*Coefficient gains ✅ DECODED (the other half of the algorithm).* Hooking the source-fetch `0x0B510`
+during the interpreter run (`capture_coeffs`) recovers the per-tap coefficients, which decode cleanly
+as **sign-magnitude / 127** — textbook reverb gains, applied in pairs to the allpass read/write taps:
+
+| coeff byte | decode | role |
+|---|---|---|
+| `0x7C` | **+0.976** | recirculating-loop feedback (just under unity → long decay) |
+| `0xBF` | **−0.496 ≈ −½** | the classic Schroeder/Griesinger **allpass coefficient** |
+| `0xE7` | −0.811 | diffuser/comb gain |
+| `0xDC` / `0xE4` | −0.724 / −0.787 | diffuser gains |
+| `0x97` | −0.181 | low-gain tap |
+
+So **delays + gains together = the recovered 224XL reverb algorithm** (input/diffuser allpasses at
+±0.5, a ~0.976 recirculating loop, comb/diffusion gains, and the multi-tap output line) — for the
+first three program records, with the method proven for the rest.
+
+**Boot-init harness — attempted, BLOCKED by a missing ROM (evidence-based).** To label record→name
+the engine resolves program# → record via **RAM tables built at boot** (`0x8000` searches a 36×2 key
+table at `0x2067`; 20-byte headers at `0x20AF`). Booting this dump in `tools/z80emu.py` from reset
+**hangs polling IN ports 0xEE/0xEF (the console UART) with the program RAM tables still zero** — the
+SBC set here is a **serial-terminal DIAGNOSTIC monitor** (`224XL V8.2 DIAGNOSTICS`), not the
+operational firmware; its reset path is a warm/overlay re-entry (`0x003B = LD E,A`, A undefined cold)
+and `0x0048-0x00BC` is byte-identical to the NVS1 engine. **The operational cold-boot ROM that
+populates the preset/program tables is not present in this dump set.** So record→name labelling needs
+a unit dumped with its *operational* SBC ROMs (or the factory default-register image) — not solvable
+from these files.
+
+**OPEN / NEXT (Phase 3 cont.):**
+- 🟡 **record→name labels** — blocked above; revisit if operational SBC ROMs / a factory register
+  dump are obtained. (22 names already decoded @0xA001: CONCERT/BRIGHT/DARK HALL, RICH CHAMBER, ROOM,
   SMALL ROOM, CHAMBER, PLATE, CD PLATE A/B, SMALL PLATE, CHORUS&ECHO, RES CHORDS, M BAND DELAY,
-  HALL/HALL, PLATE/PLATE, PLATE/HALL, PLATE/CHORUS, SIZE GATE, SIZE 1/2.
-- 🟡 **Decode coeff lanes → gains** — run the full build incl. interpreter resolve + packers
-  (0xB4F0/0xB4FF), capture coeff bytes in the final 0x41xx image, un-pack sign-magnitude + 2-bit →
-  per-tap gains (delays already in hand).
-- 🟡 sample→ms at the 224 rate; absolute-delay lock (cosmetic — the ring base cancels in offsets).
-- ✅ tooling reusable for the family: `tools/z80emu.py` carries forward to **M300 / 480L** (run their
-  real loaders the same way). Adapt `tools/pcm60_decode.py` field table for the 2-bit-extended coeff
-  if a static decode is wanted.
+  HALL/HALL, PLATE/PLATE, PLATE/HALL, PLATE/CHORUS, SIZE GATE, SIZE 1/2 — pending only the record↔name link.)
+- 🟡 **all 21 records** — records 0/1/2 fully decoded (delays + gains); the @0xB800 array's exact
+  boundaries for 3–20 need the real scan routine (the inferred 0x2AA stride misaligns past rec 2).
+- 🟡 sample→ms at the 224 sample rate (cosmetic; absolute-delay base cancels in the offsets).
+- ✅ **tooling reusable for the family:** `tools/z80emu.py` + the hook pattern carry straight to
+  **M300 / 480L** — run their real loaders the same way to recover delays + gains.
 - ❓ Hardware behavioral validation (the §8 ARU-quirks caveat) remains the final confirmation.
 
 ### Phase 4 — M300: the 480-family algorithms in Lexichip form

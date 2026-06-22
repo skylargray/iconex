@@ -179,8 +179,61 @@ def test_multiply():
     print(f"  0xB714 5000-1234 = {cpu.HL} (expect {5000-1234})  {'OK' if cpu.HL==5000-1234 else 'FAIL'}")
     return ok
 
+def all_records_summary():
+    from collections import Counter
+    print("\n=== ALL 21 records @0xB800 (stride 0x2AA): structural tap-map summary ===")
+    print("  rec  recbase  actSteps  taps  range(samp)   loopTap(xN)   pairs  outLineLen")
+    for k in range(21):
+        rb=0xB800+k*0x2AA
+        offs=tap_map(rb,verbose=False)
+        # active = before >=6-long -1 fill
+        fs=len(offs); run=0
+        for i,v in enumerate(offs):
+            if v==-1:
+                run+=1
+                if run>=6: fs=i-run+1; break
+            else: run=0
+        active=offs[:fs]
+        delays=[abs(v) for v in active if 16<=abs(v)<0x4000]
+        cnt=Counter(delays)
+        loop=cnt.most_common(1)[0] if cnt else (0,0)
+        pairs=sum(1 for d,c in cnt.items() if c>=2 and d!=loop[0])
+        s,ln=longest_monotonic_run([abs(v) for v in [(-x) for x in active]])
+        rng=f"{min(cnt)}..{max(cnt)}" if cnt else "-"
+        print(f"  {k:3d}  0x{rb:04X}   {fs:5d}   {len(cnt):4d}  {rng:>11}   {loop[0]:5d}(x{loop[1]:2d})   {pairs:3d}    {ln:3d}")
+
+def capture_coeffs(recbase):
+    """Hook 0xB510 (coeff/offset source fetch) during the interpreter expander to
+    capture the raw coefficient source bytes the bytecode references, in order."""
+    cpu=new_cpu(); seed_record(cpu,recbase)
+    cpu.ww(0x3cf1,0x3f4d)
+    try: cpu.call(0xB55B, max_ins=2_000_000)
+    except: pass
+    fe=cpu.m[(recbase+0x30)&0xFFFF]==0xFE
+    fetched=[]
+    orig=cpu.step
+    def hooked():
+        if cpu.PC==0xB510:
+            de=cpu.DE; a=(cpu.rw(0x3e05)+de)&0xFFFF
+            fetched.append((de,cpu.m[a]))
+        orig()
+    cpu.step=hooked
+    cpu.DE=recbase+(0x44 if fe else 0x35); cpu.HL=0x3e4e; cpu.BC=0x3cf4; cpu.PC=0xAA9F
+    n=0
+    while cpu.PC!=0xAB39 and n<2_000_000:
+        cpu.step(); n+=1
+    return fetched
+
 if __name__ == "__main__":
     if not test_multiply():
         print("EMULATOR SELF-TEST FAILED -- aborting build"); sys.exit(1)
     for rb in (0xB800, 0xBAAA, 0xBD54):   # records 0,1,2
         show_tap_map(rb)
+    all_records_summary()
+    print("\n=== coefficient source bytes referenced by record 0 bytecode (via 0xB510 hook) ===")
+    cf=capture_coeffs(0xB800)
+    print(f"  {len(cf)} coeff fetches; first 32 (slot_idx, byte, sign-mag decode):")
+    for de,b in cf[:32]:
+        idx=((de-0x4003)//4)&0xFF
+        sign='-' if b&0x80 else '+'; mag=b&0x7F
+        print(f"    idx 0x{idx:02X}: 0x{b:02X} = {sign}{mag}/127 = {sign}{mag/127:.3f}")
