@@ -19,10 +19,21 @@ genuine mixed-polarity quirk, confirmed empirically). A step with `lane2==lane3=
 | 0–1 | 16 | **OFST** | `offset = ~(lane1<<8 \| lane0) & 0xFFFF`; **delay = offset** (DMEM addr = position − offset, 2's-comp) | **HIGH** — all angles + clean taps |
 | 3 | 6:0 | **COEFF magnitude** | `lane3 & 0x7F` (**raw, not complemented**), gain = mag/127 | **HIGH** — image test 77 matches vs ≤50 for alternatives |
 | 3 | 7 | **CSIGN** | raw bit7, active-low: `1 ⇒ negative` | **HIGH** |
-| 2 | 1:0 | **WA** | `(~lane2) & 3` — register-file write addr (1 of 4; addr 3 = pass-through) | MED |
-| 2 | 5:2 | **RA / XFER** phase | `((~lane2)>>2) & 0xF` — read-addr + transfer strobe; **not cleanly split** (value `0xF` ⇒ XFER/result-reg load) | LOW |
+| 2 | 1:0 | **WA** | `(~lane2) & 3` — register-file write addr (1 of 4; addr 3 = pass-through) | HIGH |
+| 2 | 5:4 | **RA** | `((~lane2)>>4) & 3` — register-file **read** addr (RA1,RA0) | **HIGH** — datapath-validated |
+| 2 | 3 | **RW / SRC** | `((~lane2)>>3) & 1` — DMEM read/write (or DAB-source) select | MED |
+| 2 | 2 | **XFER** | `((~lane2)>>2) & 1` — load result register / write the tank | **HIGH** |
 | 2 | 6 | **PROTECT / MAC-enable** | `((~lane2)>>6) & 1` — set on ~99% of active steps | MED |
-| 2 | 7 | **ZERO** | `((~lane2)>>7) & 1` — clear accumulator at MAC-block start | MED |
+| 2 | 7 | **ZERO** | `((~lane2)>>7) & 1` — clear accumulator at MAC-block start | HIGH |
+
+**RA vs XFER resolved (`tools/aru_datapath.py`).** lane2[5:2] split: `b5,b4`=RA, `b3`=RW/SRC, `b2`=XFER.
+Three independent lines of evidence: (1) **XFER=b2** is set on exactly the result-transfer steps (every
+`+0.976` loop-close and DMEM-write step); (2) data-flow **liveness** favors RA including `b5` (0.727 vs
+≤0.57); (3) the manual's RA-independent-of-WA constraint rejects `(b5,b3)` (it makes RA≡WA every step);
+(4) **decisive** — running the decoded CONCERT microcode through the ARU datapath, `RA=(b5,b4)` is the
+*only* assignment that forms a coherent recirculating reverb tank (sustained energy); `(b5,b3)` and
+`(b4,b3)` collapse to silence. Lane→SRAM map confirmed by manual diag E20–E23: lane0=U49, lane1=U33,
+lane2=U18, lane3=U3.
 
 Lane→SRAM/MI map (Service Manual): lane0=U49/MI0-7, lane1=U33/MI8-15, lane2=U18/MI16-23, lane3=U3/MI24-31.
 
@@ -48,13 +59,14 @@ The control bits assemble into the documented topology, not noise:
 
 ## Pinned vs. genuinely open
 
-**Pinned:** OFST (lanes 0–1, active-low), COEFF magnitude + CSIGN (lane3 raw), lane2 = control byte
-(not coefficient), WA (lane2 bits1:0), the lane→MI map.
+**Pinned:** OFST (lanes 0–1, active-low), COEFF magnitude + CSIGN (lane3 raw), lane2 = control byte,
+WA (bits1:0), **RA (bits5:4)**, **XFER (bit2)**, ZERO (bit7), the lane→SRAM map (manual E20–E23).
 
-**Partially pinned (behavior-supported, no manual bit index):** ZERO (lane2 b7), PROTECT/enable (b6),
-XFER (phase = 0xF) — they behave exactly as named but the manual prints no bit index.
-
-**Open (needs the ARU schematic or live silicon):** the exact split of lane2 bits5:2 into RA0/RA1 vs the
-XFER strobe (they co-vary at MAC-phase boundaries); whether bit6 is the specific WCS PROTECT bit or a
-generic MAC-enable; the "2 extra multiplier LSBs" (collapsed into the 7-bit lane3 value in the image).
-Per the §8 caveat, some bits5:2 transitions may be timing-derived strobes — labelled provisionally.
+**Open (the only remaining items for bit-exact, resolved when building the C++ core vs the emulator):**
+- `b3` (RW/SRC): DMEM read/write vs DAB-source select — its exact role (which steps read vs write the
+  delay memory, and the input/output FPC steps).
+- The exact **arithmetic**: the 20→16-bit accumulator shift, the coeff denominator (≈/128) and the
+  "2 extra multiplier LSBs", rounding-toward-zero, and saturation — these set the decay/gain precisely.
+  The ARU datapath model (`tools/aru_datapath.py`) already runs the routing correctly (RA/XFER pinned);
+  these arithmetic details are tuned by diffing its output against the firmware emulator.
+- Whether `b6` is the specific WCS PROTECT bit or a generic MAC-enable (doesn't affect audio).

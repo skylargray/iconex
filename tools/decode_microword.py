@@ -43,21 +43,20 @@ def decode(power_up_id=0x01):
         csign = (l3 >> 7) & 1                            # 1 = negative
         coeff = -mag if csign else mag
 
-        # control (lane2, complemented)
+        # control (lane2, complemented) -- RA/XFER resolved via the ARU datapath model
         ctl = (~l2) & 0xFF
         zero    = (ctl >> 7) & 1
         protect = (ctl >> 6) & 1
-        ra_xfer = (ctl >> 2) & 0xF                       # RA + XFER phase field
+        ra      = (ctl >> 4) & 3                          # bits5:4 = read-register addr (RA1,RA0)
+        rw      = (ctl >> 3) & 1                          # bit3 = DMEM read/write or DAB-source sel
+        xfer    = (ctl >> 2) & 1                          # bit2 = XFER (load result reg / write tank)
         wa      = ctl & 3
-        # XFER inferred: full-set phase (0xF in bits5:2) marks result-register load
-        xfer    = 1 if ra_xfer == 0xF else 0
-        ra      = (ra_xfer >> 2) & 3                     # provisional top 2 of phase
 
         if nop:
             out.append(dict(step=s, delay=offset, nop=True))
         else:
             out.append(dict(step=s, delay=offset, coeff=round(coeff, 3),
-                            CSIGN=csign, WA=wa, RA=ra, XFER=xfer,
+                            CSIGN=csign, WA=wa, RA=ra, RW=rw, XFER=xfer,
                             ZERO=zero, PROT=protect, nop=False))
     return out
 
@@ -67,11 +66,11 @@ if __name__ == '__main__':
     rows = decode(pid)
     print(f"# power_up_id=0x{pid:02x}")
     print(f"{'S':>3} {'delay':>6} {'coeff':>7} {'SGN':>3} {'WA':>2} {'RA':>2} "
-          f"{'XF':>2} {'ZR':>2} {'PR':>2}")
+          f"{'RW':>2} {'XF':>2} {'ZR':>2} {'PR':>2}")
     for r in rows:
         if r['nop']:
             print(f"{r['step']:3d} {r['delay']:6d}    NOP (pure delay / fill)")
         else:
             print(f"{r['step']:3d} {r['delay']:6d} {r['coeff']:+7.3f} "
                   f"{r['CSIGN']:3d} {r['WA']:2d} {r['RA']:2d} "
-                  f"{r['XFER']:2d} {r['ZERO']:2d} {r['PROT']:2d}")
+                  f"{r['RW']:2d} {r['XFER']:2d} {r['ZERO']:2d} {r['PROT']:2d}")

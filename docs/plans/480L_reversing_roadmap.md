@@ -643,10 +643,21 @@ wave, paced by the main loop (`0x816F→0x8281→0xAD5C`), rate = cascaded ÷8 �
 Modulation breadth varies by program (halls 2–4 taps, rooms 8, CD plates/chorus 10–18, inverse/rich-
 dense 0). This answers the 480L "LFO→which taps + rate/depth" mechanism.
 
-- 🟡 **toward a full reconstruction:** the data is now in hand (signal graph + per-program param tables
-  + modulation). Remaining: (1) write the header-only C++17 ARU core per `480L_rom_to_plugin_guide.md`
-  and validate bit-against the emulator; (2) exact RA/XFER split + arithmetic quirks for bit-exactness
-  (else float is fine); (3) optional: sub-0x20 slider range for full bidirectional param curves.
+**RA-vs-XFER split RESOLVED (`tools/aru_datapath.py`).** The last microword ambiguity (lane2 bits5:2)
+is split: **`b5,b4` = RA** (read-register addr), **`b3` = RW/SRC** (DMEM read/write or DAB-source),
+**`b2` = XFER** (load result reg / write tank). Decisive evidence: running the decoded CONCERT microcode
+through an ARU datapath model, `RA=(b5,b4)` is the ONLY assignment that forms a coherent recirculating
+reverb tank — `(b5,b3)`/`(b4,b3)` collapse to silence; corroborated by data-flow liveness + the manual's
+RA≠WA constraint + XFER firing on exactly the result-transfer steps. Lane→SRAM confirmed (manual E20-E23:
+lane0=U49/lane1=U33/lane2=U18/lane3=U3). `decode_microword.py` now emits RA/RW/XFER. The full microword
+is decoded.
+
+- 🟡 **toward a full reconstruction:** all microword fields + the signal graph + per-program param tables
+  + modulation are now in hand. Remaining = the C++ build phase: write the header-only C++17 ARU core per
+  `480L_rom_to_plugin_guide.md` and bit-validate vs the emulator, tuning the exact arithmetic (20→16-bit
+  accumulator shift, coeff denominator ≈/128 + 2 extra LSBs, rounding/saturation) and `b3`'s DMEM
+  read/write semantics (the datapath model already runs the routing correctly). Optional: sub-0x20
+  slider range for full bidirectional param curves.
 - 🟡 sample→ms at the 224 sample rate (cosmetic; absolute-delay base cancels in the offsets).
 - ✅ **tooling reusable for the family:** `tools/z80emu.py` + `tools/boot_xl.py` (boot-the-real-firmware
   + name capture) + the hook pattern carry straight to **M300 / 480L** — run their real loaders the
