@@ -1,35 +1,43 @@
-# 224XL v8.2.1 — record → program-name + reverb-algorithm map
+# 224XL v8.2.1 - record -> program-name + reverb-algorithm map
 
 Recovered by booting the **real** v8.2.1 firmware in the Z80 emulator past its DSP power-up
 self-test and reading the program name the firmware transmits to the LARC display, then
 decoding each record's delay tap-map + coefficient gains. Tools: `tools/boot_xl.py`
 (boot + name capture), `tools/harvest_xl.py` (driver), `tools/aru224_emulate.py` (delay/gain
-decode). Names independently cross-checked 20/20 against the NVS3 directory @0xA446.
+decode). Names independently cross-checked 20/20 against the NVS3 directory @0xA446; the
+non-FE delay tables were validated byte-identical to the firmware's own load.
 
-## Records (the 21-entry @0xB800 array, firmware page-wrap walk)
+All 20 programs have name + delays + gains decoded. Records are the 21-entry @0xB800 array,
+walked with the firmware page-wrap stride (+0x2AA, +2 when low byte == 0xFE). Selector ID =
+the record's first byte. Two build paths: **FE** (recbase+0x30==0xFE) computes offsets via
+ptr-writeptr; **non-FE** copies a pre-built 128-entry offset table from recbase+0xA7..0x2A7.
 
-| rec | base | ID | program (B=bank P=prog) | FE | active steps | distinct taps | range (samp) | recirc loop |
-|----:|------|----|--------------------------|----|----:|----:|------|------|
+| rec | base | ID | program (B=bank P=prog) | path | steps | taps | range (samp) | recirc loop |
+|----:|------|----|--------------------------|------|----:|----:|------|------|
 | 0 | 0xB800 | 0x01 | CONCERT HALL (B1 P1) | FE | 104 | 63 | 128..12353 | 6008x4 |
 | 1 | 0xBAAA | 0x02 | PLATE (B3 P1) | FE | 99 | 61 | 128..12353 | 706x6 |
 | 2 | 0xBD54 | 0x81 | INVERSE ROOM (B2 P6) | FE | 107 | 59 | 16..12353 | 4097x11 |
-| 3 | 0xC000 | 0x08 | CHAMBER (B2 P3) | non-FE | — | — | — | — |
-| 4 | 0xC2AA | 0x10 | CD PLATE B (B3 P4) | non-FE | — | — | — | — |
+| 3 | 0xC000 | 0x08 | CHAMBER (B2 P3) | non-FE | 99 | 45 | 2047..16089 | 4097x3 |
+| 4 | 0xC2AA | 0x10 | CD PLATE B (B3 P4) | non-FE | 101 | 70 | 61..16083 | 16083x5 |
 | 5 | 0xC554 | 0x20 | BRIGHT HALL (B1 P2) | FE | 104 | 63 | 128..12353 | 6008x4 |
-| 6 | 0xC800 | 0x40 | SMALL ROOM (B2 P2) | non-FE | — | — | — | — |
+| 6 | 0xC800 | 0x40 | SMALL ROOM (B2 P2) | non-FE | 104 | 65 | 90..12353 | 6651x4 |
 | 7 | 0xCAAA | 0x05 | DARK HALL (B1 P3) | FE | 106 | 61 | 255..12353 | 2745x4 |
-| 8 | 0xCD54 | 0x21 | CD PLATE A (B3 P3) | non-FE | — | — | — | — |
-| 9 | 0xD000 | 0x06 | HALL/HALL (B5 P1) | non-FE | — | — | — | — |
-| 10 | 0xD2AA | 0x0A | PLATE/PLATE (B5 P2) | non-FE | — | — | — | — |
-| 11 | 0xD554 | 0x12 | PLATE/HALL (B5 P3) | non-FE | — | — | — | — |
-| 12 | 0xD800 | 0x0C | CHORUS&ECHO (B4 P1) | non-FE | — | — | — | — |
-| 13 | 0xDAAA | 0x14 | RES CHORDS (B4 P2) | non-FE | — | — | — | — |
-| 14 | 0xDD54 | 0x24 | M BAND DELAY (B4 P3) | non-FE | — | — | — | — |
+| 8 | 0xCD54 | 0x21 | CD PLATE A (B3 P3) | non-FE | 99 | 58 | 16..15526 | 1009x4 |
+| 9 | 0xD000 | 0x06 | HALL/HALL (B5 P1) | non-FE | 101 | 45 | 244..15356 | 2665x2 |
+| 10 | 0xD2AA | 0x0A | PLATE/PLATE (B5 P2) | non-FE | 103 | 56 | 61..16220 | 4097x3 |
+| 11 | 0xD554 | 0x12 | PLATE/HALL (B5 P3) | non-FE | 103 | 53 | 61..16381 | 61x2 |
+| 12 | 0xD800 | 0x0C | CHORUS&ECHO (B4 P1) | non-FE | 99 | 61 | 61..12289 | 3075x4 |
+| 13 | 0xDAAA | 0x14 | RES CHORDS (B4 P2) | non-FE | 28 | 11 | 1088..12289 | 6529x5 |
+| 14 | 0xDD54 | 0x24 | M BAND DELAY (B4 P3) | non-FE | 79 | 47 | 61..12289 | 1025x6 |
 | 15 | 0xE000 | 0x22 | PLATE/CHORUS (B5 P4) | FE | 104 | 39 | 20..15451 | 1537x5 |
 | 16 | 0xE2AA | 0x11 | RICH PLATE (B3 P5) | FE | 108 | 61 | 16..12353 | 4097x8 |
 | 17 | 0xE554 | 0x80 | RICH CHAMBER (B2 P4) | FE | 107 | 59 | 16..12353 | 4097x10 |
 | 18 | 0xE800 | 0x42 | RICH SPLIT (B5 P5) | FE | 103 | 36 | 16..15451 | 4097x6 |
 | 19 | 0xEAAA | 0x41 | DARK CHAMBER (B2 P5) | FE | 107 | 60 | 16..12353 | 4097x10 |
+
+Delay convention: delay = -offset (samples) at 34.13 kHz; the recirc-loop column is the
+most-reused in-range tap. non-FE records also carry a tight cluster of large write-offsets
+(>16383) = the recirculating-tank write region.
 
 ## Coefficient gains per record (sign-magnitude / 127)
 

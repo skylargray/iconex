@@ -67,7 +67,7 @@ def decode_algo(base):
 
 
 def harvest_name(idv):
-    cpu, mem, larc, aru, ms, _off = B.boot(power_up_id=idv, verbose=False)
+    cpu, mem, larc, aru, ms, _off, _snap = B.boot(power_up_id=idv, verbose=False)
     name = B.ascii7(mem[0x3F4F:0x3F5B]).strip()
     meta = B.ascii7(mem[0x3F5B:0x3F73]).strip()     # "Bx Px Vx ... param labels"
     return name, meta, ms.get('mainloop')

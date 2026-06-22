@@ -29,8 +29,10 @@ self-test banner): emulator now boots it **end-to-end** — past the DSP power-u
 signature test `0x0A1D`; modeled via ISR serial + active-low ARU latch + self-tests-pass) to normal
 operation, loads each program, and transmits its name to the LARC. **record→name mapping SOLVED** for
 all 20 programs (CONCERT HALL … DARK CHAMBER), **cross-checked 20/20** against the NVS3 directory; the
-record-array scan stride is fixed (firmware page-wrap walk). Gains decoded for all 20; delays for the
-10 FE-path marquee reverbs. See `docs/reference/224/224XL_record_name_map.md` + `tools/boot_xl.py`.
+record-array scan stride is fixed (firmware page-wrap walk). **Delays + gains decoded for ALL 20
+programs** (FE path computes offsets, non-FE path copies a pre-built 128-entry table @recbase+0xA7;
+validated byte-identical to firmware). **Phase 3 / 224XL essentially complete.** See
+`docs/reference/224/224XL_record_name_map.md` + `tools/boot_xl.py`.
 **Microcode→firmware divergence:** original-224 **OTP = static mask-ROM microcode** (1 hall ×16 param
 frames, 0.3–562 ms, Concert Hall ancestor); 224X/XL = **SBC-loaded WCS firmware**. See §5 RESULTS.
 
@@ -589,17 +591,21 @@ name-table read — INVERSE ROOM, RICH PLATE, RICH SPLIT, DARK CHAMBER were miss
 bases: B800 BAAA BD54 C000 C2AA C554 C800 CAAA CD54 D000 D2AA D554 D800 DAAA DD54 E000 E2AA E554 E800
 EAAA ED54. Program lookup `0x13B6→0x133E` matches record-first-byte==selector ID.
 
-*Delays + gains.* **Coefficient gains decoded for all 20 records** (sign-mag/127; see results doc).
-**Delays decoded for the 10 FE-path records** (`recbase+0x30==0xFE`): the marquee reverbs CONCERT/
-BRIGHT/DARK HALL, INVERSE ROOM, RICH PLATE/CHAMBER/SPLIT, DARK CHAMBER, PLATE/CHORUS, PLATE — full
-tap maps (allpass pairs, recirc loop, output line). **The other 10 (non-FE) records use B55B's second
-build path `0xB65A`** (does NOT use the `0x3cf1` offset buffer) — their delays are the one remaining
-decode (CHAMBER, CD PLATE A/B, SMALL ROOM, HALL/HALL, PLATE/PLATE, PLATE/HALL + the 3 non-reverb
-effects CHORUS&ECHO/RES CHORDS/M BAND DELAY).
+*Delays + gains — ALL 20 records decoded.* **Coefficient gains** (sign-mag/127) and **delay tap maps**
+recovered for every program (see results doc; ~99-108 active steps each, confirming the ~100-step
+prediction). **Two build paths** (B55B @0xB55B checks `recbase+0x30`): **FE** (`==0xFE`, 10 records)
+COMPUTES offsets (`offset = ptr − write_ptr`) and writes them via the `0x3cf1` ptr; **non-FE**
+(`0xB65A`, 10 records) COPIES a **pre-built 128-entry offset table baked into the record at
+`recbase+0xA7..0x2A7`** straight into the `0x3F4D` buffer (without moving `0x3cf1` — which is why an
+earlier `0x3cf1`-keyed read saw 0). The non-FE tables were **validated byte-identical** to the
+firmware's own load. Decoder unified in `tap_map` (reads the fixed 128-entry table for non-FE). The
+non-FE reverbs show sane structure: CHAMBER 45 taps / loop 4097, CD PLATE B 70 taps, SMALL ROOM 65
+taps, etc.; RES CHORDS is sparse (11 taps) as a resonant-chord effect should be.
 
 **OPEN / NEXT (Phase 3 cont.):**
-- 🟡 **non-FE record delays** — decode B55B's `0xB65A` path (where it writes the delay structure for
-  the 10 non-FE records) OR un-pack the firmware's loaded WCS image @0x4000 (offset+coeff+control).
+- ✅ **non-FE record delays — DONE** (B55B `0xB65A` = pre-built table at recbase+0xA7..0x2A7 copied to
+  0x3F4D; decoded for all 10, validated byte-identical to the firmware load). All 20 programs now have
+  name + delays + gains. *(Phase 3 / 224XL is now essentially complete.)*
 - 🟡 sample→ms at the 224 sample rate (cosmetic; absolute-delay base cancels in the offsets).
 - ✅ **tooling reusable for the family:** `tools/z80emu.py` + `tools/boot_xl.py` (boot-the-real-firmware
   + name capture) + the hook pattern carry straight to **M300 / 480L** — run their real loaders the

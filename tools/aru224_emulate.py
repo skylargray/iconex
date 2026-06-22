@@ -81,14 +81,22 @@ def decode_image(cpu, base=0x3e4e, n=128):
 
 def tap_map(recbase, cce=0, ccf=0, verbose=True):
     """Run B55B and read the offset buffer it writes downward from 0x3F4D.
-    Returns list of signed offsets (step order). delay = -offset (samples)."""
+    Returns list of signed offsets (step order). delay = -offset (samples).
+
+    Two record build paths (B55B @0xB55B checks recbase+0x30 == 0xFE):
+      - FE path: offsets COMPUTED (ptr-writeptr) and written via the 0x3cf1 ptr.
+      - non-FE path (0xB65A): a pre-built 128-entry offset table baked into the
+        record at recbase+0xA7..0x2A7 is COPIED to 0x3F4D (0x3cf1 is NOT moved),
+        so read a fixed 128 words. Validated byte-identical to the firmware load.
+    """
     cpu=new_cpu(); seed_record(cpu,recbase,cce,ccf)
     cpu.ww(0x3cf1,0x3f4d)
     try: cpu.call(0xB55B, max_ins=2_000_000)
     except Exception as e:
         if verbose: print(f"  B55B aborted: {e}")
+    fe = cpu.m[(recbase+0x30)&0xFFFF]==0xFE
     top=0x3f4d; bot=cpu.rw(0x3cf1)            # buffer = (bot, top], 2 bytes/step, written downward
-    nwords=(top-bot)//2
+    nwords=(top-bot)//2 if fe else 128       # non-FE: 0x3cf1 unchanged -> fixed 128-entry table
     offs=[]
     for s in range(nwords):
         a=top-s*2                              # hi @a, lo @a-1

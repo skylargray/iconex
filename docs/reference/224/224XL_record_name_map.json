@@ -119,17 +119,17 @@
     "name": "CHAMBER",
     "meta": "B2 P3 V1    LOW MID XOV",
     "fe_path": false,
-    "delays_decoded": false,
-    "active_steps": 0,
-    "distinct_taps": 0,
+    "delays_decoded": true,
+    "active_steps": 99,
+    "distinct_taps": 45,
     "rng": [
-      0,
-      0
+      2047,
+      16089
     ],
-    "loop_tap": 0,
-    "loop_count": 0,
-    "pairs": 0,
-    "out_line_len": 1,
+    "loop_tap": 4097,
+    "loop_count": 3,
+    "pairs": 25,
+    "out_line_len": 5,
     "n_coeffs": 31,
     "distinct_gains": [
       -0.937,
@@ -154,17 +154,17 @@
     "name": "CD PLATE B",
     "meta": "B3 P4 V1    LOW MID XOV",
     "fe_path": false,
-    "delays_decoded": false,
-    "active_steps": 0,
-    "distinct_taps": 0,
+    "delays_decoded": true,
+    "active_steps": 101,
+    "distinct_taps": 70,
     "rng": [
-      0,
-      0
+      61,
+      16083
     ],
-    "loop_tap": 0,
-    "loop_count": 0,
-    "pairs": 0,
-    "out_line_len": 1,
+    "loop_tap": 16083,
+    "loop_count": 5,
+    "pairs": 15,
+    "out_line_len": 14,
     "n_coeffs": 58,
     "distinct_gains": [
       -1.0,
@@ -229,17 +229,17 @@
     "name": "SMALL ROOM",
     "meta": "B2 P2 V1    LOW MID XOV",
     "fe_path": false,
-    "delays_decoded": false,
-    "active_steps": 0,
-    "distinct_taps": 0,
+    "delays_decoded": true,
+    "active_steps": 104,
+    "distinct_taps": 65,
     "rng": [
-      0,
-      0
+      90,
+      12353
     ],
-    "loop_tap": 0,
-    "loop_count": 0,
-    "pairs": 0,
-    "out_line_len": 1,
+    "loop_tap": 6651,
+    "loop_count": 4,
+    "pairs": 28,
+    "out_line_len": 5,
     "n_coeffs": 54,
     "distinct_gains": [
       -1.0,
@@ -302,17 +302,17 @@
     "name": "CD PLATE A",
     "meta": "B3 P3 V1    LOW MID XOV",
     "fe_path": false,
-    "delays_decoded": false,
-    "active_steps": 0,
-    "distinct_taps": 0,
+    "delays_decoded": true,
+    "active_steps": 99,
+    "distinct_taps": 58,
     "rng": [
-      0,
-      0
+      16,
+      15526
     ],
-    "loop_tap": 0,
-    "loop_count": 0,
-    "pairs": 0,
-    "out_line_len": 1,
+    "loop_tap": 1009,
+    "loop_count": 4,
+    "pairs": 12,
+    "out_line_len": 22,
     "n_coeffs": 55,
     "distinct_gains": [
       -1.0,
@@ -343,17 +343,17 @@
     "name": "HALL/HALL",
     "meta": "B5 P1 V1    LOW MID XOV",
     "fe_path": false,
-    "delays_decoded": false,
-    "active_steps": 0,
-    "distinct_taps": 0,
+    "delays_decoded": true,
+    "active_steps": 101,
+    "distinct_taps": 45,
     "rng": [
-      0,
-      0
+      244,
+      15356
     ],
-    "loop_tap": 0,
-    "loop_count": 0,
-    "pairs": 0,
-    "out_line_len": 1,
+    "loop_tap": 2665,
+    "loop_count": 2,
+    "pairs": 23,
+    "out_line_len": 5,
     "n_coeffs": 50,
     "distinct_gains": [
       -1.0,
@@ -378,17 +378,17 @@
     "name": "PLATE/PLATE",
     "meta": "B5 P2 V1    LOW MID XOV",
     "fe_path": false,
-    "delays_decoded": false,
-    "active_steps": 0,
-    "distinct_taps": 0,
+    "delays_decoded": true,
+    "active_steps": 103,
+    "distinct_taps": 56,
     "rng": [
-      0,
-      0
+      61,
+      16220
     ],
-    "loop_tap": 0,
-    "loop_count": 0,
-    "pairs": 0,
-    "out_line_len": 1,
+    "loop_tap": 4097,
+    "loop_count": 3,
+    "pairs": 19,
+    "out_line_len": 5,
     "n_coeffs": 54,
     "distinct_gains": [
       -1.0,
@@ -415,17 +415,17 @@
     "name": "PLATE/HALL",
     "meta": "B5 P3 V1    LOW MID XOV",
     "fe_path": false,
-    "delays_decoded": false,
-    "active_steps": 0,
-    "distinct_taps": 0,
+    "delays_decoded": true,
+    "active_steps": 103,
+    "distinct_taps": 53,
     "rng": [
-      0,
-      0
+      61,
+      16381
     ],
-    "loop_tap": 0,
-    "loop_count": 0,
-    "pairs": 0,
-    "out_line_len": 1,
+    "loop_tap": 61,
+    "loop_count": 2,
+    "pairs": 20,
+    "out_line_len": 5,
     "n_coeffs": 50,
     "distinct_gains": [
       -1.0,
@@ -459,17 +459,17 @@
     "name": "CHORUS&ECHO",
     "meta": "B4 P1 V1            CHO",
     "fe_path": false,
-    "delays_decoded": false,
-    "active_steps": 0,
-    "distinct_taps": 0,
+    "delays_decoded": true,
+    "active_steps": 99,
+    "distinct_taps": 61,
     "rng": [
-      0,
-      0
+      61,
+      12289
     ],
-    "loop_tap": 0,
-    "loop_count": 0,
-    "pairs": 0,
-    "out_line_len": 1,
+    "loop_tap": 3075,
+    "loop_count": 4,
+    "pairs": 24,
+    "out_line_len": 7,
     "n_coeffs": 46,
     "distinct_gains": [
       -1.0,
@@ -491,17 +491,17 @@
     "name": "RES CHORDS",
     "meta": "B4 P2 V1    [     NOTE L",
     "fe_path": false,
-    "delays_decoded": false,
-    "active_steps": 0,
-    "distinct_taps": 0,
+    "delays_decoded": true,
+    "active_steps": 28,
+    "distinct_taps": 11,
     "rng": [
-      0,
-      0
+      1088,
+      12289
     ],
-    "loop_tap": 0,
-    "loop_count": 0,
-    "pairs": 0,
-    "out_line_len": 1,
+    "loop_tap": 6529,
+    "loop_count": 5,
+    "pairs": 3,
+    "out_line_len": 6,
     "n_coeffs": 56,
     "distinct_gains": [
       -1.0,
@@ -517,17 +517,17 @@
     "name": "M BAND DELAY",
     "meta": "B4 P3 V1    [     BAND L",
     "fe_path": false,
-    "delays_decoded": false,
-    "active_steps": 0,
-    "distinct_taps": 0,
+    "delays_decoded": true,
+    "active_steps": 79,
+    "distinct_taps": 47,
     "rng": [
-      0,
-      0
+      61,
+      12289
     ],
-    "loop_tap": 0,
-    "loop_count": 0,
-    "pairs": 0,
-    "out_line_len": 1,
+    "loop_tap": 1025,
+    "loop_count": 6,
+    "pairs": 11,
+    "out_line_len": 6,
     "n_coeffs": 63,
     "distinct_gains": [
       -0.843,
@@ -735,26 +735,5 @@
       0.992,
       1.0
     ]
-  },
-  {
-    "rec": 20,
-    "base": 60756,
-    "id": 255,
-    "name": ".L.p...S...}",
-    "meta": ".t...MR.Mq.S.s1.@{!A<4BZ",
-    "fe_path": false,
-    "delays_decoded": false,
-    "active_steps": 0,
-    "distinct_taps": 0,
-    "rng": [
-      0,
-      0
-    ],
-    "loop_tap": 0,
-    "loop_count": 0,
-    "pairs": 0,
-    "out_line_len": 1,
-    "n_coeffs": 0,
-    "distinct_gains": []
   }
 ]

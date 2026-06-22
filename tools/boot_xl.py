@@ -136,7 +136,7 @@ def ascii7(b):
 
 def boot(max_ins=20_000_000, irq_period=64, suppress_post=True,
          stop_pc=0x8169, stop_hits=3, watch=None, power_up_id=None,
-         cap_offsets=False, verbose=True):
+         cap_offsets=False, snap_at=None, snap_rng=(0x3D4D, 0x3F4E), verbose=True):
     """Boot v8.2.1 reset->handshake->POST->normal-op.
 
     irq_period   : fire a maskable interrupt every N ins when IFF1 & (tx_en|rx_pending).
@@ -193,11 +193,14 @@ def boot(max_ins=20_000_000, irq_period=64, suppress_post=True,
     cap = []                 # captured B55B offset writes (delay = -offset) in load window
     prev_cf1 = 0x3F4D
     in_load = False
+    snap = None              # one-shot memory snapshot at snap_at
 
     for i in range(max_ins):
         pc = cpu.PC
         if pc in watch and pc not in milestones:
             milestones[pc] = cpu.icount
+        if snap_at is not None and pc == snap_at and snap is None:
+            snap = bytes(mem[snap_rng[0]:snap_rng[1]])
         # capture B55B offset-buffer writes (0x3cf1 ptr decrements) during program load
         if cap_offsets:
             if pc == 0x13B6:
@@ -256,7 +259,7 @@ def boot(max_ins=20_000_000, irq_period=64, suppress_post=True,
         print(f"\n0x3F4F display buffer: {ascii7(mem[0x3F4F:0x3F80])!r}")
         # the DL-1414 display image the firmware maintains for the LARC
         print(f"0x3F8E area:           {ascii7(mem[0x3F8E:0x3FA0])!r}")
-    return cpu, mem, larc, aru, milestones, cap
+    return cpu, mem, larc, aru, milestones, cap, snap
 
 
 if __name__ == "__main__":
