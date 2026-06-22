@@ -21,8 +21,15 @@ microword build mechanism DECODED** (interpreter 0xAA9F, step-builder 0xB55B: of
 ring-buffer wrap, sign-magnitude+2-bit coeff); **build EMULATED on real firmware** (`tools/z80emu.py`)
 → **complete reverb algorithm recovered** for the first 3 program records: delay tap map (61 taps,
 allpass pairs, 17-tap output line, ~100 steps) **+ coefficient gains** (sign-mag/127: allpass −½,
-loop +0.976, diffusion gains). record→name labelling blocked (operational cold-boot ROM absent from
-this dump — diagnostic SBC only). See §5 RESULTS + `docs/reference/PCM70/PCM70_phase2_results.md`.
+loop +0.976, diffusion gains). decode **cross-validated against the 224X Service
+Manual** (WCS@0x4000–0x41FF, offset=position−microword=delay, 100 steps, 34.13 kHz, 16×6-bit sign-mag
+mult + saturation + dual-rank shift register — all confirmed). **v8.2.1 = the operational 224XL
+firmware** (the serial port is the **LARC** UI, not a diagnostic terminal; `DIAGNOSTICS` = power-up
+self-test banner): emulator now boots it through the LARC `0xC8` handshake to the main loop and drives
+the LARC display (captured `224XL V8.2 DIAGNOSTICS…`). record→name reachable — next: model the DSP
+power-up self-test so it loads programs, then inject PROG keypresses to capture WCS+name per program.
+**Microcode→firmware divergence:** original-224 **OTP = static mask-ROM microcode** (1 hall ×16 param
+frames, 0.3–562 ms, Concert Hall ancestor); 224X/XL = **SBC-loaded WCS firmware**. See §5 RESULTS.
 
 ---
 
@@ -324,9 +331,9 @@ coefficient structure — like U67's 0.77 — not a mirror). Fill sane (NVS8 act
 
 | ROM(s) | Size | Role | Evidence |
 |---|---|---|---|
-| **SBC1** | 2 KB ×1 | SBC Z80 **diagnostics** | banner `224XL V8.2 DIAGNOSTICS … DIAG ERROR … 224X TESTS`; z80-valid 0.999, RST-grid hits; I/O to console ports 0xEE/0xEF |
-| **SBC2** | 2 KB ×1 | SBC Z80 **hardware driver** | dense `OUT` to contiguous low-port block **0x00-0x07** (0x03:22, 0x07:18, 0x06:13…) + `IN` 0x00-0x09 — the parallel ARU/audio interface |
-| **SBC3** | 2 KB ×1 | SBC Z80 code + tables | z80-valid 0.999; console-port I/O |
+| **SBC1** | 2 KB ×1 | SBC Z80 **LARC serial comms + boot + power-up self-test** | per LARC doc, "all serial-comms code + checksum diagnostics are in SBC ROM 1"; banner `224XL V8.2 DIAGNOSTICS` = the power-up self-test display; the 0xEE/0xEF I/O = the **LARC serial link** (not a console) |
+| **SBC2** | 2 KB ×1 | SBC Z80 **ARU/audio hardware driver** | dense `OUT` to contiguous low-port block **0x00-0x07** (0x03:22, 0x07:18, 0x06:13…) + `IN` 0x00-0x09 — the ARU/DSP interface |
+| **SBC3** | 2 KB ×1 | SBC Z80 program directory/load + NVS-bank dispatch | z80-valid 0.999 |
 | **NVS1-8** | 4 KB ×8 | **program / microcode / coefficient data** | NVS3@0x0000 = program-name table (`CONCERT HALL / BRIGHT HALL / DARK HALL / RICH CHAMBER / … / M BAND DELAY / SIZE / GATE`); NVS4-8 = coefficient-alphabet bytes (BC/BF/7C/80/01/02) with a rising FF-fill ladder |
 
 *Key structural finding (changes the decode approach):* the 224XL ARU microcode is **NOT** stored
@@ -349,7 +356,7 @@ directly into the window.
 | Region | Window | Role |
 |---|---|---|
 | SBC1 | 0x0000-0x07FF | reset (`JP 0x003B`), RST-0x38 IV fill, ROM checksum, memcpy 0x0614 |
-| SBC2 | 0x0800-0x0FFF | boot init (`LD SP,0x4000`), **all *diagnostic* ARU loaders** + POST |
+| SBC2 | 0x0800-0x0FFF | boot init (`LD SP,0x4000`), ARU/DSP I/O drivers + power-up self-test (POST) |
 | SBC3 | 0x1000-0x17FF | program directory lookups, program load/run, dispatch into NVS banks |
 | RAM | 0x4000+ | stack 0x4000; ARU microword RAM image staged at **0x41xx** (4-byte records, stride 4) |
 | batt-RAM | 0x3C00-0x3FFF | battery-backed presets / live params |
@@ -360,9 +367,10 @@ directly into the window.
 | **NVS5-7** | 0xC000-0xEFFF | continuation of **21 × 0x2AA (682)-byte** ARU coeff/microcode records (array ends ~0xEFFE) |
 | **NVS8** | 0xF000 | variable-length per-program parameter/range records |
 
-> **Key correction:** the **SBC ROMs are the V8.2 *diagnostic* image**; the *operational* ARU
-> loader lives in the **NVS code banks** (NVS1 engine + NVS3 loader/interpreter + NVS4 packer).
-> Both the diagnostic and runtime paths drive the ARU through the **same low-port block 0x00-0x07**.
+> **Note:** the **SBC ROMs are the operational v8.2.1 firmware** (LARC serial UI + boot + power-up
+> self-test + program management); the heavy **ARU build engine** lives in the **NVS code banks**
+> (NVS1 engine + NVS3 loader/interpreter + NVS4 packer), called by the SBC. *(An earlier draft
+> mislabeled the SBC as a "diagnostic image" — corrected; v8.2.1 is the final shipping firmware.)*
 
 *ARU port protocol ✅ (HIGH — pinned by the SBC2 POST walking-bit test 0x0A20-0x0B64, the Rosetta).*
 - **0x06** = data LOW byte (write + readback) · **0x07** = data HIGH byte → one **16-bit transfer
@@ -466,22 +474,88 @@ So **delays + gains together = the recovered 224XL reverb algorithm** (input/dif
 ±0.5, a ~0.976 recirculating loop, comb/diffusion gains, and the multi-tap output line) — for the
 first three program records, with the method proven for the rest.
 
-**Boot-init harness — attempted, BLOCKED by a missing ROM (evidence-based).** To label record→name
-the engine resolves program# → record via **RAM tables built at boot** (`0x8000` searches a 36×2 key
-table at `0x2067`; 20-byte headers at `0x20AF`). Booting this dump in `tools/z80emu.py` from reset
-**hangs polling IN ports 0xEE/0xEF (the console UART) with the program RAM tables still zero** — the
-SBC set here is a **serial-terminal DIAGNOSTIC monitor** (`224XL V8.2 DIAGNOSTICS`), not the
-operational firmware; its reset path is a warm/overlay re-entry (`0x003B = LD E,A`, A undefined cold)
-and `0x0048-0x00BC` is byte-identical to the NVS1 engine. **The operational cold-boot ROM that
-populates the preset/program tables is not present in this dump set.** So record→name labelling needs
-a unit dumped with its *operational* SBC ROMs (or the factory default-register image) — not solvable
-from these files.
+**Operational boot via the LARC — v8.2.1 IS the operational firmware ✅ (CORRECTED).** *An earlier
+draft of this doc wrongly called v8_21/v8_1A "diagnostic-only ROMs." That was a mistake — see
+`docs/reference/224/Lexicon-224-info.md` + `LARC_Theory_of_Operation.md`.* The 224XL replaced the
+224/224X's **parallel** control head with the **LARC** (Lexicon Alphanumeric Remote Control), which
+talks to the SBC over a **serial 8251 link** (ports 0xEE data / 0xEF status). So the serial port the
+earlier draft mistook for an "RS-232 diagnostic terminal" is in fact **the primary user interface**;
+the `224XL V8.2 DIAGNOSTICS` string is the **power-up self-test banner shown on the LARC**, after
+which normal operation proceeds. v8.2.1 is the final shipping 224XL firmware.
+
+**Proven by emulation (`tools/z80emu.py` now has IM1 interrupt support):** with a minimal LARC model
+(8251 status + the LARC's `0xC8` "I'm here" handshake reply, + periodic UART interrupts driving the
+IRQ-driven serial ISR at `0x03EE`), v8.2.1:
+1. completes the LARC handshake (`0x0067 OUT 0xEE,0xE0` → LARC replies `0xC8` → `0x0084 CP 0xC8` →
+   `JP 0x0703` main),
+2. runs power-up diagnostics and **drives the LARC alphanumeric display** — captured serial TX decodes
+   to ASCII: `224XL V8.2  DIAGNOSTICS ****…` then `DIAG ERROR  TYPE E32  C=55 B=FF BIT1 ADDR=3FFF`.
+
+That `DIAG ERROR` is the firmware's **power-up self-test of the DSP hardware** (DMEM / ARU / WCS,
+reached via the X-register I/O ports) — which this **SBC-only emulator doesn't model** (the ports
+return stub values, so the test reads `C=55` vs expected `FF`). So the firmware stops at the self-test
+*before* normal program-load — an **emulation-completeness** gap, **not** a missing-ROM gap.
+
+**LARC↔SBC serial protocol decoded** (from the SBC ISR `0x03EE`/`0x0413`): bytes with bit6 clear =
+slider/pot data; bit6 set = commands keyed by `B&0x38` (a plain keypress → `RAM 0x3c11`; multi-byte
+messages via a `0x3c15` state machine); `0xC8` = the power-up handshake. The **program name is sent
+SBC→LARC as ASCII to the DL-1414 displays** — so once past the self-test, capturing the serial TX
+yields the displayed program name, giving **record→name directly**.
+
+**Path to record→name (clear, machinery mostly built):** model the DSP power-up self-test responses
+(the X-register / DMEM / WCS ports) enough to pass it → firmware reaches normal operation and loads the
+power-up program (DIP-switch-selected) → then inject LARC PROG-button keypresses (`→0x3c11`) to cycle
+all programs, capturing the WCS algorithm + the TX name for each. The decoded **delays + gains** above
+stand regardless.
+
+**BONUS — original-224 static ARU microcode recovered from the OTP mask ROMs ✅** (`tools/otp224_decode.py`).
+The 4 `ROMs/Lexicon 224/OTP` ROMs (35004016–18, 2 KB each) are **parallel byte-lanes of one static
+microword — the PCM60 format** (no SBC/build needed):
+
+| OTP ROM | lane | evidence |
+|---|---|---|
+| `..._4` | control/opcode | low-nibble `7:1056 3:352 F:304 0:128 B:96` = the family opcode alphabet; **autocorr@128 = 1.0, exactly 1 unique frame** = 128-step program × 16 param frames |
+| `..._3` | offset HIGH | FC/FB/FE sign-extended negatives |
+| `..._1` | offset LOW | sparse |
+| `..._2` | coefficient | smooth descending envelope ramps |
+
+Structure = **1 reverb program × 16 parameter frames** (`ctrl` lane = **1 unique 128-byte frame** =
+fixed topology; `offhi` = **16 unique** frames, `offlo`/`coeff` = 5 each → a parameter sweep, almost
+certainly the **reverb-time/size** control). Decodes to a sane tap map every frame (82–92 taps,
+**0.3 … 562 ms** at 34.13 kHz) with the **identical PCM60 field map** (16-bit signed offset → delay;
+coeff /256 with the ×0.5 scalar; control low-nibble opcode n3/n7/nF/n0). The manual notes reverberant
+measurements use the **Concert Hall** program → the OTP is very likely the original-224 Concert Hall.
+**vs PCM60: ISA-identical siblings, distinct tuning** (control 45% exact / 60% within-8; coeff
+envelope 81% within-8; ~11% shared taps). Confirms the family-tree ISA premise in concrete bytes.
+
+**The microcode → firmware divergence (per the service manual + the dumps).** The 224-family ARU
+runs a **100-step WCS** (4×128×8 SRAM = 32-bit microword) at **34.13 kHz**, loaded by the SBC; the
+microword's low 16 bits = a data-memory **offset subtracted from a current-position counter** (delay
+= position − offset), the upper 16 = 6-bit signed (CSIGN) coefficient + 4×16 register-file addresses +
+control; the multiplier is **16×6-bit, two shift-adds at once via a dual-rank shift register, with
+saturation** (the "2-mult-bit + shift-register" datapath — *standard* 224, not XL-specific). The
+**original 224 (OTP) shipped the program as STATIC mask-ROM microcode**; the **224X/224XL moved to
+SBC-LOADED firmware** that *builds* the WCS at 0x4000–0x41FF (the bytecode VM + step-builder decoded
+above). Same ARU, two delivery eras.
+
+**Manual cross-check ✅:** every 224XL field I recovered by emulation is confirmed by the 224X Service
+Manual §3.5–3.7 — WCS @0x4000–0x41FF (4-byte step), offset=position−microword (delay), 100 steps,
+34.13 kHz, sign-magnitude coefficient + saturation, dual-rank-shift multiplier. So the decoded
+delays+gains are now corroborated by the authoritative source, and delays convert to ms at 34.13 kHz
+(e.g. rec 2's output line 3327–8867 samp = **97–260 ms**).
+
+*(Correction note: an earlier draft here claimed v8_21/v8_1A were "serial-terminal diagnostic service
+ROMs, not operational firmware, record→name needs an operational ROM dump." That was WRONG — the
+serial port is the **LARC** user interface, not a diagnostic terminal, and v8.2.1 is the operational
+firmware. Superseded by the "Operational boot via the LARC" results above.)*
 
 **OPEN / NEXT (Phase 3 cont.):**
-- 🟡 **record→name labels** — blocked above; revisit if operational SBC ROMs / a factory register
-  dump are obtained. (22 names already decoded @0xA001: CONCERT/BRIGHT/DARK HALL, RICH CHAMBER, ROOM,
-  SMALL ROOM, CHAMBER, PLATE, CD PLATE A/B, SMALL PLATE, CHORUS&ECHO, RES CHORDS, M BAND DELAY,
-  HALL/HALL, PLATE/PLATE, PLATE/HALL, PLATE/CHORUS, SIZE GATE, SIZE 1/2 — pending only the record↔name link.)
+- 🟡 **record→name labels — reachable, not blocked.** Next step: model the DSP power-up self-test
+  ports (X-register/DMEM/WCS) so v8.2.1 passes self-test → loads the power-up program → then inject
+  LARC PROG keypresses (`→0x3c11`) and capture WCS + the DL-1414 ASCII name per program. (22 names
+  already decoded @0xA001: CONCERT/BRIGHT/DARK HALL, RICH CHAMBER, ROOM, SMALL ROOM, CHAMBER, PLATE,
+  CD PLATE A/B, SMALL PLATE, CHORUS&ECHO, RES CHORDS, M BAND DELAY, HALL/HALL, PLATE/PLATE, PLATE/HALL,
+  PLATE/CHORUS, SIZE GATE, SIZE 1/2 — pending only the record↔name link.)
 - 🟡 **all 21 records** — records 0/1/2 fully decoded (delays + gains); the @0xB800 array's exact
   boundaries for 3–20 need the real scan routine (the inferred 0x2AA stride misaligns past rec 2).
 - 🟡 sample→ms at the 224 sample rate (cosmetic; absolute-delay base cancels in the offsets).

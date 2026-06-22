@@ -412,6 +412,21 @@ class Z80:
         # fall back: treat as normal opcode (prefix had no effect)
         self.PC=(self.PC-1)&0xFFFF; self._main(self.fb()); return
 
+    # ---- maskable interrupt (IM0/IM1 -> RST38 ; IM2 -> vectored) ----
+    def interrupt(self, bus=0xFF):
+        if not self.IFF1:
+            return False
+        if self.halted:
+            self.halted = False
+            self.PC = (self.PC + 1) & 0xFFFF   # step past the HALT
+        self.IFF1 = self.IFF2 = 0
+        self.push(self.PC)
+        if self.IM == 2:
+            self.PC = self.rw((self.I << 8) | (bus & 0xFF))
+        else:
+            self.PC = 0x0038                    # IM0/IM1 maskable vector
+        return True
+
     # ---- helpers ----
     def call(self,addr,stop=0xDEAD,max_ins=20_000_000):
         self.push(stop); self.PC=addr
