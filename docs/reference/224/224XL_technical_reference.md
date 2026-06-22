@@ -22,13 +22,19 @@ The 224XL is two computers:
 Data flow: `program record → SBC build engine → WCS image (microcode) → ARU executes → audio`.
 Parameters and modulation are the SBC rewriting WCS coefficient/offset bytes over time.
 
-Key clocks/sizes: system cycle **292.97 ns** (3.41 MHz), 9 time-slots/cycle grouped AS0/AS1/AS2;
-**100 microcode steps** per sample → **34.13 kHz** (the WCS counter resets at 99). Note the WCS *image*
-is 128 slots (0x4000–0x41FF = 512 B); the hardware executes ~100 of them (the program ends at a RESET
-the WCS generates). Decoded programs show live content out to ~step 108–127 plus 0xFFFF fill —
-**exactly how many steps execute per sample, and where the program-end RESET sits, is an OPEN item**
-(§10) that the diff harness must pin (it sets both the true step count and the sample rate). Until then,
-treat 100 as nominal and use the firmware's own image extent per program.
+**Step count = 128, fixed (RESOLVED, verified).** The 224XL executes **all 128 WCS steps (0–127) every
+sample** — verified three ways: the build loop `0xB65A` (`LD C,0x80`) and the WCS hardware-copy `0xAB55`
+(`LD B,0x80`) both process 128 steps, and the last program-content step = **127** in every program
+booted (CONCERT/PLATE/BRIGHT/DARK/SMALL ROOM/CHAMBER). The earlier "~100/~110" was an undercount of
+non-NOP steps; NOPs are interspersed but still execute (as pure-delay/no-op cycles). **RESET = a
+hardwired 8-bit-counter terminal-count wrap (no microword bit)** — verified: AND-ing step-127's 32-bit
+word across all programs and removing bits present in any other step yields `0x00000000` (no
+end-of-program marker). So the C++ core loops `S = 0..127` and resets at the loop boundary.
+
+**Sample rate.** 224X = 3.41 MHz ÷ 100 = 34.13 kHz (manual). The 224XL runs 128 steps; its published Fs
+is still ≈34.13 kHz, implying a proportionally faster T&C step clock ≈ **4.37 MHz** (≈229 ns/cycle).
+*Firmware-certain: 128 steps/sample.* The exact clock/Fs is an inference (the T&C clock is hardware,
+not firmware-visible) — confirm with a hardware Fs measurement or T&C schematic #060-02475.
 
 ### SBC memory map (for driving the emulator)
 
@@ -39,7 +45,7 @@ treat 100 as nominal and use the firmware's own image extent per program.
 | SBC3 | 0x1000–0x17FF | program directory/load, NVS dispatch |
 | battery RAM | 0x2000–0x27FF | user registers (saved program variations); 0xFFFF = DIP switch |
 | SBC RAM / stack | 0x3C00–0x3FFF | working state, stack; **WCS image staged + modulated here** |
-| **WCS** | **0x4000–0x41FF** | the 100-step microprogram (4 SRAMs, see §3); memory-mapped to SBC |
+| **WCS** | **0x4000–0x41FF** | the **128-step** microprogram (4 SRAMs, see §3); memory-mapped to SBC |
 | NVS1 | 0x8000 | ARU runtime engine (`CALL 0x8000`) |
 | NVS2 | 0x9000 | per-program code + param **labels** (CONCERT @0x9CDE = "LOW MID XOV HFD DEP PDL") |
 | NVS3 | 0xA000 | name table @0xA002, directory @0xA446, loader/interpreter 0xA791/0xAA9F |
@@ -91,19 +97,27 @@ overflow). On overflow, saturate to most-positive / most-negative.
 ### Per-step execution (one WCS step)
 
 ```
-addr   = (position - offset) & DMEM_MASK            # offset from microword (lanes 0-1)
-dab    = (write op) ? RES->DMEM[addr]               # XFER/write step deposits result reg
-                    : DMEM[addr]                     # read op puts delay tap on the bus
-                    (FPC audio in/out on the I/O steps)
-R[WA]  = dab                                         # register write every cycle (WA=3 = pass-through)
-prod   = multiply20(R[RA], coeff, CSIGN)            # 16x6 saturating, with the 20-bit alignment above
-if ZERO: ACC = 0
-ACC    = saturate20(ACC + prod)
-if XFER: RES = saturate16(ACC >> SHIFT)             # SHIFT/rounding = an OPEN arithmetic detail (§6)
+for S in 0..127:                                    # ALWAYS 128 steps/sample (verified, §1); no early stop
+  off14 = offset & 0x3FFF
+  if offset & 0x8000:                               # FPC select (bit15) -> analog I/O, not DMEM (§3 FPC)
+     ch = (offset & 0x4000) ? LEFT(A,D) : RIGHT(B,C)
+     if WA == 2:        dab = FPC_in[ch]            # RD AD/  : input read  (off14 == 0x3FFF)
+     elif WA == 3:      FPC_out[ch] = RES; dab = RES# WR DA/  : output write (off14 = strobe/tap)
+  else:
+     addr = (position - offset) & 0xFFFF            # ordinary DMEM tap
+     dab  = (write op) ? (DMEM[addr] = RES, RES) : DMEM[addr]
+  R[WA]  = dab                                       # register write every cycle (WA=3 = pass-through)
+  prod   = multiply20(R[RA], coeff, CSIGN)          # 16x6 saturating, 20-bit alignment above
+  if ZERO: ACC = 0
+  ACC    = saturate20(ACC + prod)
+  if XFER: RES = saturate16(ACC >> SHIFT)           # SHIFT/rounding = OPEN arithmetic detail (§4)
+position += 1                                        # RESET is implicit at the loop boundary (no microword bit)
 ```
 
-100 steps = one output sample; `position += 1` per sample. The reverb's recirculating tank lives in
-the DMEM + register feedback; the `+0.976`-class coefficients on XFER steps close the loops.
+**128 steps = one output sample** (fixed for all programs — see §1); `position += 1` per sample. The
+reverb's recirculating tank lives in the DMEM + register feedback; the `+0.976`-class coefficients on
+XFER steps close the loops. (`write op` = whether a non-FPC step writes vs reads DMEM — tied to the
+`b3` RW/SRC bit / XFER; an OPEN arithmetic detail, §4.)
 
 ---
 
@@ -138,6 +152,14 @@ firing on exactly the result-transfer steps. The exact split of lane2[5:2] = `b5
 
 Decoder: `tools/decode_microword.py` (`decode(power_up_id)` → per-step dicts with delay, coeff, CSIGN,
 WA, RA, RW, XFER, ZERO, PROT).
+
+### FPC audio I/O (address-decoded into the offset field) — full details in §12
+
+Analog I/O is selected by the **offset high bits** (no dedicated FPC bit): **`offset & 0x8000` = FPC
+select** (vs delay RAM); **`offset & 0x4000` = channel** (0 = right→B,C / 1 = left→A,D). **Input read** =
+read step `WA=2`, bit15 set, `low14 = 0x3FFF` (`RD AD/`); **output write** = pass-through `WA=3` step,
+bit15 set (`WR DA/`, channel from bit14). Verified via the Zero/Max-Delay diagnostic programs — full
+derivation, the decoded diagnostic table, and the live-image position-base caveat are in **§12**.
 
 ---
 
@@ -306,14 +328,23 @@ boundary (`processSample(float)->float`) for the DPF/STM32 wrappers.
 
 ## 10. Open items (resolve during the build)
 
-**Must find FIRST — these block even a functional (not-yet-bit-exact) core:**
-- **FPC audio I/O steps** — *where the input sample is injected onto the DAB, and which steps read the
-  4 output channels (A,B,C,D).* Without this the ARU has no defined input/output and no audio can run.
-  Findable: Manual §3.8 (FPC) + the Zero-Delay / Max-Delay diagnostic programs describe the routing
-  (left→A,D; right→B,C); the input/output steps are specific microword steps doing FPC reads/writes.
-- **Executed step count + program-end RESET** (§1/§5 contradiction) — does the ARU run exactly 100
-  steps, or a per-program count up to 128? Where is the RESET microword? This sets the sample rate and
-  which steps are live.
+**RESOLVED (these were the two gating items):**
+- **FPC audio I/O — RESOLVED (§12).** Address-decoded into the offset field: bit15 = FPC select, bit14 =
+  channel (0=right→B,C / 1=left→A,D); input = read step `WA=2, low14=0x3FFF` (`RD AD/`); output =
+  pass-through `WA=3` step (`WR DA/`). Verified by building the Zero/Max-Delay diagnostic programs
+  (`0x0EFD`/`0x0EF4` → builder `0x0F2C`).
+- **Executed step count + RESET — RESOLVED (§1).** **128 steps/sample, fixed** for all programs
+  (verified: build loop `0xB65A`/WCS copy `0xAB55` both 128; last content step = 127 in every program).
+  **RESET = hardwired counter terminal-wrap, no microword bit** (verified: no bit unique to step 127).
+  Loop `S=0..127` and reset at the boundary.
+
+**Open (resolve during the build):**
+- **Per-program position base** — needed to apply the FPC bit15/bit14 decode and align DMEM read/write
+  tap pairs in *live* images (diagnostic images decode cleanly; live offsets are base-relative). Anchor:
+  the input read at offset `0xFFFF` (`WA=2, low14=0x3FFF`) ⇒ address = position+1. The main remaining I/O
+  sub-task. Live reverbs are **mono-in / stereo-out** (one input read; outputs split L→A,D / R→B,C).
+- **224XL step clock / exact Fs** — 128 steps × ~34.13 kHz ⇒ ~4.37 MHz step clock (inferred; confirm via
+  a hardware Fs measurement or T&C schematic #060-02475).
 
 **Bit-exact arithmetic (tune via §9 layer 2, the diff loop):**
 - result-register shift (20→16), coeff denominator (≈/128) + the 2 extra LSBs, rounding (toward-zero?)
@@ -345,6 +376,77 @@ boundary (`processSample(float)->float`) for the DPF/STM32 wrappers.
   `0x3e45/0x3e46`, value writes `0xAE6C` (delay) / `0xAE8E` (interp coeff).
 - Boot/normal-op: reset `0x0000→0x003B`, LARC handshake `0x0067`/`0xC8`, POST → `0x00CC` → `0x813B`
   (normal op), main loop `0x8169`, program load `0x13B6`, display `0x82CF`.
+
+---
+
+## 12. FPC audio I/O — the input read & 4 output writes (RESOLVED)
+
+**How recovered.** The two minimal diagnostic programs whose behavior is fully specified by the manual
+(§5: "7 ZERO DELAY" = input straight to output, no DMEM; "8 .5 S DELAY" = input → 0.5 s delay → output;
+both route left→A,D, right→B,C) are *built in ROM*, not stored as records. The diag-menu dispatch
+(SBC1 `0x032D` `JP 0x11BE` over the table at `0x0330`) sends item 7 → handler **`0x0EFD`** (ZERO DELAY)
+and item 8 → **`0x0EF4`** (MAX/.5 s DELAY). Both call the WCS builder **`0x0F2C`**, which:
+1. fills `0x4000–0x41FF` with `0xFF` (all-NOP);
+2. reverse-copies (routine `0x0933`/`0x0938`, writes *downward* from `0x41FF`) a 4-step block from ROM
+   `0x0F5F` into steps **124–127** (LEFT) and a 4-step block from ROM `0x0F6F` into steps **74–77**
+   (RIGHT) — so source bytes land in lane order `[l3,l2,l1,l0]`;
+3. patches step 29 (`0x4074=0xF7`, `0x4076=0xFE`);
+4. issues `OUT(0x01)` then `OUT(0x03)` (= RUN).
+ZERO DELAY's handler additionally patches the two `WA=3` output steps' offset low bytes
+(`0x4130/0x4131` → step 76, `0x41F8/0x41F9` → step 126) to shorten the delay to ~0.
+
+**Decoded diagnostic blocks** (offset = `~(l1<<8|l0)`; `ctl=~l2`; coeff = raw `l3`):
+
+| pgm | step | l0 l1 l2 l3 | offset | b15 | b14 | low14 | WA | coeff | role |
+|---|---|---|---|---|---|---|---|---|---|---|
+| MAX | 74  | 7f e9 fe ff | 0x1680 | 0 | 0 | —     | 1 | −1.000 | DMEM delay-line (right) |
+| MAX | 75  | 00 40 fd fe | 0xBFFF | 1 | 0 | 0x3FFF| 2 | −0.992 | **FPC INPUT read (right), RD AD/** |
+| MAX | 76  | ff 7f fc 7c | 0x8000 | 1 | 0 | 0x0000| 3 | +0.976 | **FPC OUTPUT write (B,C), WR DA/** |
+| MAX | 77  | ff cf fe 7d | 0x3000 | 0 | 0 | —     | 1 | +0.984 | DMEM delay-line (right) |
+| MAX | 124 | 7f e6 fe ff | 0x1980 | 0 | 0 | —     | 1 | −1.000 | DMEM delay-line (left) |
+| MAX | 125 | 00 00 fd fe | 0xFFFF | 1 | 1 | 0x3FFF| 2 | −0.992 | **FPC INPUT read (left), RD AD/** |
+| MAX | 126 | ff 3f fc 7c | 0xC000 | 1 | 1 | 0x0000| 3 | +0.976 | **FPC OUTPUT write (A,D), WR DA/** |
+| MAX | 127 | ff cf fe 7d | 0x3000 | 0 | 0 | —     | 1 | +0.984 | DMEM delay-line (left) |
+
+(bit14 carries the channel only on FPC steps, where bit15=1: the left FPC steps 125/126 have bit14=1;
+the plain DMEM delay steps 124/127 have bit14=0 — bit14 is just part of an ordinary delay address there.)
+
+(ZERO DELAY = identical except step 76 offset → `0xBFFE` and step 126 offset → `0xFFFE`; i.e. the *only*
+bytes that differ between zero-delay and half-second-delay are the `low14` of the two `WA=3` output
+steps — proving those steps are the output writes and that the output offset's low bits set the tap.)
+
+**The FPC encoding (authoritative for the C++ core):**
+- **`offset & 0x8000` (bit15) = FPC select.** When set, the access targets the FPC "device on the DAB"
+  (§3.8: "the analog I/O looks simply like another device that can be read from / written into via the
+  DAB") instead of delay RAM. Delay-line steps have bit15 = 0.
+- **`offset & 0x4000` (bit14) = channel group.** 0 → right channel (input R; outputs **B,C**); 1 → left
+  channel (input L; outputs **A,D**). Matches the manual's program routing left→A,D, right→B,C.
+- **Input step** = a *read* step (non-XFER, `WA≠3`) with bit15 set and `low14 = 0x3FFF`. Asserts RD AD/;
+  the A/D sample for that channel is driven onto the DAB and latched into the read register. (Diag uses
+  `WA=2`.)
+- **Output step** = the *pass-through* step (`WA=3`) with bit15 set; asserts WR DA/ with the channel
+  select. The result register is driven to the FPC double-buffer for that output pair. `low14` is the
+  output/strobe code (and, on the diag, doubles as the delay-tap selector).
+- Every active diag I/O step has **ZERO=0, PROTECT=0, XFER=0, RW=0** (`ctl` ∈ {0x01,0x02,0x03}); the
+  device is chosen purely by the **offset high bits**, *not* by a dedicated FPC microword bit. This is
+  why the 32-bit microword has "no spare bit" — FPC I/O is address-decoded, identical to a DMEM
+  read/write but at addresses with bit15 set. (Confirms the earlier scouting note: RESET/strobes are not
+  dedicated microword bits; they are decoded from address/counter state in the T&C+FPC.)
+
+**Caveat for *live* reverb images — the position base.** In the diagnostic programs the WCS is built
+with a position base such that the FPC steps decode cleanly (input `low14 = 0x3FFF`, channel in bit14).
+In a live program image (e.g. CONCERT from `boot_xl`) the stored offsets are **absolute and
+position-relative** (§2: "absolute offsets are large relative to an arbitrary position base that cancels
+across read/write pairs"). So bit15/bit14 of a *live absolute* offset is **not** by itself a clean FPC
+marker — many ordinary delay taps have bit15 set merely because of the base. The reliable, base-invariant
+fingerprint that *does* survive is the **input read** at `low14 = 0x3FFF` with `WA=2`: it appears in
+CONCERT at **step 76** (`offset = 0xFFFF`, WA=2, coeff −1.0) — the input-injection step — exactly as in
+the diagnostic. The diff harness (§9) must pin the per-program position base so the FPC address decode
+lines up; once the base is subtracted, the bit15 = FPC / bit14 = channel rule holds for the live image
+too. For the C++ core's per-step execution: branch on `(offset − base) & 0x8000` to route reads from the
+FPC input latch (channel = `& 0x4000`) and `WA=3` writes to the FPC output channel (channel = `& 0x4000`,
+strobe = `low14`), instead of reading/writing DMEM. Pinning `base` per program is the remaining sub-task
+(it is the same base that makes the read/write tap pairs align in DMEM).
 
 ---
 
