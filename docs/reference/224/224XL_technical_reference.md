@@ -357,8 +357,9 @@ two layers:
    with the same input, compare output **sample-by-sample (integer == integer)**. All arithmetic details
    in §4 are now resolved (coefficient encoding, b3/RDRREG/, result shift >>3, read-before-write, closer
    ordering). The reference and core are anchored by: (a) the Service-Manual multiplier test vectors (§4)
-   as unit tests (all passing), (b) the current eigenvalue λ≈1.000346 (near-critical; sub-LSB gap to
-   the hardware P85 target λ=0.9999899 is the final remaining item, see §10), and (c) the real-hardware
+   as unit tests (all passing), (b) the current eigenvalue λ≈1.0008 (grows; the structural gap to the
+   hardware P85 target λ=0.9999899 — missing band-split damping, NOT rounding — is the final item, see §10),
+   and (c) the real-hardware
    IRs `P85 - 20.0 Seconds A.wav` (primary oracle, RT60≈20 s) and `Concert Hall V7.2.L.wav` (secondary)
    for decay-shape / HF / LFO ground truth. `diff_harness golden 01` → DIFF PASSED.
 3. **Dynamic parity.** Drive the firmware emulator and the C++ core with the same parameter and time
@@ -382,9 +383,10 @@ Two real CONCERT HALL impulse responses are in the repo:
 - **LFO/chorus** visible in the tail: ~2–3 Hz, mod depth ~0.76 samples. **Pre-delay ≈ 147 ms**.
 - Use for decay-shape / HF roll-off / LFO validation and as a second eigenvalue crosscheck.
 
-The RESOLVED arithmetic brings λ from the broken ~1.48 (sustaining) → **~1.000346** (near-critical).
+The RESOLVED arithmetic brings λ from the broken ~1.48 (sustaining) → **~1.0008** (grows, near-critical).
 DMEM addressing (base=0, schematic #060-02512) and register file (#060-01318) are confirmed correct.
-The remaining gap to the P85 target is sub-LSB (see §10).
+The remaining gap to the P85 target is **structural — missing frequency-dependent band-split damping, NOT
+sub-LSB rounding** (refuted; see §10 and `docs/plans/224XL-concert-decay-investigation.md`).
 
 Additional schematics now in hand (cross-reference): ARU #060-01318, FPC #060-01320, DMEM #060-02512,
 DMEM #060-02273, Block-Diagram-Memory + zoom crops.
@@ -412,9 +414,11 @@ DMEM #060-02273, Block-Diagram-Memory + zoom crops.
   DMEM (write-back); `b3=0` ⇒ DMEM/FPC drives DAB (read). Independent stored bit.
 - **Register file:** read-before-write (LS670); WA=3 = pass-through scratch; DAB WSTB/ writes every cycle.
 - **Comb-closer ordering:** XFER loads RES before b3 drives the DAB — post-XFER value written to DMEM.
-- **Loop eigenvalue:** RESOLVED arithmetic brings CONCERT λ from ~1.48 (broken) → **~1.000346**
-  (near-critical). DMEM addressing (base=0, schematic #060-02512) and register file (#060-01318) are
-  confirmed correct. Remaining gap to hardware target (λ=0.9999899, P85 20 s IR) is sub-LSB (see §10).
+- **Loop eigenvalue:** RESOLVED arithmetic brings CONCERT λ from ~1.48 (broken) → **~1.0008** (grows;
+  near-critical). DMEM addressing (base=0, schematic #060-02512) and register file (#060-01318) are
+  confirmed correct. Remaining gap to hardware target (λ=0.9999899, P85 20 s IR) is **structural — missing
+  frequency-dependent band-split damping, NOT sub-LSB rounding** (refuted; see §10 and
+  `docs/plans/224XL-concert-decay-investigation.md`).
 - Implemented in `tools/aru_datapath.py` and `libs/sgdsp/include/sgdsp/reverb/224xl.hpp`; verified
   integer-exact by the diff harness (DIFF PASSED) with multiplier unit tests passing.
 
@@ -427,13 +431,19 @@ DMEM #060-02273, Block-Diagram-Memory + zoom crops.
   chips, `DAB WSTB/` (A41) writes every cycle, no special address-3 gating — R[3] stores normally.
   **CONFIRMED CORRECT.**
 
-**Open (FINAL remaining item):**
-- **Sub-LSB rounding/truncation** — the CONCERT loop eigenvalue is currently λ≈1.000346 vs the
-  hardware 20-second target **λ=0.9999899** (IR `P85 - 20.0 Seconds A.wav`, RT60≈20 s). The gap
-  (~3×10⁻⁴, ~0.03%) is below firmware/schematic resolution — localized to the rounding/truncation
-  mode in the 2's-complement saturating multiplier / result-register transfer, specifically for the
-  two +0.976 comb closers (steps s65, s88). The hardware P85 IR decay curve is the only oracle.
-  Full investigation plan: **`docs/plans/224XL-concert-decay-continuation.md`**.
+**Open (FINAL remaining item) — REFRAMED (2026-06-23):**
+- **Missing frequency-dependent (band-split / mid-band HF) damping** — the CONCERT loop eigenvalue is
+  λ≈1.0008 (grows) vs the hardware 20-second target **λ=0.9999899** (IR `P85 - 20.0 Seconds A.wav`). A full
+  systematic-debugging investigation **REFUTED the earlier "sub-LSB rounding" hypothesis**: the instability
+  is present in *exact float arithmetic* (structural, not rounding), and proven on first principles —
+  arithmetic rounding can only add a fixed DC bias, never change a decay eigenvalue. The tank is a nested
+  all-pass network (lossless by construction, confirmed all-pass-flat) + a frequency-dependent band-split
+  decay (LOW/MID/XOV); the **mid-band is under-damped**, so its 3653 Hz resonance grows. Adding a one-pole
+  HF lowpass to the recirculation pulls λ to target and matches V7.2's HF<LF (3.79 s/5.25 s). Every
+  reconstructable element (microcode, arithmetic, sign, accumulator, crossover, timing) is verified faithful;
+  the damping deficit is not in any of them → likely a 480L-roadmap-§8 hazard ("a word that doesn't do what
+  its encoding implies", needs behavioral hardware validation) or a real per-delay HF damping below schematic
+  resolution. **Full record: `docs/plans/224XL-concert-decay-investigation.md`.**
 - **224XL step clock / exact Fs** — 128 steps × ~34.13 kHz ⇒ ~4.37 MHz step clock (inferred; confirm
   via hardware Fs measurement). Delay lengths are Fs-relative; bit-exact only at the true native rate.
 
