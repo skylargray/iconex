@@ -25,9 +25,12 @@ codebase contains, what was learned, and the prioritized next steps.
 | Bit-exact C++17 ARU core (`224xl.hpp`) | ✅ First cut, merged to `main` |
 | Emulator-diff harness (integer parity) | ✅ CONCERT static **integer-exact** vs the Python reference |
 | Multiplier/saturation unit tests | ✅ Pass (Service-Manual coefficient anchors) |
-| Decaying/tuned reverb (gain/decay arithmetic) | ✅ **RESOLVED** — coefficient encoding, b3/RDRREG/, result shift, read-before-write, closer ordering all confirmed; λ → 0.9979 (genuine decay) pending position base |
-| Hardware IR ground truth | ✅ **In repo** — `IR/Lexicon 224XL/Concert Hall V7.2.L.wav` (RT60 ~4.9 s, 24-bit/96 kHz) |
-| FPC analog I/O (live input + true stereo split) | ⏳ Deferred — pending per-program position base (final blocker) |
+| Decaying/tuned reverb (gain/decay arithmetic) | ✅ **RESOLVED** — coefficient encoding, b3/RDRREG/, result shift, read-before-write, closer ordering all confirmed; λ 1.48→~1.000346 (near-critical loop); DMEM addressing + register file CONFIRMED CORRECT |
+| DMEM addressing (64K bank, base 0) | ✅ **CONFIRMED CORRECT** — one 64K×16 bank (#060-02512), `addr=(pos−offset)&0xFFFF`, base=0 (anchored by s76); no bank-select |
+| Register file (WA/RA, no address-3 gating) | ✅ **CONFIRMED CORRECT** — 4×LS670 (U29-U32, #060-01318), DAB WSTB/ writes every cycle, R[3] stores normally |
+| Hardware IR ground truth | ✅ **In repo** — P85 `IR/Lexicon 224XL/P85 - 20.0 Seconds A.wav` (RT60≈20 s, λ=0.9999899); Concert Hall V7.2.L (RT60≈4.86 s, λ=0.9999580) |
+| Decaying CONCERT (sub-LSB fine-arithmetic) | ⏳ **Final remaining item** — model is ~3×10⁻⁴ too hot (λ≈1.000346 vs target 0.9999899); sub-LSB rounding/truncation in saturating multiplier/result transfer |
+| FPC analog I/O (live input + true stereo split) | ⏳ Deferred — FPC encoding confirmed; position base confirmed 0 |
 | Parameters (per-program curves) | ⏳ Interface stub only |
 | Modulation / LFO (dynamic parity) | ⏳ Interface stub only |
 | All 20 programs | ⏳ Only CONCERT (0x01) generated/validated |
@@ -36,12 +39,14 @@ codebase contains, what was learned, and the prioritized next steps.
 | Three-consumer CI (Phase F.1) | ⛔ Not started (harness builds locally) |
 
 **Headline:** the C++ core reproduces the Python `aru_datapath.py` reference *integer-exact* for CONCERT
-static microcode (`diff_harness golden 01` → `DIFF PASSED`), and the arithmetic is now fully RESOLVED
-(coefficient encoding, b3/RDRREG/, result-register shift, read-before-write, comb-closer ordering) —
-verified by the diff harness + Service-Manual unit tests + the hardware IR. Loop eigenvalue moves from
-the broken ~1.48 → ~0.9979 (genuine single-exponential decay) once the per-program DMEM position base
-is pinned. **The one remaining structural blocker is the per-program position base** (DMEM address
-aliasing between tank banks). After that: I/O wiring, parameters, modulation, host wrappers.
+static microcode (`diff_harness golden 01` → `DIFF PASSED`). Arithmetic is fully RESOLVED (coefficient
+encoding, b3/RDRREG/, result-register shift, read-before-write, comb-closer ordering); loop eigenvalue
+moves from the broken ~1.48 → ~1.000346. DMEM addressing (one 64K×16 bank, base=0, confirmed by
+schematic #060-02512 and anchored by s76 input-read step) and the register file (4×LS670, no
+address-3 gating, confirmed by #060-01318) are **confirmed correct** — these are no longer open items.
+**The one remaining item to a fully decaying CONCERT is a sub-LSB fine-arithmetic detail** (~3×10⁻⁴):
+the model currently runs λ≈1.000346 vs the hardware P85 target λ=0.9999899 (RT60≈20 s). After that:
+I/O wiring, parameters, modulation, host wrappers.
 
 ---
 
@@ -113,11 +118,14 @@ down several things that matter for the rest of the build:
    `(n, s, addr, dab, racc_in, prod, acc, res)` pinpoints the exact first divergence. Verified non-vacuous
    by perturbing the core (arithmetic, RA bits, golden bytes) and confirming the harness fails each time.
 
-6. **Arithmetic RESOLVED — the tank decays. (UPDATED)** The RESOLVED arithmetic (items below) brings
-   the CONCERT loop eigenvalue from the broken ~1.48 (sustaining) → ~1.0003 (structural unity from DMEM
-   address aliasing between overlapping tank-bank offsets) → **~0.9979** (genuine clean single-exponential
-   decay, matching the hardware IR shape) once the per-program position base is pinned. The diff harness
-   stays green (DIFF PASSED) and multiplier unit tests pass throughout.
+6. **Arithmetic RESOLVED — the tank is near-critical. (UPDATED)** The RESOLVED arithmetic (items below)
+   brings the CONCERT loop eigenvalue from the broken ~1.48 (sustaining) → **~1.000346** (near-critical,
+   very slow growth). DMEM addressing is confirmed correct (one 64K×16 bank, base=0, schematic #060-02512;
+   the earlier λ=0.9979 with the tank in its own address window was a Schroeder-integration artifact over a
+   non-decaying signal, not a real decay; the s52/s104 offset-0x1000 collision is real but negligible).
+   The register file is confirmed correct (4×LS670, U29-U32, #060-01318; DAB WSTB/ writes every cycle; no
+   address-3 gating; R[3] stores normally). The diff harness stays green (DIFF PASSED) and multiplier unit
+   tests pass throughout. The single remaining gap is sub-LSB rounding/truncation (~3×10⁻⁴) — see §5B.
 
 7. **Arithmetic knobs — all RESOLVED:**
 
@@ -133,7 +141,7 @@ down several things that matter for the rest of the build:
    | "2 extra LSBs" (0xB4F0) | attributed to main multiply | **Modulation interpolation coefficient only** (computed at 0xAE72 `AND 3 / OR 3`) |
 
    Gains ≥ 1 (×1, ×5/4, ×42/32) arise from 4-step MAC accumulation (ZERO gating), firmware-confirmed
-   via the ADD'L MULT diagnostic (handler 0x0D99).
+   via the ADD'L MULT diagnostic (handler 0x0D99). Together these bring λ: 1.48 → ~1.000346.
 
 ---
 
@@ -176,21 +184,47 @@ The guide ([480L_rom_to_plugin_guide.md](480L_rom_to_plugin_guide.md)) defines P
 ### A. ✅ RESOLVED — Arithmetic (coefficient encoding, b3, result shift, register timing, closer ordering)
 All arithmetic is confirmed (firmware + ARU schematic #060-01318 + T&C #060-02475 + hardware IR).
 Implemented in `tools/aru_datapath.py` and `libs/sgdsp/include/sgdsp/reverb/224xl.hpp`. Diff harness
-passes (DIFF PASSED); multiplier unit tests pass. Loop eigenvalue CONCERT: ~1.48 → ~1.0003 →
-**~0.9979** (genuine decay) once the position base is pinned. See §3 item 7 for the full knob table.
+passes (DIFF PASSED); multiplier unit tests pass. Loop eigenvalue CONCERT: ~1.48 → **~1.000346**.
+See §3 item 7 for the full knob table.
 
-**Hardware IR ground truth now in repo:** `IR/Lexicon 224XL/Concert Hall V7.2.L.wav` (24-bit/96 kHz,
-RT60 ~4.9 s, LF ~5.25 s / HF ~3.79 s, LFO ~2–3 Hz, pre-delay ~147 ms, λ_target ≈ 0.999958 ±1e-6).
-Use for decay-shape / HF / LFO validation. Parameter settings unknown — exact RT60 calibration deferred.
+**✅ CONFIRMED CORRECT — DMEM addressing.** The DMEM is one 64K×16 bank (sixteen 4164 DRAMs, schematic
+#060-02512). Formula: `addr = (pos − offset) & 0xFFFF`, position base = 0 (anchored by the input-read
+step s76, offset 0xFFFF, WA=2 ⇒ addr=pos+1). There is no bank-select; #060-02273 is the SBC
+program-memory board, not the delay RAM. The earlier "λ=0.9979 with the tank in its own address window"
+was a Schroeder-integration artifact over a non-decaying signal, not a real decay; the s52/s104
+offset-0x1000 collision is real but negligible.
 
-### B. Pin per-program position base → FPC I/O + DMEM alignment  *(current highest priority)*
-- **The final structural blocker.** Two tank banks write overlapping offsets (e.g. 0x1000, 0xD4D8)
-  that alias in the 64K buffer, holding λ at ~1.0003. Pinning the per-program base to a non-aliasing
-  address window drops λ to ~0.9979 — genuine clean exponential decay matching the IR shape.
-- Anchor: the input read at `low14 = 0x3FFF`, `WA=2` (CONCERT step 76, offset=0xFFFF) ⇒ address =
-  position+1. The SM notes the DMEM may be one 64K bank or two 16K banks.
-- Once pinned: route `(offset−base)&0x8000` reads from FPC input latch, `WA=3` writes to FPC output
-  channel (`&0x4000`: L→A,D / R→B,C). Replace the first-cut "duplicate mono to L/R."
+**✅ CONFIRMED CORRECT — Register file.** 4×LS670 (U29–U32, schematic #060-01318 register-file zoom):
+WA/RA feed all chips, `DAB WSTB/` (A41) writes every cycle, no special address-3 gating — R[3] stores
+normally; the "pass-through" is the firmware's dump-the-don't-care convention. (The "WA=3 magic lever"
+idea is refuted.)
+
+**Hardware IR targets now in repo:**
+- **P85 (default CONCERT):** `IR/Lexicon 224XL/P85 - 20.0 Seconds A.wav` — RT60≈20 s, λ=0.9999899 @ 34130 Hz (primary oracle)
+- **Concert Hall V7.2.L:** `IR/Lexicon 224XL/Concert Hall V7.2.L.wav` — RT60≈4.86 s, λ=0.9999580 (24-bit/96 kHz, LFO ~2–3 Hz, pre-delay ~147 ms)
+
+### B. Close the final sub-LSB (decaying CONCERT)  *(current highest priority)*
+
+The default CONCERT is a near-critical **20-second** tank: target **λ = 0.9999899 @ 34130 Hz** (from
+the hardware IR `P85 - 20.0 Seconds A.wav`, RT60≈20 s). The model is currently λ≈1.000346 — ~3×10⁻⁴
+too hot (grows to a plateau instead of decaying). The gap is sub-LSB (one coeff unit = 1/64 ≈ 1.5%;
+needed nudge ≈ 0.03%) — a **rounding/truncation detail** in the 2's-complement saturating multiplier /
+result transfer, localized to the two +0.976 comb closers (s65, s88). Below firmware/schematic
+resolution; the hardware P85 IR is the only oracle.
+
+Prioritized investigations (see **[224XL-concert-decay-continuation.md](224XL-concert-decay-continuation.md)** for the full brief):
+1. Bit-faithful saturating multiplier — confirm floor-divide vs truncate in partial products, and
+   saturation clamp behavior matches the LS163 counter terminal-count / LS157 sat-mux exactly.
+2. Rounding/truncation-mode sweep vs P85 EDC — try the four rounding combinations (coeff×floor/round,
+   result>>3 floor/round) and pick the one that minimizes λ error against the hardware IR decay curve.
+3. Comb-closer pipeline ordering — verify XFER-then-b3 sequencing is bit-exact (no off-by-one in the
+   result-register feedback for steps s65/s88).
+4. Confirm booted param state == 20 s default — re-boot with `power_up_id=0x01` and check slider state
+   matches P85 param settings, not the shorter V7.2 IR.
+5. LFO — confirm the modulation walker is at center (depth=0 or phase=0) for the static impulse test,
+   so the static eigenvalue comparison is valid.
+
+DMEM-position-base and register-file items are **RESOLVED/confirmed** — no longer open.
 
 ### C. Parameters
 - Wire `setParameter(index, value01)` through the per-program sweep curves in
@@ -223,14 +257,16 @@ Use for decay-shape / HF / LFO validation. Parameter settings unknown — exact 
 
 ## 6. Open questions / risks
 
-- **Per-program position base — the final structural blocker.** Without the correct per-program base,
-  tank banks alias in the 64K buffer and λ stays at ~1.0003 (structural unity loop). This is step B
-  above, and unlocks both correct DMEM topology and FPC I/O decode for live images.
+- **Sub-LSB fine-arithmetic — the final remaining item.** The model runs λ≈1.000346 vs the hardware P85
+  target λ=0.9999899 (RT60≈20 s). The gap (~3×10⁻⁴) is localized to the saturating multiplier /
+  result-transfer rounding for the +0.976 comb closers (s65, s88). The hardware P85 IR is the only oracle.
+  See step B above and `224XL-concert-decay-continuation.md` for the full investigation plan.
+- **DMEM addressing and register file — CONFIRMED CORRECT.** No longer open: one 64K×16 bank, base=0
+  (schematic #060-02512, anchored by s76); 4×LS670, no address-3 gating (schematic #060-01318).
 - **224XL step clock / exact Fs.** 128 steps × ~34.13 kHz ⇒ ~4.37 MHz step clock (inferred). Bit-exact
   delay lengths only hold at the true native rate — confirm via a hardware Fs measurement.
-- **Hardware IR parameter settings unknown.** `Concert Hall V7.2.L.wav` is usable for decay-shape, HF,
-  and LFO shape validation. Exact RT60 calibration and absolute gain matching require a recording with
-  known parameter settings.
+- **Hardware IR P85 (20 s default) is the decay oracle.** `Concert Hall V7.2.L.wav` (RT60≈4.86 s) is
+  also available for a shorter param state. Use P85 for absolute eigenvalue calibration.
 - **Reference/core lockstep.** Any further arithmetic changes must update `aru_datapath.py` and
   `ArithProfile` together; the diff harness is the safety net. Treat the reference as the spec.
 
@@ -240,9 +276,9 @@ Use for decay-shape / HF / LFO validation. Parameter settings unknown — exact 
 
 1. Read this file, then the technical reference (§2 links) for the locked decisions.
 2. Reproduce the green baseline (§2 "Reproduce") — confirm `DIFF PASSED` and `ctest` 2/2.
-3. **Current target: step B — pin the per-program position base.** The arithmetic is fully resolved;
-   the single remaining structural gap is the DMEM address aliasing between tank banks. Anchor on the
-   input-read step (CONCERT step 76, offset=0xFFFF, WA=2) ⇒ address = position+1 to find the base.
-   Once pinned: λ drops to ~0.9979 and FPC I/O decode (`(offset−base)&0x8000`) becomes correct for
-   live images. Validate with `wav_ir_tool ir` against `IR/Lexicon 224XL/Concert Hall V7.2.L.wav`
-   (decay shape / HF roll-off / LFO).
+3. **Current target: step B — close the sub-LSB fine-arithmetic.** The arithmetic, DMEM addressing, and
+   register file are all confirmed correct. The single remaining gap is the rounding/truncation detail
+   in the saturating multiplier / result transfer for the +0.976 comb closers (s65, s88). Target:
+   λ=0.9999899 @ 34130 Hz (P85 hardware IR, RT60≈20 s). See `224XL-concert-decay-continuation.md`
+   for the prioritized investigation plan. Validate with `wav_ir_tool ir` against
+   `IR/Lexicon 224XL/P85 - 20.0 Seconds A.wav` (primary) and `Concert Hall V7.2.L.wav` (secondary).

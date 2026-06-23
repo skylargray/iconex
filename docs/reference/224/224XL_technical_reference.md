@@ -69,10 +69,10 @@ Components:
   sign `CSIGN/`.
 - **Accumulator** — 20-bit. `ZERO/` clears it.
 - **Result register** — 16-bit. `XFER/` (clock XFER CK) loads it from the accumulator.
-- **DMEM** — **circular delay memory of 65536 words → `DMEM_MASK = 0xFFFF`** (manual: one bank of 64K
-  DRAM, or two 16K banks; 16-bit offset + 16-bit position ⇒ 64K). Addressed by a 16-bit **current-
-  position counter** (incremented once per sample) **minus** the microword offset. The DAB carries DMEM
-  data, FPC audio, the result register, or the SBC XREG.
+- **DMEM** — **circular delay memory of 65536 words → `DMEM_MASK = 0xFFFF`** (schematic #060-02512:
+  **one 64K×16 bank** of sixteen 4164 DRAMs; no bank-select; position base = 0). Addressed by a 16-bit
+  **current-position counter** (incremented once per sample) **minus** the microword offset. The DAB
+  carries DMEM data, FPC audio, the result register, or the SBC XREG.
 
   **Address/delay convention (authoritative — use this in C++):** the stored offset bytes are `OFST/`
   (active-low). True offset = `~(lane1<<8 | lane0) & 0xFFFF`. The hardware does a 2's-complement subtract
@@ -357,9 +357,10 @@ two layers:
    with the same input, compare output **sample-by-sample (integer == integer)**. All arithmetic details
    in §4 are now resolved (coefficient encoding, b3/RDRREG/, result shift >>3, read-before-write, closer
    ordering). The reference and core are anchored by: (a) the Service-Manual multiplier test vectors (§4)
-   as unit tests (all passing), (b) a stable, decaying impulse response (λ ≈ 0.9979 once position base
-   pinned), and (c) the real-hardware IR `IR/Lexicon 224XL/Concert Hall V7.2.L.wav` (§9 above) for
-   decay-shape / HF / LFO ground truth. `diff_harness golden 01` → DIFF PASSED.
+   as unit tests (all passing), (b) the current eigenvalue λ≈1.000346 (near-critical; sub-LSB gap to
+   the hardware P85 target λ=0.9999899 is the final remaining item, see §10), and (c) the real-hardware
+   IRs `P85 - 20.0 Seconds A.wav` (primary oracle, RT60≈20 s) and `Concert Hall V7.2.L.wav` (secondary)
+   for decay-shape / HF / LFO ground truth. `diff_harness golden 01` → DIFF PASSED.
 3. **Dynamic parity.** Drive the firmware emulator and the C++ core with the same parameter and time
    base; assert the C++ core's modulation + param de-zipper reproduce the firmware's live WCS frames
    (capture WCS frames from the emulator at control ticks; compare to the C++ core's WCS state).
@@ -370,17 +371,20 @@ boundary (`processSample(float)->float`) for the DPF/STM32 wrappers.
 
 ### Hardware IR ground truth (now available)
 
-A real CONCERT HALL impulse response is in the repo: **`IR/Lexicon 224XL/Concert Hall V7.2.L.wav`**
-(24-bit / 96 kHz, mono/Left). Measured characteristics:
-- **RT60 ≈ 4.8–4.9 s**, clean single exponential (LF ~5.25 s, HF ~3.79 s — HF damping present).
-- **LFO/chorus** visible in the tail: ~2–3 Hz, mod depth ~0.76 samples.
-- **Pre-delay ≈ 147 ms**.
-- **Target per-sample loop eigenvalue λ ≈ 0.999958** at the 34.13 kHz native rate (tolerance ±1e-6 ≈
-  ±0.1 s RT60). The RESOLVED arithmetic brings λ from the broken ~1.48 (sustaining) → ~1.0003 (still a
-  structural unity loop from DMEM address aliasing) → **~0.9979** (genuine clean decay) once the per-
-  program position base is pinned (see §10).
-- **Parameter settings UNKNOWN** — so exact RT60 calibration is deferred. Use this recording for
-  decay-shape / HF roll-off / LFO validation, not for absolute parameter matching.
+Two real CONCERT HALL impulse responses are in the repo:
+
+**Primary oracle (default param state, 20 s):** `IR/Lexicon 224XL/P85 - 20.0 Seconds A.wav`
+- **RT60 ≈ 20 s** (clean single exponential, default CONCERT program).
+- **Target λ = 0.9999899** at the 34.13 kHz native rate. Use for absolute eigenvalue calibration.
+
+**Secondary (shorter param state):** `IR/Lexicon 224XL/Concert Hall V7.2.L.wav` (24-bit/96 kHz, mono/Left)
+- **RT60 ≈ 4.86 s** (LF ~5.25 s, HF ~3.79 s — HF damping present). Target **λ ≈ 0.9999580**.
+- **LFO/chorus** visible in the tail: ~2–3 Hz, mod depth ~0.76 samples. **Pre-delay ≈ 147 ms**.
+- Use for decay-shape / HF roll-off / LFO validation and as a second eigenvalue crosscheck.
+
+The RESOLVED arithmetic brings λ from the broken ~1.48 (sustaining) → **~1.000346** (near-critical).
+DMEM addressing (base=0, schematic #060-02512) and register file (#060-01318) are confirmed correct.
+The remaining gap to the P85 target is sub-LSB (see §10).
 
 Additional schematics now in hand (cross-reference): ARU #060-01318, FPC #060-01320, DMEM #060-02512,
 DMEM #060-02273, Block-Diagram-Memory + zoom crops.
@@ -408,19 +412,28 @@ DMEM #060-02273, Block-Diagram-Memory + zoom crops.
   DMEM (write-back); `b3=0` ⇒ DMEM/FPC drives DAB (read). Independent stored bit.
 - **Register file:** read-before-write (LS670); WA=3 = pass-through scratch; DAB WSTB/ writes every cycle.
 - **Comb-closer ordering:** XFER loads RES before b3 drives the DAB — post-XFER value written to DMEM.
-- **Loop eigenvalue:** RESOLVED arithmetic brings CONCERT λ from ~1.48 (broken) → ~1.0003 (structural
-  unity from aliasing) → **~0.9979** (genuine decay) once the position base is pinned.
+- **Loop eigenvalue:** RESOLVED arithmetic brings CONCERT λ from ~1.48 (broken) → **~1.000346**
+  (near-critical). DMEM addressing (base=0, schematic #060-02512) and register file (#060-01318) are
+  confirmed correct. Remaining gap to hardware target (λ=0.9999899, P85 20 s IR) is sub-LSB (see §10).
 - Implemented in `tools/aru_datapath.py` and `libs/sgdsp/include/sgdsp/reverb/224xl.hpp`; verified
   integer-exact by the diff harness (DIFF PASSED) with multiplier unit tests passing.
 
-**Open (FINAL remaining blocker):**
-- **Per-program position base** — the last structural gap. Two tank banks write overlapping offsets
-  (e.g. 0x1000, 0xD4D8) that collide in the single 64K buffer; λ ≈ 1.0003 until each program's base
-  is pinned to a non-aliasing address window. Anchor: the input read at offset `0xFFFF` (`WA=2,
-  low14=0x3FFF`, CONCERT step 76) ⇒ address = position+1. The SM notes the DMEM may be one 64K bank
-  or two 16K banks. Once pinned: apply `(offset − base) & 0x8000` for FPC decode, and the bit15=FPC /
-  bit14=channel rule holds for live images. Live reverbs are **mono-in / stereo-out** (one input read;
-  outputs split L→A,D / R→B,C). HF damping and LFO modulation remain for full spectral/chorus fidelity.
+**Confirmed correct (previously open):**
+- **DMEM addressing** — one 64K×16 bank (sixteen 4164 DRAMs, schematic **#060-02512**). Formula:
+  `addr = (pos − offset) & 0xFFFF`, position base = **0** (anchored by the input-read step s76,
+  offset=0xFFFF, WA=2 ⇒ addr=pos+1). No bank-select; #060-02273 is the SBC program-memory board, not
+  the delay RAM. **CONFIRMED CORRECT.**
+- **Register file** — 4×LS670 (U29–U32, schematic **#060-01318** register-file zoom): WA/RA feed all
+  chips, `DAB WSTB/` (A41) writes every cycle, no special address-3 gating — R[3] stores normally.
+  **CONFIRMED CORRECT.**
+
+**Open (FINAL remaining item):**
+- **Sub-LSB rounding/truncation** — the CONCERT loop eigenvalue is currently λ≈1.000346 vs the
+  hardware 20-second target **λ=0.9999899** (IR `P85 - 20.0 Seconds A.wav`, RT60≈20 s). The gap
+  (~3×10⁻⁴, ~0.03%) is below firmware/schematic resolution — localized to the rounding/truncation
+  mode in the 2's-complement saturating multiplier / result-register transfer, specifically for the
+  two +0.976 comb closers (steps s65, s88). The hardware P85 IR decay curve is the only oracle.
+  Full investigation plan: **`docs/plans/224XL-concert-decay-continuation.md`**.
 - **224XL step clock / exact Fs** — 128 steps × ~34.13 kHz ⇒ ~4.37 MHz step clock (inferred; confirm
   via hardware Fs measurement). Delay lengths are Fs-relative; bit-exact only at the true native rate.
 
@@ -506,20 +519,17 @@ steps — proving those steps are the output writes and that the output offset's
   read/write but at addresses with bit15 set. (Confirms the earlier scouting note: RESET/strobes are not
   dedicated microword bits; they are decoded from address/counter state in the T&C+FPC.)
 
-**Caveat for *live* reverb images — the position base.** In the diagnostic programs the WCS is built
-with a position base such that the FPC steps decode cleanly (input `low14 = 0x3FFF`, channel in bit14).
-In a live program image (e.g. CONCERT from `boot_xl`) the stored offsets are **absolute and
+**Note on live reverb images — position base (CONFIRMED = 0).** In the diagnostic programs the WCS is
+built with a position base such that the FPC steps decode cleanly (input `low14 = 0x3FFF`, channel in
+bit14). In a live program image (e.g. CONCERT from `boot_xl`) the stored offsets are **absolute and
 position-relative** (§2: "absolute offsets are large relative to an arbitrary position base that cancels
-across read/write pairs"). So bit15/bit14 of a *live absolute* offset is **not** by itself a clean FPC
-marker — many ordinary delay taps have bit15 set merely because of the base. The reliable, base-invariant
-fingerprint that *does* survive is the **input read** at `low14 = 0x3FFF` with `WA=2`: it appears in
-CONCERT at **step 76** (`offset = 0xFFFF`, WA=2, coeff −1.0) — the input-injection step — exactly as in
-the diagnostic. The diff harness (§9) must pin the per-program position base so the FPC address decode
-lines up; once the base is subtracted, the bit15 = FPC / bit14 = channel rule holds for the live image
-too. For the C++ core's per-step execution: branch on `(offset − base) & 0x8000` to route reads from the
-FPC input latch (channel = `& 0x4000`) and `WA=3` writes to the FPC output channel (channel = `& 0x4000`,
-strobe = `low14`), instead of reading/writing DMEM. Pinning `base` per program is the remaining sub-task
-(it is the same base that makes the read/write tap pairs align in DMEM).
+across read/write pairs"). The position base is **confirmed = 0** (anchored by the input-read step:
+CONCERT step 76, `offset = 0xFFFF`, WA=2 ⇒ addr = pos+1; schematic #060-02512). So bit15/bit14 of a
+*live absolute* offset is still a valid FPC marker at base 0. The reliable, base-invariant fingerprint
+that always survives regardless of base is the **input read** at `low14 = 0x3FFF` with `WA=2`. For the
+C++ core's per-step execution: branch on `offset & 0x8000` (with base=0 this is simply the raw offset
+bit15) to route reads from the FPC input latch (channel = `& 0x4000`) and `WA=3` writes to the FPC
+output channel (channel = `& 0x4000`, strobe = `low14`), instead of reading/writing DMEM.
 
 ---
 
