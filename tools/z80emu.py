@@ -233,8 +233,10 @@ class Z80:
                 elif y==3:self.rra()
                 elif y==4:self._daa()
                 elif y==5:self.A^=0xFF; self.F|=FH|FN            # CPL
-                elif y==6:self.F=(self.F&(FS|FZ|FPV))|FC          # SCF
-                else:self.F=(self.F&(FS|FZ|FPV))|((self.F&FC)^FC and 0)|(0 if self.F&FC else FC)  # CCF
+                elif y==6:self.F=(self.F&(FS|FZ|FPV))|FC          # SCF (H=0,N=0)
+                else:  # CCF: H = old C, C = ~C, N = 0, S/Z/P preserved
+                    oc=self.F&FC
+                    self.F=(self.F&(FS|FZ|FPV))|(FH if oc else 0)|(0 if oc else FC)
                 return
         if x==3:
             if z==0:  # RET cc
@@ -289,8 +291,14 @@ class Z80:
         a=self.A; cf=self.F&FC; hf=self.F&FH; nf=self.F&FN; corr=0; c=0
         if hf or (a&0xF)>9: corr|=0x06
         if cf or a>0x99: corr|=0x60; c=FC
-        a=(a-corr)&0xFF if nf else (a+corr)&0xFF
-        self.A=a; self.F=(a&FS)|(FZ if a==0 else 0)|PARITY[a]|nf|c
+        # H output: subtract -> borrow from bit4 (H set if it was needed); add -> carry from bit4.
+        if nf:
+            h=FH if (hf and (a&0xF)<6) else 0
+            a=(a-corr)&0xFF
+        else:
+            h=FH if (a&0xF)>9 else 0
+            a=(a+corr)&0xFF
+        self.A=a; self.F=(a&FS)|(FZ if a==0 else 0)|PARITY[a]|nf|c|h
 
     def _getrp(self,p): return [self.BC,self.DE,self.HL,self.SP][p]
     def _setrp(self,p,v):
@@ -409,7 +417,28 @@ class Z80:
         if op==0xE9: self.PC=get(); return
         if op==0xE3: t=self.rw(self.SP); self.ww(self.SP,get()); setr(t); return
         if op==0xF9: self.SP=get(); return
-        # fall back: treat as normal opcode (prefix had no effect)
+        # DD/FD on a remaining opcode: substitute H->idxH (high byte), L->idxL (low
+        # byte) -> the undocumented IXH/IXL ops. (HL) operands were already remapped
+        # to (IX+d) by the explicit handlers above; an op touching none of H/L/(HL)
+        # is unaffected by the prefix and runs as the base opcode.
+        def gr(i):
+            if i==4: return (get()>>8)&0xFF
+            if i==5: return get()&0xFF
+            return self._rget(i)
+        def sr(i,v):
+            v&=0xFF
+            if i==4: setr((get()&0x00FF)|(v<<8))
+            elif i==5: setr((get()&0xFF00)|v)
+            else: self._rset(i,v)
+        x=op>>6; y=(op>>3)&7; z=op&7
+        if x==1 and op!=0x76 and (y in (4,5) or z in (4,5)):   # LD r,r' with H/L -> IXH/IXL
+            sr(y,gr(z)); return
+        if x==2 and z in (4,5):                                 # ALU A,IXH/IXL
+            self._alu(y,gr(z)); return
+        if x==0 and z==4 and y in (4,5): sr(y,self.inc8(gr(y))); return  # INC IXH/IXL
+        if x==0 and z==5 and y in (4,5): sr(y,self.dec8(gr(y))); return  # DEC IXH/IXL
+        if x==0 and z==6 and y in (4,5): sr(y,self.fb()); return         # LD IXH/IXL,n
+        # prefix has no effect on this opcode -> execute the base opcode
         self.PC=(self.PC-1)&0xFFFF; self._main(self.fb()); return
 
     # ---- maskable interrupt (IM0/IM1 -> RST38 ; IM2 -> vectored) ----

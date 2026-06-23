@@ -1,0 +1,48 @@
+D:\OneDrive\Gray Instruments\iconex\tools\damp_grid.py:17: WavFileWarning: Chunk (non-data) not understood, skipping it.
+  sr, d = wav.read('IR/Lexicon 224XL/P85 - 20.0 Seconds A.wav')
+D:\OneDrive\Gray Instruments\iconex\tools\damp_grid.py:19: WavFileWarning: Chunk (non-data) not understood, skipping it.
+  srv, dv = wav.read('IR/Lexicon 224XL/Concert Hall V7.2.L.wav')
+benchmark V7.2 vs P85 = 0.916; scramble ~0.30
+
+  lam_eff=0.9990 a=0.00: P85corr=+0.542 @scale=1.0955
+  lam_eff=0.9990 a=0.30: P85corr=+0.754 @scale=1.1000
+  lam_eff=0.9990 a=0.50: P85corr=+0.828 @scale=1.1000
+  lam_eff=0.9990 a=0.60: P85corr=+0.840 @scale=1.1000
+  lam_eff=0.9990 a=0.70: P85corr=+0.843 @scale=1.1000
+  lam_eff=0.9990 a=0.80: P85corr=+0.840 @scale=1.1000
+  lam_eff=0.9990 a=0.85: P85corr=+0.837 @scale=1.1000
+
+  lam_eff=0.9970 a=0.00: P85corr=+0.531 @scale=1.1000
+  lam_eff=0.9970 a=0.30: P85corr=+0.765 @scale=1.1000
+  lam_eff=0.9970 a=0.50: P85corr=+0.830 @scale=1.1000
+  lam_eff=0.9970 a=0.60: P85corr=+0.840 @scale=1.1000
+  lam_eff=0.9970 a=0.70: P85corr=+0.842 @scale=1.1000
+  lam_eff=0.9970 a=0.80: P85corr=+0.839 @scale=1.1000
+  lam_eff=0.9970 a=0.85: P85corr=+0.836 @scale=1.1000
+
+  lam_eff=0.9950 a=0.00: P85corr=+0.528 @scale=1.1000
+  lam_eff=0.9950 a=0.30: P85corr=+0.772 @scale=1.1000
+  lam_eff=0.9950 a=0.50: P85corr=+0.831 @scale=1.1000
+  lam_eff=0.9950 a=0.60: P85corr=+0.840 @scale=1.1000
+  lam_eff=0.9950 a=0.70: P85corr=+0.842 @scale=1.1000
+  lam_eff=0.9950 a=0.80: P85corr=+0.838 @scale=1.1000
+  lam_eff=0.9950 a=0.85: P85corr=+0.835 @scale=1.1000
+
+  lam_eff=0.9900 a=0.00: P85corr=+0.575 @scale=1.1000
+  lam_eff=0.9900 a=0.30: P85corr=+0.786 @scale=1.1000
+  lam_eff=0.9900 a=0.50: P85corr=+0.833 @scale=1.1000
+  lam_eff=0.9900 a=0.60: P85corr=+0.839 @scale=1.1000
+  lam_eff=0.9900 a=0.70: P85corr=+0.839 @scale=1.1000
+  lam_eff=0.9900 a=0.80: P85corr=+0.835 @scale=1.1000
+  lam_eff=0.9900 a=0.85: P85corr=+0.832 @scale=1.1000
+
+  lam_eff=0.9850 a=0.00: P85corr=+0.616 @scale=1.1000
+  lam_eff=0.9850 a=0.30: P85corr=+0.796 @scale=1.1000
+  lam_eff=0.9850 a=0.50: P85corr=+0.833 @scale=1.1000
+  lam_eff=0.9850 a=0.60: P85corr=+0.837 @scale=1.1000
+  lam_eff=0.9850 a=0.70: P85corr=+0.836 @scale=1.1000
+  lam_eff=0.9850 a=0.80: P85corr=+0.832 @scale=1.1000
+  lam_eff=0.9850 a=0.85: P85corr=+0.828 @scale=1.1000
+
+BEST: corr=0.843 at lam_eff,a,scale=(0.999, 0.7, 1.1)
+(V7.2 real benchmark 0.92; scramble 0.30; flat-leak-only baseline ~0.53)
