@@ -1,17 +1,26 @@
-// Multiplier + saturation unit tests for the 224XL ARU primitives.
-// Anchors: the Service-Manual multiplier diagnostic exercises coefficients
-// +21/32, +42/32, +63/64 and x1, x1/2, x-1, x1/4, x5/4, and states "the last two
-// coefficients should set the saturation" (Lexicon 224X Service Manual 5.3,
-// E80-EB3). The 7-bit/128 first-cut datapath cannot represent x1, 42/32, 5/4
-// exactly (that is the OPEN coeff-denominator/2-LSB item) - those exact
-// coefficients become assertions once that knob resolves. This test pins the
-// representable mechanics: sign-magnitude scaling, floor-shift, and saturation.
+// Multiplier + saturation unit tests for the 224XL ARU primitives (firmware/
+// schematic-resolved datapath; authority is tools/aru_datapath.py).
+//
+// The resolved per-multiply is:
+//   * 6-bit signed coeff  Cs = +/-(abs(coeff7) >> 1)              [aruCoeff6]
+//   * operand = x << 3,  prod = (operand * Cs) >> 6  (arith. >>)  [aruProd]
+//     (net gain x * Cs / 64; the <<3/>>6 is the 17->20 bit operand alignment)
+//   * 20-bit saturating accumulator, rails +/-524287              [aruSat20 / aruMac]
+//   * result register RES = sat16(ACC >> 3), rails [-32768,32767] [aruSat16]
+//
+// Anchors: the firmware ADD'L MULT mapping confirms coefficient magnitude 124 ->
+// C = 62 -> gain 62/64 = 0.969 (Service Manual 5.3 multiplier diagnostic).
+// This test pins the representable mechanics: coeff folding, the <<3/>>6 product,
+// floor-shift on negatives, and both saturation rails.
 #include "sgdsp/reverb/224xl.hpp"
 #include <cstdio>
 #include <cstdint>
 
+using sgdsp::reverb::aruCoeff6;
+using sgdsp::reverb::aruProd;
 using sgdsp::reverb::aruMac;
 using sgdsp::reverb::aruSat16;
+using sgdsp::reverb::aruSat20;
 using sgdsp::reverb::AruAccum;
 
 static int g_fail = 0;
@@ -19,44 +28,63 @@ static int g_fail = 0;
 static void check(const char* name, AruAccum got, AruAccum want)
 {
     if (got != want) {
-        std::printf("FAIL %-28s got=%lld want=%lld\n", name,
+        std::printf("FAIL %-30s got=%lld want=%lld\n", name,
                     (long long)got, (long long)want);
         ++g_fail;
     } else {
-        std::printf("ok   %-28s = %lld\n", name, (long long)got);
+        std::printf("ok   %-30s = %lld\n", name, (long long)got);
     }
 }
 
 int main()
 {
-    // Representable coefficients (signed 7-bit magnitude, applied as coeff>>7):
-    //   +1/2  -> coeff 64   (64/128)
-    //   +1/4  -> coeff 32
-    //   +21/32-> coeff 84   (84/128 == 21/32)
-    //   +63/64-> coeff 126  (126/128 == 63/64)
-    // MAC from acc=0: (x*coeff)>>7.
-    check("half of 1000",        aruMac(0, 1000,  64),  500);   // 1000*64>>7 = 500
-    check("quarter of 1000",     aruMac(0, 1000,  32),  250);   // 1000*32>>7 = 250
-    check("21/32 of 3200",       aruMac(0, 3200,  84), 2100);   // 3200*84>>7 = 2100
-    check("63/64 of 6400",       aruMac(0, 6400, 126), 6300);   // 6400*126>>7 = 6300
+    // ---- 6-bit coefficient folding: Cs = +/-(abs(coeff7) >> 1) ----
+    check("coeff6 124 (ADD'L MULT 62)", aruCoeff6(124),  62);   // gain 62/64 = 0.969
+    check("coeff6 126",                 aruCoeff6(126),  63);   // 126>>1
+    check("coeff6 64",                  aruCoeff6(64),   32);   // 64>>1
+    check("coeff6 1 (floors to 0)",     aruCoeff6(1),     0);   // 1>>1 == 0
+    check("coeff6 -124",                aruCoeff6(-124),-62);   // sign via CSIGN
+    check("coeff6 -1 (floors to 0)",    aruCoeff6(-1),    0);   // -(1>>1) == 0
 
-    // Floor division on negatives: a non-exact case proves floor (toward -inf),
-    // not truncation toward zero:  (-5 * 1) >> 7 == -1 (floor); -5/128 == 0 (trunc).
-    check("floor neg small",     aruMac(0,   -5,   1),   -1);
+    // ---- product term: prod = (x<<3)*Cs >> 6  (== x*Cs/64, floored) ----
+    // 1000 * 62 / 64 = 62000/64 = 968.75 -> floor 968.  Via (8000*62)>>6 = 496000>>6 = 7750? no:
+    // careful: (1000<<3)=8000; 8000*62=496000; 496000>>6 = 7750. The net scale is x*Cs/8
+    // for this representation: operand<<3 then >>6 == <<3 net only when... no -> it is /8.
+    // (x<<3)*Cs>>6 = x*Cs*8/64 = x*Cs/8. So 1000*62/8 = 62000/8 = 7750. Confirmed.
+    check("prod 1000 * 62 (=/8)",   aruProd(1000,  62), 7750);   // 1000*62/8
+    check("prod 1024 * 32",         aruProd(1024,  32), 4096);   // 1024*32/8
+    check("prod 100 * 63",          aruProd( 100,  63),  787);   // 6300/8 = 787.5 -> 787 floor
+    check("prod 100 * -63",         aruProd( 100, -63), -788);   // -6300/8 = -787.5 -> -788 floor
 
-    // Standalone product cannot saturate at 16-bit scale (max coeff 127):
-    check("126/128 of 32767",    aruMac(0, 32767, 126), 32255); // 32767*126>>7 = 32255
+    // Floor division (toward -inf) on negatives: (-5<<3)*1>>6 = -40>>6 = -1 (floor),
+    // not 0 (truncation toward zero).
+    check("floor neg small",        aruProd(  -5,   1),   -1);   // -40>>6 = floor(-0.625) = -1
+    check("floor neg one",          aruProd(  -1,   1),   -1);   //  -8>>6 = floor(-0.125) = -1
+    check("pos under one floors 0", aruProd(   1,   1),    0);   //   8>>6 = 0
 
-    // Saturation trips come from ACCUMULATION (the Manual's "last two coefficients
-    // set saturation"): start near the rail, add more.
-    check("sat from big acc",    aruMac(32000, 1000, 126), 32767);
-    check("sat negative rail",   aruMac(-32000, 1000, -126), -32768);
+    // ---- MAC: sat20(acc + prod) ----
+    check("mac accumulate",         aruMac(100, 1024, 32), 4196); // 100 + 4096
+    check("mac neg coeff",          aruMac(  0, 1000,-62),-7750); // -(1000*62/8)
 
-    // negative coefficient, non-saturating: (1000 * -64) >> 7 = -500
-    check("neg coeff of 1000",   aruMac(0, 1000, -64), -500);
+    // ---- 20-bit accumulator saturation (the Manual's "last coefficients set sat") ----
+    // prod 1000*63/8 = 7875; 524000 + 7875 = 531875 -> rail +524287.
+    check("sat20 high rail",        aruMac( 524000, 1000,  63),  524287);
+    check("sat20 low rail",         aruMac(-524000, 1000, -63), -524287);
+    check("sat20 passthrough hi",   aruSat20( 524287),  524287);
+    check("sat20 passthrough lo",   aruSat20(-524287), -524287);
+    check("sat20 clamp over",       aruSat20( 600000),  524287);
+    check("sat20 clamp under",      aruSat20(-600000), -524287);
 
-    // accumulate then saturate (sat applied to acc+prod each step)
-    check("accumulate then add", aruMac(100, 1000, 64), 600);   // 100 + 500
+    // ---- 16-bit result-register saturation: RES = sat16(ACC>>3) ----
+    // ACC at full positive rail: 524287>>3 = 65535 -> sat16 -> 32767.
+    check("res from acc hi rail",   aruSat16(524287 >> 3),  32767);  // 65535 clamps
+    check("res from acc lo rail",   aruSat16(-524287 >> 3), -32768); // -65536>>... clamps
+    check("sat16 passthrough hi",   aruSat16( 32767),  32767);
+    check("sat16 passthrough lo",   aruSat16(-32768), -32768);
+    check("sat16 clamp over",       aruSat16( 40000),  32767);
+    check("sat16 clamp under",      aruSat16(-40000), -32768);
+    // A mid-range result that does NOT saturate: ACC=80000 -> 80000>>3 = 10000.
+    check("res mid no sat",         aruSat16(80000 >> 3),  10000);
 
     std::printf(g_fail ? "\n%d FAILURE(S)\n" : "\nALL PASS\n", g_fail);
     return g_fail ? 1 : 0;

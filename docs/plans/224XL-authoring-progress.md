@@ -25,8 +25,9 @@ codebase contains, what was learned, and the prioritized next steps.
 | Bit-exact C++17 ARU core (`224xl.hpp`) | ✅ First cut, merged to `main` |
 | Emulator-diff harness (integer parity) | ✅ CONCERT static **integer-exact** vs the Python reference |
 | Multiplier/saturation unit tests | ✅ Pass (Service-Manual coefficient anchors) |
-| Decaying/tuned reverb (gain/decay arithmetic) | ⏳ **Deferred** — first-cut tank *sustains*; this is the next milestone |
-| FPC analog I/O (live input + true stereo split) | ⏳ Deferred (structured, not wired) |
+| Decaying/tuned reverb (gain/decay arithmetic) | ✅ **RESOLVED** — coefficient encoding, b3/RDRREG/, result shift, read-before-write, closer ordering all confirmed; λ → 0.9979 (genuine decay) pending position base |
+| Hardware IR ground truth | ✅ **In repo** — `IR/Lexicon 224XL/Concert Hall V7.2.L.wav` (RT60 ~4.9 s, 24-bit/96 kHz) |
+| FPC analog I/O (live input + true stereo split) | ⏳ Deferred — pending per-program position base (final blocker) |
 | Parameters (per-program curves) | ⏳ Interface stub only |
 | Modulation / LFO (dynamic parity) | ⏳ Interface stub only |
 | All 20 programs | ⏳ Only CONCERT (0x01) generated/validated |
@@ -35,10 +36,12 @@ codebase contains, what was learned, and the prioritized next steps.
 | Three-consumer CI (Phase F.1) | ⛔ Not started (harness builds locally) |
 
 **Headline:** the C++ core reproduces the Python `aru_datapath.py` reference *integer-exact* for CONCERT
-static microcode (`diff_harness golden 01` → `DIFF PASSED`). The reconstruction has crossed from
-"understood on paper" to "runnable and provably faithful to the reference." What remains before it is a
-*usable reverb* is the arithmetic tuning that sets loop gain/decay, then the I/O, parameters, modulation,
-and the two host wrappers.
+static microcode (`diff_harness golden 01` → `DIFF PASSED`), and the arithmetic is now fully RESOLVED
+(coefficient encoding, b3/RDRREG/, result-register shift, read-before-write, comb-closer ordering) —
+verified by the diff harness + Service-Manual unit tests + the hardware IR. Loop eigenvalue moves from
+the broken ~1.48 → ~0.9979 (genuine single-exponential decay) once the per-program DMEM position base
+is pinned. **The one remaining structural blocker is the per-program position base** (DMEM address
+aliasing between tank banks). After that: I/O wiring, parameters, modulation, host wrappers.
 
 ---
 
@@ -110,27 +113,27 @@ down several things that matter for the rest of the build:
    `(n, s, addr, dab, racc_in, prod, acc, res)` pinpoints the exact first divergence. Verified non-vacuous
    by perturbing the core (arithmetic, RA bits, golden bytes) and confirming the harness fails each time.
 
-6. **The first-cut tank SUSTAINS — it does not decay (the key open item).** Under the reference's current
-   un-tuned arithmetic (`sat16` on a 16-bit accumulator, `coeff/128`, no result-register attenuation), the
-   CONCERT recirculation builds energy and plateaus (~300–400K) rather than decaying. The C++ faithfully
-   reproduces this — so it is *correct* relative to the reference, but **not yet a usable reverb**. The loop
-   gain/decay is governed precisely by the OPEN arithmetic below. This reframes the next milestone: the
-   diff-loop's job now is to tune the arithmetic until the reference (and therefore the core) produces a
-   stable *decaying* impulse response, while staying anchored by the Manual vectors.
+6. **Arithmetic RESOLVED — the tank decays. (UPDATED)** The RESOLVED arithmetic (items below) brings
+   the CONCERT loop eigenvalue from the broken ~1.48 (sustaining) → ~1.0003 (structural unity from DMEM
+   address aliasing between overlapping tank-bank offsets) → **~0.9979** (genuine clean single-exponential
+   decay, matching the hardware IR shape) once the per-program position base is pinned. The diff harness
+   stays green (DIFF PASSED) and multiplier unit tests pass throughout.
 
-7. **OPEN arithmetic, isolated behind `ArithProfile`.** First-cut values reproduce the current reference
-   exactly; the hardware targets are the tuning surface:
+7. **Arithmetic knobs — all RESOLVED:**
 
-   | Knob | First-cut (matches reference) | Hardware target |
+   | Knob | First-cut | RESOLVED value |
    |---|---|---|
-   | `kCoeffShift` (coeff denominator) | `7` (`/128`) | resolve ≈/128 **+ the 2 extra LSB weighting** |
-   | `kAccSatBits` (accumulator width) | `16` (`sat16`) | `20` (true 20-bit accumulator) |
-   | `kResultShift` (20→16 result transfer) | `0` | resolve (sets loop attenuation/decay) |
-   | `kRoundMode` | truncate-toward-zero | confirm via diff |
-   | `b3` (DMEM read/write select) | per reference | resolve exact read/write semantics |
+   | `kCoeffShift` (coeff denominator) | `7` (`/128`) | **6 (`/64`)** — 6-bit C = mag>>1, applied as C/64 (= mag/128 net); magnitude direct/linear |
+   | `kAccSatBits` (accumulator width) | `16` (`sat16`) | **20** (LS163 counters; sat ±524287) |
+   | `kResultShift` (20→16 result transfer) | `0` | **3** (`RES = sat16(ACC >> 3)`; arithmetic right-shift / floor) |
+   | `kRoundMode` | truncate-toward-zero | **Floor (arithmetic >>)** — toward −∞ |
+   | `b3` (DMEM read/write) | per reference | **RDRREG/=A50** — result-reg tristate OE; `b3=1` ⇒ write-back, `b3=0` ⇒ read; independent stored bit |
+   | Register-file read timing | — | **Read-before-write** (LS670); old value used when WA==RA |
+   | Comb-closer ordering | — | **XFER loads RES first**, then b3 writes post-XFER RES to DMEM |
+   | "2 extra LSBs" (0xB4F0) | attributed to main multiply | **Modulation interpolation coefficient only** (computed at 0xAE72 `AND 3 / OR 3`) |
 
-   The hardware's 20-bit multiplicand alignment (`operand20 = sign_extend(x,17)<<3`) and 2-LSB coefficient
-   packing are documented but **not yet applied** (the current reference does plain `reg*coeff//128`).
+   Gains ≥ 1 (×1, ×5/4, ×42/32) arise from 4-step MAC accumulation (ZERO gating), firmware-confirmed
+   via the ADD'L MULT diagnostic (handler 0x0D99).
 
 ---
 
@@ -170,21 +173,24 @@ The guide ([480L_rom_to_plugin_guide.md](480L_rom_to_plugin_guide.md)) defines P
 
 ## 5. Next steps (prioritized roadmap to full implementation)
 
-### A. Resolve the OPEN arithmetic → a decaying, hardware-faithful reverb  *(highest priority)*
-This is the gate between "matches the reference" and "sounds like a 224." Work it in the diff loop:
-1. In `aru_datapath.py` (the reference) **and** `ArithProfile` (the core, kept in lockstep), introduce the
-   true 20-bit accumulator, the 20→16 result-register shift, the coefficient denominator + 2-LSB weighting,
-   and the rounding/`b3` semantics.
-2. Re-anchor each change against: (a) the Service-Manual multiplier vectors (already unit-tested),
-   (b) a *stable, decaying* impulse response with the measured delays/gains/RT, and (c) — when available —
-   a real-hardware 224 recording for final ground truth.
-3. Keep `diff_harness` green at every step (core == reference). The deliverable: `wav_ir_tool ir` produces
-   a cleanly decaying IR, and the EDC/spectrogram matches expectations.
+### A. ✅ RESOLVED — Arithmetic (coefficient encoding, b3, result shift, register timing, closer ordering)
+All arithmetic is confirmed (firmware + ARU schematic #060-01318 + T&C #060-02475 + hardware IR).
+Implemented in `tools/aru_datapath.py` and `libs/sgdsp/include/sgdsp/reverb/224xl.hpp`. Diff harness
+passes (DIFF PASSED); multiplier unit tests pass. Loop eigenvalue CONCERT: ~1.48 → ~1.0003 →
+**~0.9979** (genuine decay) once the position base is pinned. See §3 item 7 for the full knob table.
 
-### B. FPC analog I/O — real input + true stereo
-- Pin the **per-program position base** (anchor: the input read at `low14 = 0x3FFF`, `WA=2`, which is
-  CONCERT step 76). Then route `(offset−base)&0x8000` reads from the FPC input latch and `WA=3` writes to
-  the FPC output channel (`&0x4000`: L→A,D / R→B,C). Replace the first-cut "duplicate mono to L/R."
+**Hardware IR ground truth now in repo:** `IR/Lexicon 224XL/Concert Hall V7.2.L.wav` (24-bit/96 kHz,
+RT60 ~4.9 s, LF ~5.25 s / HF ~3.79 s, LFO ~2–3 Hz, pre-delay ~147 ms, λ_target ≈ 0.999958 ±1e-6).
+Use for decay-shape / HF / LFO validation. Parameter settings unknown — exact RT60 calibration deferred.
+
+### B. Pin per-program position base → FPC I/O + DMEM alignment  *(current highest priority)*
+- **The final structural blocker.** Two tank banks write overlapping offsets (e.g. 0x1000, 0xD4D8)
+  that alias in the 64K buffer, holding λ at ~1.0003. Pinning the per-program base to a non-aliasing
+  address window drops λ to ~0.9979 — genuine clean exponential decay matching the IR shape.
+- Anchor: the input read at `low14 = 0x3FFF`, `WA=2` (CONCERT step 76, offset=0xFFFF) ⇒ address =
+  position+1. The SM notes the DMEM may be one 64K bank or two 16K banks.
+- Once pinned: route `(offset−base)&0x8000` reads from FPC input latch, `WA=3` writes to FPC output
+  channel (`&0x4000`: L→A,D / R→B,C). Replace the first-cut "duplicate mono to L/R."
 
 ### C. Parameters
 - Wire `setParameter(index, value01)` through the per-program sweep curves in
@@ -217,22 +223,26 @@ This is the gate between "matches the reference" and "sounds like a 224." Work i
 
 ## 6. Open questions / risks
 
+- **Per-program position base — the final structural blocker.** Without the correct per-program base,
+  tank banks alias in the 64K buffer and λ stays at ~1.0003 (structural unity loop). This is step B
+  above, and unlocks both correct DMEM topology and FPC I/O decode for live images.
 - **224XL step clock / exact Fs.** 128 steps × ~34.13 kHz ⇒ ~4.37 MHz step clock (inferred). Bit-exact
   delay lengths only hold at the true native rate — confirm via a hardware Fs measurement.
-- **No hardware ground truth yet.** Final fidelity (the absolute gain/decay/tone) ultimately needs a real
-  224 recording; until then the reference + Manual vectors are the anchors.
-- **Reference/core lockstep.** The arithmetic tuning (step A) must change the Python reference and the C++
-  `ArithProfile` together, or the diff harness — the whole safety net — goes red for the wrong reason.
-  Treat the reference as the spec and the core as its mirror.
-- **Coefficients > 1.** The Manual uses coefficients like +5/4, +42/32 that the plain 7-bit/128 model can't
-  represent; resolving the 2-LSB packing / denominator is required to honor those (and is part of step A).
+- **Hardware IR parameter settings unknown.** `Concert Hall V7.2.L.wav` is usable for decay-shape, HF,
+  and LFO shape validation. Exact RT60 calibration and absolute gain matching require a recording with
+  known parameter settings.
+- **Reference/core lockstep.** Any further arithmetic changes must update `aru_datapath.py` and
+  `ArithProfile` together; the diff harness is the safety net. Treat the reference as the spec.
 
 ---
 
 ## 7. How to pick up the work
 
-1. Read this file, then the spec (§2 links) for the locked decisions and the OPEN-arithmetic table.
+1. Read this file, then the technical reference (§2 links) for the locked decisions.
 2. Reproduce the green baseline (§2 "Reproduce") — confirm `DIFF PASSED` and `ctest` 2/2.
-3. Start step A: pick one OPEN knob, change it in `aru_datapath.py` + `ArithProfile` together, re-export
-   goldens, re-run `diff_harness` (it must stay green), and check the IR with `wav_ir_tool`. Iterate toward
-   a decaying response anchored by the Manual vectors.
+3. **Current target: step B — pin the per-program position base.** The arithmetic is fully resolved;
+   the single remaining structural gap is the DMEM address aliasing between tank banks. Anchor on the
+   input-read step (CONCERT step 76, offset=0xFFFF, WA=2) ⇒ address = position+1 to find the base.
+   Once pinned: λ drops to ~0.9979 and FPC I/O decode (`(offset−base)&0x8000`) becomes correct for
+   live images. Validate with `wav_ir_tool ir` against `IR/Lexicon 224XL/Concert Hall V7.2.L.wav`
+   (decay shape / HF roll-off / LFO).

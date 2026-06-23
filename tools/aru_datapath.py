@@ -41,8 +41,21 @@ def sat16(x):
     return 32767 if x > 32767 else (-32768 if x < -32768 else x)
 
 
+def sat20(x):
+    """Saturate to the ARU's 20-bit signed accumulator (+/-524287)."""
+    return 524287 if x > 524287 else (-524287 if x < -524287 else x)
+
+
 def run(prog, ra_pick, nsamp=4000, imp=20000):
     """Run nsamp samples; inject one impulse into the input register at sample 0.
+
+    Firmware/schematic-resolved cycle-accurate ARU model. Per output sample:
+    pos advances by 1; then each active step (in order) executes the resolved datapath:
+      6-bit coefficient C = (abs(coeff) >> 1) applied with CSIGN; b3 selects RES->DAB
+      (and writes RES back to DMEM, post-XFER); LS670 read-before-write register file;
+      ZERO clears the accumulator first; MAC uses operand = x<<3, prod = (operand*Cs)>>6,
+      20-bit saturating accumulator; XFER loads RES = sat16(ACC>>3) BEFORE the b3
+      write-back so comb closers store the just-computed (post-XFER) RES.
     ra_pick(step)->0..3 selects the read register. Returns the per-sample output energy
     (sum |RES at XFER steps|) to gauge whether a coherent reverb decay forms."""
     R = [0, 0, 0, 0]
@@ -55,25 +68,39 @@ def run(prog, ra_pick, nsamp=4000, imp=20000):
         pos = (pos + 1) & DMASK
         esum = 0
         for st in prog:
+            # 1. delay address
             addr = (pos - st['offset']) & DMASK
-            # bus value: XFER step writes RES to DMEM; else read DMEM
-            if st['XFER']:
-                DM[addr] = RES
+            # 2. DAB source: b3 -> result register drives DAB (the CURRENT, pre-XFER RES);
+            #    else read DMEM. Impulse injected additively at first active step of sample 0.
+            if st['b3']:
                 dab = RES
             else:
                 dab = DM[addr]
-            # input injection: first non-XFER step of sample 0 gets the impulse
             if n == 0 and st is prog[0]:
-                dab = imp
-            # register write (addr 3 = pass-through transient, still latches the bus)
-            R[st['WA']] = dab
-            # multiply-accumulate
+                dab += imp
+            # 3. 6-bit coefficient with sign
+            mag = abs(st['coeff'])
+            csign = st['coeff'] < 0
+            Cs = -(mag >> 1) if csign else (mag >> 1)
+            # 4. LS670 read-before-write: read multiplicand FIRST, then write the bus.
             ra = ra_pick(st)
+            x = R[ra]
+            R[st['WA']] = dab
+            # 5. ZERO clears the accumulator before this step's product.
             if st['ZERO']:
                 ACC = 0
-            ACC = sat16(ACC + (R[ra] * st['coeff']) // 128)  # 7-bit sign-mag coeff / 128
+            # 6. multiply-accumulate: operand<<3, 6-bit fractional coeff, 20-bit acc
+            operand = x << 3
+            prod = (operand * Cs) >> 6
+            ACC = sat20(ACC + prod)
+            # 7. XFER then write-back: RES loads from ACC (net x*Cs/64), then the b3
+            #    write-back stores the POST-XFER RES into DMEM.
             if st['XFER']:
-                RES = sat16(ACC)
+                RES = sat16(ACC >> 3)
+            if st['b3']:
+                DM[addr] = RES
+            # 8. energy probe
+            if st['XFER']:
                 esum += abs(RES)
         out.append(esum)
     return out
@@ -110,23 +137,37 @@ def run_trace(prog, ra_pick, nsamp=4000, imp=20000, trace_window=64):
         pos = (pos + 1) & DMASK
         esum = 0
         for st in prog:
+            # 1. delay address
             addr = (pos - st['offset']) & DMASK
-            if st['XFER']:
-                DM[addr] = RES
+            # 2. DAB source (b3 -> pre-XFER RES; else DMEM read), additive impulse.
+            if st['b3']:
                 dab = RES
             else:
                 dab = DM[addr]
             if n == 0 and st is prog[0]:
-                dab = imp
-            R[st['WA']] = dab
+                dab += imp
+            # 3. 6-bit coefficient with sign
+            mag = abs(st['coeff'])
+            csign = st['coeff'] < 0
+            Cs = -(mag >> 1) if csign else (mag >> 1)
+            # 4. LS670 read-before-write
             ra = ra_pick(st)
-            racc_in = R[ra]
+            racc_in = R[ra]            # x: multiplicand read BEFORE this cycle's write
+            R[st['WA']] = dab
+            # 5. ZERO clears accumulator first
             if st['ZERO']:
                 ACC = 0
-            prod = (racc_in * st['coeff']) // 128
-            ACC = sat16(ACC + prod)
+            # 6. MAC: operand<<3, 6-bit coeff, 20-bit saturating accumulator
+            operand = racc_in << 3
+            prod = (operand * Cs) >> 6
+            ACC = sat20(ACC + prod)
+            # 7. XFER then post-XFER b3 write-back
             if st['XFER']:
-                RES = sat16(ACC)
+                RES = sat16(ACC >> 3)
+            if st['b3']:
+                DM[addr] = RES
+            # 8. energy + probe
+            if st['XFER']:
                 esum += abs(RES)
                 res_val = RES
             else:

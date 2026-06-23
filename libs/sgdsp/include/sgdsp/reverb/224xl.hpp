@@ -9,8 +9,8 @@
 //
 // The bit-exact reference is the Python model tools/aru_datapath.py (the 224XL's
 // Z80 SBC builds/modulates microcode but does not compute audio). This core is
-// authored to match that reference integer-exact; arithmetic details still being
-// resolved (tech-ref 4/10) are isolated in ArithProfile so tuning is one line.
+// authored to match that reference integer-exact; the firmware/schematic-resolved
+// arithmetic constants are isolated in ArithProfile so tuning is one line.
 //
 // Float appears ONLY at the I/O boundary. Everything between floatToAru and
 // aruToFloat is integer. See docs/reference/224/224XL_technical_reference.md and
@@ -29,43 +29,73 @@ using namespace core;
 using AruWord  = int32_t;
 using AruAccum = int64_t;
 
-// ---- OPEN-arithmetic profile (tech-ref 4/10). First-cut values reproduce the
-// current aru_datapath.py reference exactly. Move toward hardware by editing here. ----
+// ---- ARU arithmetic profile (firmware/schematic-resolved; authority is
+// tools/aru_datapath.py run()/run_trace()). The hardware datapath is:
+//   * 6-bit coefficient C = (abs(coeff7) >> 1), sign applied via CSIGN (so the
+//     effective signed coefficient Cs = +/-(mag>>1)).
+//   * operand = x << 3 (the 17->20 bit operand alignment into the multiplier).
+//   * product = (operand * Cs) >> 6   (arithmetic right shift; floors toward -inf).
+//   * 20-bit saturating accumulator, rails +/-524287.
+//   * result register RES = sat16(ACC >> 3), rails [-32768, +32767].
+// These supersede the old (x*coeff)>>7 / 16-bit-acc first cut. Move toward any
+// further hardware nuance by editing the constants here. ----
 struct ArithProfile
 {
-    static constexpr int      kCoeffShift = 7;        // the "/128" denominator (arithmetic >>)
-    static constexpr AruAccum kSatMax     = 32767;    // sat16 high rail (reference uses 16-bit sat)
-    static constexpr AruAccum kSatMin     = -32768;   // sat16 low rail
-    // Hardware targets, NOT yet applied (enabled when matching hardware, not the
-    // current reference): 20-bit accumulator, 2-LSB coeff packing, 20->16 result
-    // shift, the operand20 = sign_extend(x,17)<<3 alignment.
+    static constexpr int      kOperandShift = 3;        // operand = x << 3 (multiplier input align)
+    static constexpr int      kCoeffShift   = 1;        // 6-bit coeff = (abs(coeff7) >> 1)
+    static constexpr int      kProdShift    = 6;        // product = (operand * Cs) >> 6
+    static constexpr int      kResultShift  = 3;        // RES = sat16(ACC >> 3)
+    static constexpr AruAccum kAccMax       = 524287;   // 20-bit accumulator high rail (+2^19-1)
+    static constexpr AruAccum kAccMin       = -524287;  // 20-bit accumulator low rail (reference sat20)
+    static constexpr AruAccum kResMax       = 32767;    // 16-bit result register high rail
+    static constexpr AruAccum kResMin       = -32768;   // 16-bit result register low rail
 };
 
-// Saturate to the result/accumulator rails (reference sat16). NOTE: the "16" in the
-// name reflects the first-cut 16-bit rails; revisit the name if ArithProfile is
-// retargeted to the 20-bit hardware accumulator.
-SGDSP_INLINE AruAccum aruSat16(AruAccum x) noexcept
+// Saturate to the 20-bit signed accumulator rails (reference sat20, +/-524287).
+SGDSP_INLINE AruAccum aruSat20(AruAccum x) noexcept
 {
-    if (x > ArithProfile::kSatMax) return ArithProfile::kSatMax;
-    if (x < ArithProfile::kSatMin) return ArithProfile::kSatMin;
+    if (x > ArithProfile::kAccMax) return ArithProfile::kAccMax;
+    if (x < ArithProfile::kAccMin) return ArithProfile::kAccMin;
     return x;
 }
 
-// The ARU product term: (x * coeff) >> 7. Arithmetic right shift floors toward -inf to
-// match Python `(x*coeff)//128`. NOTE: C++20 guarantees arithmetic shift on signed; on
-// MSVC/GCC/Clang it already holds in C++17. Do NOT use `/ 128` (truncates toward zero on
-// negatives). This is the SINGLE source of the product term, shared by aruMac and the
-// datapath so the unit test (via aruMac) and executeSample cannot drift.
-SGDSP_INLINE AruAccum aruProd(AruWord x, int coeff) noexcept
+// Saturate to the 16-bit result-register rails (reference sat16, [-32768, +32767]).
+SGDSP_INLINE AruAccum aruSat16(AruAccum x) noexcept
 {
-    SGDSP_ASSERT(coeff >= -127 && coeff <= 127);   // 7-bit sign-magnitude coefficient
-    return (static_cast<AruAccum>(x) * coeff) >> ArithProfile::kCoeffShift;
+    if (x > ArithProfile::kResMax) return ArithProfile::kResMax;
+    if (x < ArithProfile::kResMin) return ArithProfile::kResMin;
+    return x;
 }
 
-// One multiply-accumulate step: acc + product, saturated.
-SGDSP_INLINE AruAccum aruMac(AruAccum acc, AruWord x, int coeff) noexcept
+// The 6-bit signed coefficient Cs = +/-(abs(coeff7) >> 1) carried by CSIGN.
+// coeff7 is the decoded signed 7-bit-magnitude microword field (-127..127).
+SGDSP_INLINE int aruCoeff6(int coeff7) noexcept
 {
-    return aruSat16(acc + aruProd(x, coeff));
+    SGDSP_ASSERT(coeff7 >= -127 && coeff7 <= 127);
+    const int mag = coeff7 < 0 ? -coeff7 : coeff7;
+    const int c   = mag >> ArithProfile::kCoeffShift;   // (mag >> 1), 6-bit magnitude
+    return coeff7 < 0 ? -c : c;
+}
+
+// The ARU product term: operand = x<<3, prod = (operand * Cs) >> 6. Arithmetic
+// right shift floors toward -inf to match Python `(operand*Cs) >> 6`. Cs is the
+// already-resolved 6-bit signed coefficient (see aruCoeff6). NOTE: C++20 guarantees
+// arithmetic shift on signed; on MSVC/GCC/Clang it already holds in C++17. Do NOT
+// use `/ 64` (truncates toward zero on negatives). This is the SINGLE source of the
+// product term, shared by aruMac and the datapath so the unit test (via aruMac) and
+// executeSample cannot drift.
+SGDSP_INLINE AruAccum aruProd(AruWord x, int cs6) noexcept
+{
+    SGDSP_ASSERT(cs6 >= -63 && cs6 <= 63);             // 6-bit signed coefficient
+    const AruAccum operand = static_cast<AruAccum>(x) << ArithProfile::kOperandShift;
+    return (operand * cs6) >> ArithProfile::kProdShift;
+}
+
+// One multiply-accumulate step: acc + product, 20-bit-saturated. `cs6` is the
+// resolved 6-bit signed coefficient (apply aruCoeff6 to the raw 7-bit field first).
+SGDSP_INLINE AruAccum aruMac(AruAccum acc, AruWord x, int cs6) noexcept
+{
+    return aruSat20(acc + aruProd(x, cs6));
 }
 
 // Per-step probe record (mirrors aru_datapath.run_trace tuple field order).
@@ -80,12 +110,13 @@ struct AruStep
 {
     int      s;        // original step index 0..127
     uint32_t offset;   // DMEM offset; addr = (pos - offset) & 0xFFFF
-    int      coeff;    // signed 7-bit magnitude (-127..127)
+    int      coeff;    // signed 7-bit magnitude (-127..127); kept for L1 decode parity
+    int      cs6;      // resolved 6-bit signed coefficient Cs = +/-(abs(coeff)>>1)
     uint8_t  zero;     // clear accumulator before MAC
-    uint8_t  xfer;     // load result register / write tank
+    uint8_t  xfer;     // XFER: load result register (RES = sat16(ACC>>3)) / write tank
     uint8_t  wa;       // write-register address (3 = pass-through)
     uint8_t  ra;       // read-register address (b5<<1 | b4)
-    uint8_t  b3;       // RW/SRC (OPEN; recorded for parity, unused in first cut)
+    uint8_t  b3;       // DAB source / DMEM read-write select: b3 -> dab=RES & post-XFER DM write
 };
 
 template <uint32_t DmemWords = 65536, uint32_t Channels = 2>
@@ -119,6 +150,7 @@ public:
             st.s      = s;
             st.offset = static_cast<uint32_t>(~(l0 | (l1 << 8))) & 0xFFFFu;
             st.coeff  = (l3 & 0x80) ? -static_cast<int>(l3 & 0x7F) : static_cast<int>(l3 & 0x7F);
+            st.cs6    = aruCoeff6(st.coeff);   // 6-bit signed coeff Cs = +/-(abs(coeff)>>1)
             st.zero   = (ctl >> 7) & 1;
             st.xfer   = (ctl >> 2) & 1;
             st.wa     = ctl & 3;
@@ -203,24 +235,37 @@ private:
         AruWord lastRes = res_;
         for (int i = 0; i < nActive_; ++i) {
             const AruStep& st = steps_[i];
+            // 1. delay address
             const uint32_t addr = (pos_ - st.offset) & kDmemMask;
-            AruWord dab;
-            if (st.xfer) { dmem_[addr] = res_; dab = res_; }
-            else         { dab = dmem_[addr]; }
+            // 2. DAB source: b3 -> the CURRENT (pre-XFER) result register drives DAB;
+            //    else read DMEM. Additive impulse at the first active step of sample 0.
+            AruWord dab = st.b3 ? res_ : dmem_[addr];
             if (i == firstActive_) dab += in;     // additive injection: equals the reference's
                                                   // dab=imp at sample 0 (DM/RES are 0 there) and
                                                   // generalizes to continuous input on the float path
-            R_[st.wa] = dab;
+            // 3. (coefficient Cs is precomputed as st.cs6 = +/-(abs(coeff)>>1))
+            // 4. LS670 read-before-write: read the multiplicand FIRST, then write the bus.
             const AruWord raccIn = R_[st.ra];
+            R_[st.wa] = dab;
+            // 5. ZERO clears the accumulator before this step's product.
             if (st.zero) acc_ = 0;
-            const AruAccum prod = aruProd(raccIn, st.coeff);
-            acc_ = aruSat16(acc_ + prod);
+            // 6. MAC: operand = raccIn<<3, prod = (operand*Cs)>>6, 20-bit saturating acc.
+            const AruAccum prod = aruProd(raccIn, st.cs6);
+            acc_ = aruSat20(acc_ + prod);
+            // 7. XFER then b3 write-back: RES loads from sat16(ACC>>3) FIRST, then the
+            //    b3 write-back stores the POST-XFER RES into DMEM (ordering is load-bearing:
+            //    a b3+XFER comb closer writes the just-computed RES while step-3's R[WA]
+            //    captured the OLD RES via dab earlier this sample).
             int64_t resVal = kProbeResSentinel;
             if (st.xfer) {
-                res_ = static_cast<AruWord>(aruSat16(acc_));
+                res_ = static_cast<AruWord>(aruSat16(acc_ >> ArithProfile::kResultShift));
+                resVal = res_;
+            }
+            if (st.b3) dmem_[addr] = res_;
+            // 8. energy probe (sum |RES| over XFER steps)
+            if (st.xfer) {
                 esum += (res_ < 0) ? -res_ : res_;
                 lastRes = res_;
-                resVal = res_;
             }
             if (Trace && probes) {
                 probes[np++] = Probe{ (int64_t)sampleIndex_, (int64_t)st.s, (int64_t)addr,
@@ -230,7 +275,7 @@ private:
         }
         if (Trace) { if (nProbes) *nProbes = np; if (esumOut) *esumOut = esum; }
         ++sampleIndex_;
-        return lastRes;   // first-cut audio proxy = last RES of the sample
+        return lastRes;   // audio proxy = last RES of the sample
     }
 
     // Group 1: hot per-sample state
