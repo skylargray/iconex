@@ -3,6 +3,9 @@ __pycache__/
 *.pyc
 build/
 tools/harness/**/build/
+docs/reference/224/crops/
+IR/Lexicon 480L/
+*.zip
 
 # Agent-generated schematic zoom crops (working artifacts; full sheets are committed)
 docs/reference/224/crops/
