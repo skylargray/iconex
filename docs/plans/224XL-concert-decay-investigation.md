@@ -512,6 +512,132 @@ live integer model.**
 
 ---
 
+### 0.10.11 SESSION 5 (2026-06-23) — executed plan §3.1: faithful live modulation REFUTED as the decay mechanism
+
+Executed the START-HERE plan's highest-priority item (§3.1, "DO THIS FIRST"): faithful live modulation,
+**Route A** (replay the firmware's ACTUAL modulated WCS frames, not a re-derived engine). Decisive result:
+**faithful modulation does NOT stabilize the tank** — now proven rigorously, confirming the prior approximate
+finding.
+
+**Built** (`tools/exp_modcap.py`, `tools/exp_live.py`):
+- `exp_modcap.py` boots CONCERT to the main loop, runs the foreground, and captures the live modulated WCS
+  image (0x4000:0x4200) at **every modulation-engine pass (0xAD5C)** → `tools/_modframes.npz` (**26 364
+  distinct frames over 6 M SBC instructions**). This is the firmware's exact frame stream — ground truth,
+  sidestepping the un-disassembled engine body (0xAD80–0xAE9B is a **gap** in `aru224_engine_disasm.asm`).
+- `exp_live.py` replays the frames through the bit-exact datapath one output sample at a time, advancing
+  frames at the control-tick rate.
+
+**Faithful by construction (resolves plan items 2/3 for free):** the modulated steps 56/57/107/108 carry
+BOTH a swept integer offset (lane0/1) AND a swept **lane3 coefficient**. **That lane3 sweep IS the firmware's
+all-pass interpolation coefficient** (the 0xAE8E write). So replaying the real microcode with the real swept
+coeffs reproduces the all-pass fractional-delay chorus EXACTLY — no hand-built interpolator, no guessed LFO.
+Confirmed live: rate `0x3cd3`=32, depth `0x3cd4`=4, enable `0x3ccd` bit6; chorus = steps 56/57 (pair A) &
+107/108 (pair B) **anti-phase**; offset triangle half-period ≈ **344k ins** (matches the doc's ~345k),
+genuinely sub-Hz.
+
+**Decisive metric — the saturation-free Lyapunov exponent of the time-varying linear map.** The static-λ
+tools assume LTI; the integer EDC is masked by the saturation limit cycle (a tiny impulse explodes to
+saturation in ms then sustains — `peakEnv`≫rail). The correct LTV generalisation is the **top Lyapunov
+exponent of the modulated linear map** (float, zero saturation) by power iteration with periodic renorm,
+advancing the live frames (`exp_live.py lyap`):
+
+| run | per-sample λ | verdict |
+|---|---|---|
+| STATIC (frozen frame 0) | 1.0009465 (+946 ppm) | GROW |
+| LIVE modulated, ~0.29 Hz | 1.0011264 (+1126 ppm) | GROW |
+| LIVE modulated, ~0.61 Hz | 1.0011260 (+1126 ppm) | GROW |
+| LIVE modulated, ~1.02 Hz | 1.0011257 (+1126 ppm) | GROW |
+
+The SBC Z80 clock is undocumented (the 4.608 MHz crystal in the docs is the **LARC 8749**, not the SBC; the
+emulator counts instructions, not T-states), so the chorus frequency is **bounded, not exact** → swept the
+full plausible band. **The live λ is RATE-INVARIANT (±0.7 ppm over a 3.5× rate range) and ≈ the average
+frozen-snapshot λ.** Per-pass and coarse (every-2000-ins) captures agree to 0.1 ppm.
+
+**Mechanism (airtight) — the unstable mode has ZERO support on the modulated taps.** Perturbing the static
+frame-0 float map (`tools/_wf_modsupport.py`):
+- MOD taps (56/57/107/108) coeff→0 (remove entirely): **dλ = +0.0 ppm**
+- MOD taps static detune +40 samp: dλ = +0.0 ppm  (−40: +55 ppm, a coincidental address collision)
+- HFD taps (40/41/92/93) coeff→0: dλ = −30 ppm; ×1.5: +14 ppm  (tiny, and the "wrong" sign — not the lever)
+
+Removing the modulated taps does not move λ **at all**, so **no modulation of them, at any rate or depth, can
+change the growth.** This is the rigorous root of the rate-invariance and a faithful refutation of plan
+**item 1** (reconfirming the §11 `exp_lfo` finding by mechanism, not just by re-measurement).
+
+**Re-assessment (plan §4) — the remaining approximations cannot rescue the LINEAR λ.** The +1126 ppm lives in
+the **exact float linear map** (zero saturation/quantization). Therefore: items **4** (serial-multiply
+intermediate saturation) and **5** (exact saturation value) are NONLINEAR and cannot move it; item **6**
+(sample rate) is a per-sample λ — Fs only maps λ→RT60-seconds, a λ>1 stays >1 at any Fs; item **7** (FPC I/O)
+is the in/out boundary, not the recirculation. **Every remaining stand-in is nonlinear or I/O and provably
+cannot reduce the linear λ below 1.** The +1126 ppm linear instability is determined ENTIRELY by (a) the
+decoded program — offsets/coeffs/topology, read directly from the firmware-built image — and (b) the linear
+arithmetic alignment (`<<3 / >>6 / >>3` scalings), both Session-4 schematic-confirmed faithful. **The decay
+deficit is now a genuinely isolated, fully-faithful-model LINEAR excess** — exactly the condition the plan
+said justifies the 480L behavioral-capture path, OR a real loss mechanism *outside* the 8-item register (the
+likeliest physical candidate: the in-loop damping / "Treble Decay" as actually realised in hardware, since
+the recirculation as decoded is net over-unity and the HFD taps as decoded do not damp).
+
+### 0.10.12 SESSION 6 — 6-angle parallel hunt: the over-unity is an EMERGENT COLLECTIVE mode (no single bug)
+
+A 6-angle parallel workflow (`concert-overunity-hunt`, all findings high-confidence, NONE flipped to a
+faithful decay) **definitively characterizes** the +1126 ppm and eliminates the entire single-cause space:
+- **+1126 ppm is REAL** — confirmed by 4 independent methods (power-iter, matrix-free random-start PM ×2
+  seeds, long float64 impulse log-slope, L∞ peak-amplitude). Not a norm/support artifact. The OUTPUT itself
+  grows (+333 dB/s in exact float). Settled unity-crossing = ~**24% uniform coeff reduction** (the old "11%"
+  was an unsettled-impulse artifact).
+- **Eliminated (high-confidence):** field/bit decode (the committed `(b5,b4)` is uniquely the most reverb-like
+  of ~50 re-decodes; every λ<1 re-decode is a degenerate dead-tank), global gain bug (diagnostic passthrough =
+  **exactly 1.00000000**, bit-exact), coefficient convention (floor/round/ceil/127/1s-comp all run hotter),
+  FPC-output recirculation (real FPC steps are λ-neutral dead-sinks), FPC↔DMEM addressing (SM §3.5: full
+  16-bit DMEM address, no reserved bit15; FPC + DMEM are separate strobe domains), register-file write gating
+  (owner net-trace: DAB WSTB/ → LS670 GW pin12 directly, ungated, writes every cycle — R[3] stores normally).
+- **THE finding (loop decomposition):** the DMEM write→read graph is **24 nested Schroeder comb/all-pass
+  cells**; **every individual cell is SUB-UNITY (max round-trip |g| = 0.83)** — they all decay alone. The
+  +1126 ppm is an **emergent collective eigenmode** of the coupled near-lossless all-pass bank (cells cluster
+  at the **+0.969 all-pass coefficient**, coupled through the shared **4-word register file** + overlapping
+  DMEM). No single principled change reaches decay (best off-by-one 16 ppm, best sign flip 185 ppm).
+
+**So there is NO localizable bug — the instability is in the COUPLING of individually-correct cells.** That
+is why inspecting coefficients/decodes/assumptions for days found nothing. Since every cell + coefficient is
+faithful and the user's (correct) point is the decay is digital-by-design, the error must be structural in
+the coupling. **Two untested digital candidates remain, both invisible to the diff harness (Python≡C++ share
+the assumption):** (1) **All-pass coefficient MATCHING** — a Schroeder all-pass is lossless only if feedforward
+`−g` exactly matches feedback `+g`; the closer blocks `[−c,−small,−c,+0.976]` may have `−c ≠ +0.969`, making
+each cell slightly *active* (×28 coupled → collective over-unity). (2) **ARU pipeline timing** — the collective
+eigenvalue is exquisitely sensitive to *when* RES/registers update relative to reads; a one-step pipeline
+delay in hardware vs. the model's immediate update would change the coupling (diff harness can't catch it).
+**Next:** verify the closer blocks are truly lossless all-pass (matched FF/FB) and that the RES/register
+pipeline timing matches hardware — the only two mechanisms that make a bank of stable cells collectively
+unstable. (Scratch: `tools/_hunt_*.py`.)
+
+---
+
+**Mode localization (reliable, state-seeded) + gain margin.** Per-step λ-sensitivity with the power iteration
+seeded into the **state** (R/RES/DMEM), not via step 0 — this corrects a seed artifact in the first sweep
+(`tools/_wf_sens2.py` supersedes `_wf_modsupport.py sweep`). Findings:
+- The unstable mode lives in the **comb-closer network (steps ~60–119)**, **dominated by step 69** (cs=+62,
+  an XFER+b3 closer): zeroing it makes the loop **+16102 ppm hotter** (λ→1.0170), so it supplies the bulk of
+  the damping that *almost* balances the loop. Other load-bearing closers: 70/73/60/98/91/88/105/68.
+- The **modulated taps (56/57/107/108) AND the output taps (0/1) have ZERO effect on λ** (≤1 ppm). The first
+  sweep's "step 1 dominates (λ→0.004)" was a **seed artifact** — step 1 is an *output* tap (b3=0, X=1), and
+  varying its coeff −5→−3 moves λ by 0.0 ppm (`tools/_wf_gainmargin.py`).
+- **Gain margin (decisive for the "small decode error" branch):** step 69 is already near the 6-bit max
+  (cs=63), and a uniform global coeff scale is weak (**−86 ppm per −1% gain**, so **~11% coeff reduction**
+  would be needed to reach unity). So **NO single-coeff decode tweak — and no plausible small systematic —
+  reaches unity.** The loop is **robustly over-unity by a wide margin**, not knife-edge.
+
+**Refined conclusion:** with modulation refuted, every register item inert on λ, and the over-unity margin too
+large for a small decode error, the leading explanation is a **uniform per-sample loss of ~1126 ppm
+(≈ 0.1 %/sample "air-absorption" leak)** — physical/analog (DMEM/converter/summing or the truncation realised
+as a real attenuation), **absent from the digital coeff/topology domain**. This is exactly the mechanism §6/§7
+already found *both* stabilizes the model *and* reproduces V7.2's HF≪LF decay (there dismissed as "arbitrary"
+— it now looks like the real physical loss). **Next steps:** (1) treat the ~0.1 %/sample uniform leak as the
+working physical model and pin its exact value/frequency-shape against the P85 EDC; (2) the only remaining
+*digital* branch is whether the real ARU arithmetic (the per-XFER `>>3` truncation in the recirculation, or
+the accumulator sign-extension) realises a genuine multiplicative attenuation our float map omits — owner
+schematic for the multiplier/sat path (§3.2/§3.3) would settle this.
+
+---
+
 ## 1. Executive summary
 
 The booted-default CONCERT loop **grows** instead of decaying: clean converged power-iteration structural

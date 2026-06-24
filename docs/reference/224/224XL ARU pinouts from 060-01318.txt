@@ -301,19 +301,117 @@ pin 16 (VCC)= Not depicted
 ---
 
 74S86 XORs feeding the adder B-inputs — U5, U6, U7, U8, U9 (14-pin):
+Control pattern (ALL five): pins 2,5,10,13 commoned -> subtract-control rail (CS33N/ via U2)
 
+U5:
+pin 1  (1A) = U12 pin 15    
+pin 2  (1B) = sub-ctrl rail
+pin 3  (1Y) = U19 pin 6   (B0)
+pin 4  (2A) = U12 pin 10  
+pin 5  (2B) = sub-ctrl rail
+pin 6  (2Y) = U19 pin 2   (B1)
+pin 7  (GND)= Not depicted
+pin 8  (3Y) = U19 pin 15  (B2)
+pin 9  (3A) = U12 pin 7   
+pin 10 (3B) = sub-ctrl rail
+pin 11 (4Y) = U19 pin 11  (B3)
+pin 12 (4B) = U12 pin 2
+pin 13 (4A) = sub-ctrl rail
+pin 14 (VCC)= Not depicted
 
-pin 1  (1A) = ?
-pin 2  (1B) = ?
-pin 3  (1Y) = ?
-pin 4  (2A) = ?
-pin 5  (2B) = ?
-pin 6  (2Y) = ?
-pin 7  (GND)= ?
-pin 8  (3Y) = ?
-pin 9  (3A) = ?
-pin 10 (3B) = ?
-pin 11 (4Y) = ?
-pin 12 (4B) = ?
-pin 13 (4A) = ?
-pin 14 (VCC)= ?
+U6:
+pin 1  (1A) = U11 pin 19     
+pin 4  (2A) = U11 pin 16     
+pin 9  (3A) = U11 pin 15     
+pin 12 (4B) = U11 pin 12     
+  (pins 2,5,10,13 = sub-ctrl rail; pins 3,6,8,11 -> U20 B0,B1,B2,B3 per pattern; 7,14 NC)
+
+U7:
+pin 1  (1A) = U11 pin 9      
+pin 4  (2A) = U11 pin 6      
+pin 9  (3A) = U11 pin 5      
+pin 12 (4B) = U11 pin 2      
+  (pins 2,5,10,13 = sub-ctrl rail; pins 3,6,8,11 -> U21 B0..B3; 7,14 NC)
+
+U8:
+pin 1  (1A) = U10 pin 19     
+pin 4  (2A) = U10 pin 16     
+pin 9  (3A) = U10 pin 15     
+pin 12 (4B) = U10 pin 12     
+  (pins 2,5,10,13 = sub-ctrl rail; pins 3,6,8,11 -> U22 B0..B3; 7,14 NC)
+
+U9:
+pin 1  (1A) = U10 pin 9      
+pin 4  (2A) = U10 pin 6      
+pin 9  (3A) = U10 pin 5      
+pin 12 (4B) = U10 pin 2      
+  pins 2,5,10,13 = sub-ctrl rail
+  pin 3 -> U23 pin 6; pin 6 -> U23 pin 2; pin 8 -> U23 pin 15
+  pin 11 -> U23 pin 11 (B3)  ** also tied to U2 pin 9 -> B-IN (sat-clamp sign)
+  pins 7,14 NC
+  
+---
+
+Product Register
+
+U10 (74F374)           
+pin 1  (OE\)   = tied to ground   
+pin 2  (Q0)    = U9 pin 12        
+pin 3  (D0)    = U24 pin 10 (Σ3)  
+pin 4  (D1)    = U24 pin 13 (Σ2)  
+pin 5  (Q1)    = U9 pin 9         
+pin 6  (Q2)    = U9 pin 4         
+pin 7  (D2)    = U24 pin 1  (Σ1)  
+pin 8  (D3)    = U24 pin 4  (Σ0)  
+pin 9  (Q3)    = U9 pin 1         
+pin 10 (GND)   = Not depicted
+pin 11 (CP)    = ARUCK
+pin 12 (Q4)    = U8 pin 12        
+pin 13 (D4)    = U38 pin 10 (Σ3)  
+pin 14 (D5)    = U38 pin 13 (Σ2)  
+pin 15 (Q5)    = U8 pin 9         
+pin 16 (Q6)    = U8 pin 4         
+pin 17 (D6)    = U38 pin 1  (Σ1)  
+pin 18 (D7)    = U38 pin 4  (Σ0)  
+pin 19 (Q7)    = U8 pin 1         
+pin 20 (VCC)   = Not depicted
+
+U11 (74F374)            
+pin 1  (OE\)   = tied to ground   
+pin 2  (Q0)    = U7 pin 12        
+pin 3  (D0)    = U25 pin 10 (Σ3)  
+pin 4  (D1)    = U25 pin 13 (Σ2)  
+pin 5  (Q1)    = U7 pin 9         
+pin 6  (Q2)    = U7 pin 4         
+pin 7  (D2)    = U25 pin 1  (Σ1)  
+pin 8  (D3)    = U25 pin 4  (Σ0)  
+pin 9  (Q3)    = U7 pin 1         
+pin 10 (GND)   = Not depicted
+pin 11 (CP)    = ARUCK
+pin 12 (Q4)    = U6 pin 12        
+pin 13 (D4)    = U39 pin 10 (Σ3)  
+pin 14 (D5)    = U39 pin 13 (Σ2)  
+pin 15 (Q5)    = U6 pin 9         
+pin 16 (Q6)    = U6 pin 4         
+pin 17 (D6)    = U39 pin 1  (Σ1)  
+pin 18 (D7)    = U39 pin 4  (Σ0)  
+pin 19 (Q7)    = U6 pin 1         
+pin 20 (VCC)   = Not depicted
+
+U12 (74S175)           
+pin 1  (CLR\)  = +5 (tied high)
+pin 2  (Q0)    = U5 pin 12        
+pin 3  (Q0\)   = n/c
+pin 4  (D0)    = U13 pin 10 (Σ3)  
+pin 5  (D1)    = U13 pin 13 (Σ2)  
+pin 6  (Q1\)   = n/c
+pin 7  (Q1)    = U5 pin 9         
+pin 8  (GND)   = Not depicted
+pin 9  (CP)    = ARUCK
+pin 10 (Q2)    = U5 pin 4         
+pin 11 (Q2\)   = n/c
+pin 12 (D2)    = U13 pin 1  (Σ1)  
+pin 13 (D3)    = U13 pin 4  (Σ0)  
+pin 14 (Q3\)   = n/c
+pin 15 (Q3)    = U5 pin 1         
+pin 16 (VCC)   = Not depicted  

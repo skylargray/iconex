@@ -1,7 +1,10 @@
 # 224XL Faithful Reconstruction Plan — eliminate every approximation
 
-**Status:** OPEN. Created 2026-06-23 (end of Session 4). **This is the START-HERE document for the next
-session.** Read it fully before touching code.
+**Status:** OPEN. Created 2026-06-23 (end of Session 4). **Session 5 (2026-06-23) executed §3.1 (modulation,
+the "DO THIS FIRST" item) → REFUTED** (faithful live modulation does not produce the decay; items 1/2/3/8
+closed). See the §3.1 RESULT box and the **§4 RE-ASSESSMENT** box below, and investigation doc §0.10.11. The
+decay deficit is now proven to be an isolated linear excess that none of the remaining register items can fix.
+**This is the START-HERE document for the next session.** Read it fully before touching code.
 
 **Mandate (from the project owner, verbatim intent):** the 224XL reconstruction must be a **bit-exact,
 fully-faithful** recreation. Every place the current model approximates or omits real hardware/firmware
@@ -83,20 +86,34 @@ harnesses) departs from bit-exact faithfulness. Fix ALL of them.
 
 | # | Approximation | Affects decay? | Fix in §3 |
 |---|---|---|---|
-| **1** | **Modulation omitted from the audio/λ model** — runs a single *frozen* WCS snapshot; the SBC continuously rewrites the WCS (chorus + param ramps) every control tick | **YES — primary suspect** | §3.1 |
-| **2** | Modulated taps read with **linear interpolation**, but firmware uses **all-pass interpolation** (engine `0xAE72`) | **YES** | §3.1 |
-| **3** | LFO is an **assumed triangle at a guessed rate/depth**, not the firmware's actual waveform/rate/depth (`0x3cd3`/`0x3cd4`/`0x3ccd`, phase counters `0x3e45/46`) | **YES** | §3.1 |
-| **4** | **Serial multiply collapsed** to one net op; the 3 sub-state partial products and any **intermediate saturation** are not modeled | maybe (large-signal) | §3.2 |
-| **5** | **Saturation substitute value** modeled as a hard clamp; the exact sat-mux constant (`B-IN` = U2 pin8) not verified/modeled | limit-cycle only | §3.3 |
-| **6** | **Native sample rate = 34130 Hz** assumed; it is an **analog LC-tank oscillator** (drifts, not crystal-derived) | shifts λ↔RT60 target | §3.4 |
-| **7** | **FPC analog I/O / converters** not modeled (input = 0); the **12/13-bit converter asymmetry** (480L hazard) ignored | I/O fidelity only | §3.5 |
-| **8** | Model runs a **frozen WCS**, not the live **param de-zipper / group-table** ramped image | maybe (param ramps) | §3.1 (subsumed) |
+| **1** | **Modulation omitted from the audio/λ model** — runs a single *frozen* WCS snapshot; the SBC continuously rewrites the WCS (chorus + param ramps) every control tick | ~~primary suspect~~ **REFUTED (S5)** — live λ rate-invariant at +1126 ppm; mode has 0 support on mod taps | §3.1 ✅ |
+| **2** | Modulated taps read with **linear interpolation**, but firmware uses **all-pass interpolation** (engine `0xAE72`) | **RESOLVED (S5)** — lane3 sweep = all-pass coeff; frame replay is exact | §3.1 ✅ |
+| **3** | LFO is an **assumed triangle at a guessed rate/depth**, not the firmware's actual waveform/rate/depth (`0x3cd3`/`0x3cd4`/`0x3ccd`, phase counters `0x3e45/46`) | **RESOLVED (S5)** — real frames captured & replayed (no guess) | §3.1 ✅ |
+| **4** | **Serial multiply collapsed** to one net op; the 3 sub-state partial products and any **intermediate saturation** are not modeled | **RESOLVED (S5c)** — U5–U12 traced: the multiply is a **separate non-saturating Product Register** (U10/U11/U12, clk ARUCK); the main AC (clk ARUCKE/) adds the **complete** product once ⇒ **no intermediate saturation; 1-op model is bit-exact** | §3.2 ✅ |
+| **5** | **Saturation substitute value** modeled as a hard clamp; the exact sat-mux constant (`B-IN` = U2 pin8) not verified/modeled | **RESOLVED + IMPLEMENTED + VERIFIED (S5b)** — B-IN pattern = **±2¹⁸** (+262143/−262144), in Python+C++, gate green | §3.3 ✅ |
+| **6** | **Native sample rate = 34130 Hz** assumed; it is an **analog LC-tank oscillator** (drifts, not crystal-derived) | **DOCUMENTED (S5b)** — nominal 34130 (3.41 MHz÷100); exact value needs schematic LC/divider or hardware (residual) | §3.4 ✅ |
+| **7** | **FPC analog I/O / converters** not modeled (input = 0); the **12/13-bit converter asymmetry** (480L hazard) ignored | **Input (step 76) + 12-bit converters IMPLEMENTED** (AM25L04 ADC @ DAB0–11 ±2048; DAC80 @ DAB4–15 = `RES>>4`; both 12-bit ⇒ no 12/13 asymmetry on XL); only the **per-channel L/R split** awaits the `WR DA/` decode (convoluted residual) | §3.5 ◐ |
+| **8** | Model runs a **frozen WCS**, not the live **param de-zipper / group-table** ramped image | **REFUTED (S5)** — settled de-zipper image grows MORE (+1121 vs +947 ppm) | §3.1 ✅ |
 
 ---
 
 ## 3. Detailed work items
 
-### 3.1 Faithful live modulation + live WCS (items 1, 2, 3, 8) — **DO THIS FIRST**
+### 3.1 Faithful live modulation + live WCS (items 1, 2, 3, 8) — **DONE (Session 5): REFUTED**
+
+> **RESULT (Session 5, 2026-06-23) — faithful live modulation does NOT produce the decay.** Built
+> `tools/exp_modcap.py` (captures the firmware's real per-pass modulated WCS frame stream →
+> `tools/_modframes.npz`, 26 364 frames) and `tools/exp_live.py` (replays them through the bit-exact
+> datapath + a saturation-free Lyapunov measurement). The modulated steps 56/57/107/108 carry a swept
+> **lane3 coefficient = the firmware's all-pass interp coeff**, so frame replay reproduces the all-pass
+> fractional delay EXACTLY (items 2/3 resolved for free; item 8/de-zipper measured — the *settled* image
+> grows MORE, +1121 ppm, not less). Decisive: the **top Lyapunov exponent of the live time-varying linear
+> map** stays at **+1126 ppm GROW**, **rate-invariant** (±0.7 ppm across the full plausible SBC-clock band,
+> ~0.29–1.02 Hz). Mechanism (airtight): removing the modulated taps entirely (coeff→0) moves λ by **+0.0
+> ppm** — **the unstable mode has ZERO support on the modulated taps**, so no rate/depth of modulation can
+> change the growth. **Item 1 is refuted.** See investigation doc §0.10.11. Original §3.1 spec retained below
+> for the record.
+
 
 **What the firmware actually does** (tech ref §7 + `docs/reference/224/224XL_modulation_lfo.md`; engine
 `0xAD5C`–`0xAE9B`):
@@ -143,7 +160,24 @@ the `c`↔fraction mapping against the firmware's `0xAE72` output — get the ac
 time-varying (parametric) modulated tank. The decay verdict under modulation must come from the **EDC of the
 live integer model**, not from λ. Keep λ only as the static-image diagnostic.
 
-### 3.2 Faithful serial multiplier (item 4)
+### 3.2 Faithful serial multiplier (item 4) — **RESOLVED (S5c): no intermediate saturation; current model is bit-exact**
+
+> **RESULT (Session 5c — owner traced U5–U12):** **there is NO intermediate accumulator saturation to model;
+> the committed 1-op multiply is already bit-exact.** The full datapath is now wiring-verified:
+> - **U5–U9** (74S86) = the **sign-control XOR layer**: partial product (U12 → bits 0–3, U11 → bits 4–11,
+>   U10 → bits 12–19) XOR'd with the commoned subtract-control rail (CS33N/ via U2) → the main adder B-inputs.
+>   Confirms `AC ± product`; and U9 pin11 = product MSB → U2 pin9 → B-IN confirms **item 5's** sat sign source.
+> - **U10/U11/U12 = a dedicated "Product Register"** (74F374 ×2 + 74S175) with **NO sat-mux** on its inputs
+>   (D ← the multiplier's internal partial-product adders U13/U24/U25/U38/U39), clocked by **ARUCK** (the
+>   multiply sub-cycle clock). Its Q drives U5–U9.
+> - The **main accumulator** (U45–U49) is clocked separately by **ARUCKE/** and is the only stage with a
+>   sat-mux (item 5).
+>
+> ⇒ The 3-sub-cycle serial multiply happens in the **separate, non-saturating** product register; the main
+> accumulator adds the **complete** product **once** per microcode step. So the main AC never sees the partial
+> products — **no intermediate saturation exists.** (The plan §1 phrase "accumulator not cleared between the 3
+> sub-states" refers to *this product register*, not the main AC.) The net product is test-vector-validated =
+> `aruProd`, so `ACC = sat20(ACC + prod)` is exact. **No code change; gate stays green.**
 
 **What's missing:** the multiply is `operand × 6-bit coefficient`, done **serially** (2 coeff bits/state ×
 3 states; coefficient serialized via the T&C LS195 shift registers). The accumulator is load-only (no shift),
@@ -159,14 +193,34 @@ Then model the 3-state accumulation explicitly, including saturation **after eac
 saturates per state. **Verify** against the ADD'L MULT test vectors (must still pass) AND construct new
 large-signal vectors that would expose per-state saturation.
 
-### 3.3 Exact saturation value (item 5)
+### 3.3 Exact saturation value (item 5) — **DONE (S5b): IMPLEMENTED + VERIFIED**
+
+> **RESULT (Session 5b):** resolved from the pinouts file. The 74F157 sat-muxes (U33–U37) substitute **B-IN**
+> on overflow (SAT = `U42` 74S86 XOR of the two top **sum** bits). U37 wires the **top two** PP bits
+> (PP18/PP19) to the sign net (`U2` 74S04 pin9 = U23 pin11) and **PP0–PP17 to its complement** (`U2` pin8), so
+> the substitute pattern is **+0x3FFFF / −0x40000 = +262143 / −262144 = ±2¹⁸** — NOT the model's old ±(2¹⁹−1).
+> Elegant confirmation: with this rail, `RES = PP[3..18] = ACC>>3` fits 16 bits with **no separate clamp**
+> (the result register is a plain latch). Implemented in `tools/aru_datapath.py` (`sat20`) **and**
+> `libs/.../224xl.hpp` (`kAccMax/kAccMin`); golden regenerated; **gate green** (ctest 2/2, DIFF PASSED, mult
+> ALL PASS — the sat20 unit vectors updated to the ±2¹⁸ rails). Affects only the large-signal limit cycle
+> (nonlinear ⇒ inert on the decay λ, as the §2 table predicted).
 
 **Trace** `B-IN` (= `U2` 74S04 pin8) to its source and the `SAT` generation (the `U42` 74S86 two-MSB XOR
 on AC18/AC19 or PP18/PP19 — confirm which). Model the **exact** value the sat-mux substitutes on overflow
 (it may be a sign-extended max, not a generic clamp). **Verify** the saturating limit-cycle amplitude/shape
 matches the hardware's (and that the multiply test vectors that trip saturation still pass).
 
-### 3.4 Native sample rate (item 6)
+### 3.4 Native sample rate (item 6) — **DOCUMENTED (S5b); exact value = residual**
+
+> **RESULT (Session 5b):** nominal **Fs ≈ 34130 Hz**, derived (tech ref §1) from the 224X spec **3.41 MHz ÷
+> 100 = 34.13 kHz**; the 224XL runs 128 steps/sample ⇒ a proportionally faster T&C step clock ≈ **4.37 MHz**
+> (≈229 ns/cycle). The clock is an **analog LC-tank oscillator**, so the true Fs **drifts** around this nominal
+> and is not crystal-exact. The firmware does NOT program Fs (the ARU/T&C step clock is hardware, asynchronous
+> to the SBC), so it cannot be recovered from the ROM. **Exact value is a residual** needing one of: (a) the
+> schematic LC component values + divider chain (owner), or (b) a clean single-tap hardware impulse to fit the
+> comb spacing (the live tank is too dense/multimodal to fit a single comb from P85). **Inert on the decay λ**
+> (λ is per-sample; Fs only rescales λ↔RT60-seconds) — so do not treat 34130 as exact, but it does not gate
+> the decay question.
 
 The clock is an **LC-tank oscillator** (owner-confirmed), so Fs is analog and drifts around the nominal
 ≈ 34130 Hz. Determine the nominal: (a) read the LC component values + the divider chain from the schematic,
@@ -175,7 +229,43 @@ and/or (b) recover the sample-timer/ARU-clock divider from the firmware (the boo
 (`λ = 10^(−3/(RT60·Fs))`) and time-accurate output, **not** λ itself. Document the value + its uncertainty;
 do not treat 34130 as exact.
 
-### 3.5 FPC analog I/O + converters (item 7)
+### 3.5 FPC analog I/O + converters (item 7) — **INPUT DONE (S5b); output/converters = residual**
+
+> **RESULT (Session 5b):** the **analog INPUT path is now faithful + verified.** The FPC input-read step is
+> identified by the base-invariant fingerprint (offset bit15 set, `WA≠3`, `low14=0x3FFF` → CONCERT **step 76**)
+> and the external A/D sample now drives the DAB there (silent ⇒ 0), **REPLACING** the old (wrong) DMEM/tank
+> read — implemented in `aru_datapath.py` (`fpc_input_step` + `run`/`run_trace`) **and** `224xl.hpp`
+> (`inputStepIdx_`); golden regenerated; **gate green**. Bonus: directly tested that the old spurious
+> input-port→DMEM feedback was **λ-inert** (dλ = +0.0 ppm), confirming item 7 does not touch the decay.
+> **Residual:** in a *live* program image the **output-write** steps (`WA=3` + bit15) are **not cleanly
+> separable** from ordinary recirculation closers by the WCS bits alone (51 false matches in CONCERT — at
+> base 0 a large absolute offset just *is* a >32768-sample DMEM delay, not an FPC access) — only the
+> diagnostic programs expose them via fixed strobe codes; and the **12/13-bit converter asymmetry** (480L
+> hazard) needs the converter spec. Both are end-to-end-audio fidelity only (λ-inert).
+>
+> **CONVERTERS RESOLVED (2026-06-24, owner read the FPC sheet):** ADC = **AM25L04** (AD0–AD11 ⇒ **12-bit**);
+> DAC = **DAC80-CBI-V** (data pins A1,A3,…A23 ⇒ **12-bit**; "CBI" = Complementary Binary Input = **active-low/
+> inverted** digital inputs, fits the active-low DAB; "V" = voltage out). **Both 12-bit ⇒ NO 12/13 asymmetry
+> on the 224XL** (that hazard was 480L-specific). Model: 12-bit quantize both directions, DAC inputs
+> complemented. The converter sub-item is closed.
+>
+> **INPUT path RESOLVED (2026-06-24, owner Trace A):** AD0–AD11 → LS194 (holding reg) → LS244 buffers → DAB,
+> with **AD11 (sign) fanned to DAB11–DAB15** ⇒ **12-bit signed, sign-extended to 16-bit** (input on DAB0–11;
+> 16-bit internal datapath = 4 bits headroom). LS244 OE = LS157 (U4) muxing **RD AD/** vs U5(LS20) ⇒ the ADC
+> drives the DAB when RD AD/ fires. ⇒ faithful input = 12-bit-quantize + sign-extend at the input-read step.
+>
+> **OUTPUT decode (Trace C, partial):** RD AD/ (and WR DA/) generated by an **LS139** whose select inputs
+> latch through an **LS374** fed by deep T&C logic — **genuinely convoluted, not hand-traceable cheaply, and
+> λ-inert/lowest-value** ⇒ left as a residual (do NOT grind it for fidelity polish).
+>
+> **I/O ALIGNMENT RESOLVED + CONVERTERS IMPLEMENTED (2026-06-24, owner read the FPC sheet):** the DAC80 data
+> inputs come from **DAB4–DAB15 = the TOP 12 bits of RES (`RES>>4`)**; the ADC sits at **DAB0–DAB11** (bottom
+> 12, sign-extended). So input enters 24 dB below the 16-bit internal full-scale and the program's
+> input-diffusion coeffs provide the makeup gain. **Implemented in `224xl.hpp`** `floatToAru` (12-bit ADC,
+> ±2048) + `aruToFloat` (12-bit DAC = `RES>>4`). This is the **float audio boundary only** — the integer
+> diff-harness path is untouched, gate stays green (build clean, ctest 2/2, DIFF PASSED, mult ALL PASS after
+> `export_golden`). **Only remaining item-7 piece: the per-channel L/R split** (which output steps → A,D vs
+> B,C), which needs the `WR DA/` decode (the convoluted LS139←LS374←T&C residual — left as fidelity polish).
 
 Model the actual input ADC and output DAC, including the **12/13-bit converter asymmetry** (480L roadmap §8
 hazard). The recirculating tank is digital, so this does **not** affect the decay λ — but it is required for
@@ -201,6 +291,35 @@ After §3.1, re-assess: if the faithfully-modulated model decays at ≈ 20 s and
 question is **answered** and remaining items are fidelity polish. If it still grows, the residual is now a
 *genuinely* isolated, fully-faithful-model excess — at which point the 480L "behavioral hardware capture"
 path is justified (and only then).
+
+> **§4 RE-ASSESSMENT (Session 5 — §3.1 came back REFUTED → "it still grows").** The faithfully-modulated
+> model still grows (+1126 ppm), so by the rule above we are in the second branch. Crucially, the remaining
+> items **cannot** rescue the result, and this is provable, not a guess: the +1126 ppm lives in the **exact
+> float LINEAR map** (zero saturation/quantization), so items **4** (serial-mult intermediate saturation) and
+> **5** (exact sat value) are nonlinear and inert on it; item **6** (sample rate) only rescales λ→RT60-seconds
+> (a per-sample λ>1 stays >1 at any Fs); item **7** (FPC I/O) is the in/out boundary, not the recirculation.
+> So **no remaining item in the §2 register can move the linear λ below 1.** The linear λ is fixed entirely by
+> (a) the decoded program (offsets/coeffs/topology, read straight from the firmware-built image) and (b) the
+> linear arithmetic alignment (`<<3`/`>>6`/`>>3`) — both Session-4 schematic-confirmed faithful.
+>
+> **Therefore the decay deficit is a genuinely isolated, fully-faithful-model linear excess.** Two honest
+> options remain, and they are NOT "needs hardware" hand-waving:
+> 1. **A real, roughly-uniform physical loss (leading explanation).** Reliable state-seeded λ-sensitivity
+>    (`tools/_wf_sens2.py`) localizes the unstable mode to the **comb-closer network (steps ~60–119)**,
+>    dominated by **step 69** (cs=+62, a closer — zeroing it is +16102 ppm hotter, λ→1.017). The modulated
+>    taps and the output taps (0/1) have **zero** λ effect (the first sweep's "step 1" was a seed artifact).
+>    **Gain margin kills the small-decode-error idea:** step 69 is already near the 6-bit max (cs=63) and a
+>    uniform coeff scale is weak (−86 ppm/−1% → ~11% reduction needed for unity), so no single-coeff tweak and
+>    no plausible small systematic reaches unity (`tools/_wf_gainmargin.py`). The loop is **robustly
+>    over-unity**. → The decay deficit is best modeled as a **uniform ~0.1 %/sample loss** ("air absorption"),
+>    which §6/§7 already showed stabilizes the model *and* reproduces V7.2's HF≪LF. **Next lead (NOT
+>    owner-blocked):** pin that uniform leak's value/shape against the P85 EDC and check whether the real ARU
+>    arithmetic (per-XFER `>>3` truncation in the recirculation / accumulator sign-extension) realises it.
+> 2. **A genuinely analog/irreducible loss** (DRAM/sense-amp behavior, converter, analog summing) not present
+>    in any digital model → the 480L behavioral-capture path, now justified *with* the linear-excess proof.
+>
+> Do NOT spend more effort on modulation, the de-zipper, saturation, sample rate, or FPC I/O for the **decay**
+> question — they are settled-inert. (They remain required for end-to-end audio fidelity, just not for λ.)
 
 ---
 

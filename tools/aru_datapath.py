@@ -41,9 +41,27 @@ def sat16(x):
     return 32767 if x > 32767 else (-32768 if x < -32768 else x)
 
 
+def fpc_input_step(prog):
+    """The FPC analog-input read step (item 7): offset bit15 set (FPC device select), WA != 3,
+    and low14 == 0x3FFF -- the base-invariant ADC fingerprint (tech ref 12). Returns its step
+    index s, or None. In hardware this drives the A/D sample onto the DAB (it is NOT a DMEM/tank
+    tap; the current pre-item-7 model wrongly read DMEM there); silent input => 0. Verified inert
+    on the recirculation eigenvalue, but required for a faithful end-to-end audio (input) path."""
+    for p in prog:
+        if (p['offset'] & 0x8000) and p['WA'] != 3 and (p['offset'] & 0x3FFF) == 0x3FFF:
+            return p['s']
+    return None
+
+
 def sat20(x):
-    """Saturate to the ARU's 20-bit signed accumulator (+/-524287)."""
-    return 524287 if x > 524287 else (-524287 if x < -524287 else x)
+    """ARU accumulator/PP saturation (item 5, schematic-exact from pinouts 060-01318).
+    The 74F157 sat-muxes (U33-U37) substitute B-IN on overflow (SAT = U42 XOR of the two
+    top sum bits). U37 wires the top two PP bits (PP18,PP19) to the sign net and PP0..PP17
+    to its complement (U2 74S04), so the substitute pattern is +0x3FFFF / -0x40000 =
+    **+262143 / -262144 = +/-2^18**, NOT +/-(2^19-1). Consequence: RES = PP[3..18] = (PP>>3)
+    then fits 16 bits with no separate clamp (the result register is a plain latch). Affects
+    only the saturated (large-signal) limit cycle, not the linear decay eigenvalue."""
+    return 262143 if x > 262143 else (-262144 if x < -262144 else x)
 
 
 def run(prog, ra_pick, nsamp=4000, imp=20000):
@@ -64,20 +82,21 @@ def run(prog, ra_pick, nsamp=4000, imp=20000):
     DM = [0] * (DMASK + 1)
     pos = 0
     out = []
+    in_step = fpc_input_step(prog)        # FPC ADC read step (item 7); None -> legacy s0 inject
     for n in range(nsamp):
         pos = (pos + 1) & DMASK
         esum = 0
         for st in prog:
             # 1. delay address
             addr = (pos - st['offset']) & DMASK
-            # 2. DAB source: b3 -> result register drives DAB (the CURRENT, pre-XFER RES);
-            #    else read DMEM. Impulse injected additively at first active step of sample 0.
-            if st['b3']:
-                dab = RES
+            # 2. DAB source: the FPC input-read step takes the external A/D sample (item 7,
+            #    silent => 0); else b3 -> the CURRENT (pre-XFER) RES drives the DAB, else DMEM.
+            if in_step is not None and st['s'] == in_step:
+                dab = imp if n == 0 else 0
             else:
-                dab = DM[addr]
-            if n == 0 and st is prog[0]:
-                dab += imp
+                dab = RES if st['b3'] else DM[addr]
+                if in_step is None and n == 0 and st is prog[0]:
+                    dab += imp     # legacy fallback when no FPC input step is decoded
             # 3. 6-bit coefficient with sign
             mag = abs(st['coeff'])
             csign = st['coeff'] < 0
@@ -133,19 +152,21 @@ def run_trace(prog, ra_pick, nsamp=4000, imp=20000, trace_window=64):
     pos = 0
     esum_list = []
     steps = []
+    in_step = fpc_input_step(prog)        # FPC ADC read step (item 7); None -> legacy s0 inject
     for n in range(nsamp):
         pos = (pos + 1) & DMASK
         esum = 0
         for st in prog:
             # 1. delay address
             addr = (pos - st['offset']) & DMASK
-            # 2. DAB source (b3 -> pre-XFER RES; else DMEM read), additive impulse.
-            if st['b3']:
-                dab = RES
+            # 2. DAB source: FPC input-read step takes the external A/D sample (item 7, silent
+            #    => 0); else b3 -> pre-XFER RES; else DMEM read.
+            if in_step is not None and st['s'] == in_step:
+                dab = imp if n == 0 else 0
             else:
-                dab = DM[addr]
-            if n == 0 and st is prog[0]:
-                dab += imp
+                dab = RES if st['b3'] else DM[addr]
+                if in_step is None and n == 0 and st is prog[0]:
+                    dab += imp
             # 3. 6-bit coefficient with sign
             mag = abs(st['coeff'])
             csign = st['coeff'] < 0

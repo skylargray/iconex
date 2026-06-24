@@ -5,7 +5,7 @@
 //   * 6-bit signed coeff  Cs = +/-(abs(coeff7) >> 1)              [aruCoeff6]
 //   * operand = x << 3,  prod = (operand * Cs) >> 6  (arith. >>)  [aruProd]
 //     (net gain x * Cs / 64; the <<3/>>6 is the 17->20 bit operand alignment)
-//   * 20-bit saturating accumulator, rails +/-524287              [aruSat20 / aruMac]
+//   * saturating accumulator, rails +/-2^18 = +262143/-262144     [aruSat20 / aruMac]
 //   * result register RES = sat16(ACC >> 3), rails [-32768,32767] [aruSat16]
 //
 // Anchors: the firmware ADD'L MULT mapping confirms coefficient magnitude 124 ->
@@ -66,19 +66,20 @@ int main()
     check("mac accumulate",         aruMac(100, 1024, 32), 4196); // 100 + 4096
     check("mac neg coeff",          aruMac(  0, 1000,-62),-7750); // -(1000*62/8)
 
-    // ---- 20-bit accumulator saturation (the Manual's "last coefficients set sat") ----
-    // prod 1000*63/8 = 7875; 524000 + 7875 = 531875 -> rail +524287.
-    check("sat20 high rail",        aruMac( 524000, 1000,  63),  524287);
-    check("sat20 low rail",         aruMac(-524000, 1000, -63), -524287);
-    check("sat20 passthrough hi",   aruSat20( 524287),  524287);
-    check("sat20 passthrough lo",   aruSat20(-524287), -524287);
-    check("sat20 clamp over",       aruSat20( 600000),  524287);
-    check("sat20 clamp under",      aruSat20(-600000), -524287);
+    // ---- accumulator/PP saturation: rails +/-2^18 (item 5, schematic-exact from pinouts
+    // 060-01318; the 74F157 sat-muxes substitute the +0x3FFFF / -0x40000 B-IN pattern). ----
+    // prod 1000*63/8 = 7875; 260000 + 7875 = 267875 -> rail +262143.
+    check("sat20 high rail",        aruMac( 260000, 1000,  63),  262143);
+    check("sat20 low rail",         aruMac(-260000, 1000, -63), -262144);
+    check("sat20 passthrough hi",   aruSat20( 262143),  262143);
+    check("sat20 passthrough lo",   aruSat20(-262144), -262144);
+    check("sat20 clamp over",       aruSat20( 400000),  262143);
+    check("sat20 clamp under",      aruSat20(-400000), -262144);
 
-    // ---- 16-bit result-register saturation: RES = sat16(ACC>>3) ----
-    // ACC at full positive rail: 524287>>3 = 65535 -> sat16 -> 32767.
-    check("res from acc hi rail",   aruSat16(524287 >> 3),  32767);  // 65535 clamps
-    check("res from acc lo rail",   aruSat16(-524287 >> 3), -32768); // -65536>>... clamps
+    // ---- 16-bit result-register: RES = PP[3..18] = ACC>>3. With PP clamped to +/-2^18 the
+    // result fits 16 bits exactly (262143>>3 = 32767, -262144>>3 = -32768) -> no extra clamp. ----
+    check("res from acc hi rail",   aruSat16(262143 >> 3),  32767);  // exactly 32767, no clamp
+    check("res from acc lo rail",   aruSat16(-262144 >> 3), -32768); // exactly -32768, no clamp
     check("sat16 passthrough hi",   aruSat16( 32767),  32767);
     check("sat16 passthrough lo",   aruSat16(-32768), -32768);
     check("sat16 clamp over",       aruSat16( 40000),  32767);

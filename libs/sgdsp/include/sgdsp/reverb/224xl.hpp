@@ -35,7 +35,7 @@ using AruAccum = int64_t;
 //     effective signed coefficient Cs = +/-(mag>>1)).
 //   * operand = x << 3 (the 17->20 bit operand alignment into the multiplier).
 //   * product = (operand * Cs) >> 6   (arithmetic right shift; floors toward -inf).
-//   * 20-bit saturating accumulator, rails +/-524287.
+//   * saturating accumulator, rails +/-2^18 (+262143/-262144; sat-mux B-IN, item 5).
 //   * result register RES = sat16(ACC >> 3), rails [-32768, +32767].
 // These supersede the old (x*coeff)>>7 / 16-bit-acc first cut. Move toward any
 // further hardware nuance by editing the constants here. ----
@@ -45,13 +45,17 @@ struct ArithProfile
     static constexpr int      kCoeffShift   = 1;        // 6-bit coeff = (abs(coeff7) >> 1)
     static constexpr int      kProdShift    = 6;        // product = (operand * Cs) >> 6
     static constexpr int      kResultShift  = 3;        // RES = sat16(ACC >> 3)
-    static constexpr AruAccum kAccMax       = 524287;   // 20-bit accumulator high rail (+2^19-1)
-    static constexpr AruAccum kAccMin       = -524287;  // 20-bit accumulator low rail (reference sat20)
+    // Accumulator/PP saturation rails (item 5, schematic-exact, pinouts 060-01318): the
+    // 74F157 sat-muxes substitute B-IN on overflow; U37 ties PP18/PP19 to the sign net and
+    // PP0..PP17 to its complement (U2 74S04), so the clamp pattern is +0x3FFFF / -0x40000 =
+    // +/-2^18, NOT +/-(2^19-1). RES = PP[3..18] = PP>>3 then fits 16 bits with no extra clamp.
+    static constexpr AruAccum kAccMax       = 262143;   // +2^18 - 1  (PP = 0x3FFFF)
+    static constexpr AruAccum kAccMin       = -262144;  // -2^18      (PP = 0xC0000)
     static constexpr AruAccum kResMax       = 32767;    // 16-bit result register high rail
     static constexpr AruAccum kResMin       = -32768;   // 16-bit result register low rail
 };
 
-// Saturate to the 20-bit signed accumulator rails (reference sat20, +/-524287).
+// Saturate to the accumulator/PP rails (reference sat20, +262143/-262144 = +/-2^18).
 SGDSP_INLINE AruAccum aruSat20(AruAccum x) noexcept
 {
     if (x > ArithProfile::kAccMax) return ArithProfile::kAccMax;
@@ -159,6 +163,17 @@ public:
             steps_[nActive_++] = st;
         }
         firstActive_ = (nActive_ > 0) ? 0 : -1;
+        // FPC analog-input read step (item 7): offset bit15 set (FPC device), WA != 3, and
+        // low14 == 0x3FFF (base-invariant ADC fingerprint, tech ref 12). External A/D sample
+        // drives the DAB here (NOT a DMEM tap); silent input => 0. Inert on the recirculation
+        // eigenvalue but required for the faithful audio-in path. -1 => legacy firstActive inject.
+        inputStepIdx_ = -1;
+        for (int i = 0; i < nActive_; ++i) {
+            const AruStep& s = steps_[i];
+            if ((s.offset & 0x8000u) && s.wa != 3 && (s.offset & 0x3FFFu) == 0x3FFFu) {
+                inputStepIdx_ = i; break;
+            }
+        }
     }
 
     SGDSP_NOINLINE void reset() noexcept
@@ -208,17 +223,30 @@ public:
     void setParameter(int index, float value01) noexcept { (void)index; (void)value01; }
 
 private:
-    static constexpr float kAruScale = 32768.0f;
+    // FPC analog converters (item 7, schematic-confirmed from the FPC sheet, 2026-06-24).
+    //  * Input  A/D = AM25L04, 12-bit. The result lands bottom-aligned on the DAB: AD0->DAB0 ..
+    //    AD11->DAB11, with the sign bit AD11 fanned to DAB11..DAB15 (sign-extend to 16-bit). So a
+    //    full-scale input is +/-2048 on the DAB -- 24 dB below the 16-bit internal full-scale; the
+    //    program's input-diffusion coefficients provide the makeup gain.
+    //  * Output D/A = DAC80-CBI-V, 12-bit, fed from DAB4..DAB15 (the TOP 12 bits of RES) = RES>>4.
+    //    ("CBI" = complementary/active-low inputs + bipolar offset; the inversion nets out to the
+    //    correct analog level, so it does not change the float value here.)
+    // This affects ONLY the float audio boundary (process()); the integer diff-harness path
+    // (processFixed/Traced with an integer impulse) is unchanged, so the §5 gate is unaffected.
+    // The L/R channel split still awaits the WR DA/ output decode (residual), so out is duplicated.
+    static constexpr float kAdcScale = 2048.0f;        // 12-bit ADC full-scale (DAB0..DAB11)
+    static constexpr float kDacScale = 2048.0f;        // 12-bit DAC full-scale (DAB4..DAB15)
     SGDSP_INLINE static AruWord floatToAru(Sample x) noexcept
     {
-        float s = x * kAruScale;
-        if (s >  32767.0f) s =  32767.0f;
-        if (s < -32768.0f) s = -32768.0f;
+        float s = x * kAdcScale;                       // AM25L04: 12-bit, bottom-aligned on the DAB
+        if (s >  2047.0f) s =  2047.0f;
+        if (s < -2048.0f) s = -2048.0f;
         return static_cast<AruWord>(s >= 0.0f ? s + 0.5f : s - 0.5f);
     }
     SGDSP_INLINE static Sample aruToFloat(AruWord v) noexcept
     {
-        return static_cast<Sample>(v) * (1.0f / kAruScale);
+        const AruWord dac12 = v >> 4;                  // DAC80 reads DAB4..DAB15 = top 12 bits of RES
+        return static_cast<Sample>(dac12) * (1.0f / kDacScale);
     }
 
     // The 128-step microprogram for one output sample. Trace==true records probes
@@ -237,12 +265,17 @@ private:
             const AruStep& st = steps_[i];
             // 1. delay address
             const uint32_t addr = (pos_ - st.offset) & kDmemMask;
-            // 2. DAB source: b3 -> the CURRENT (pre-XFER) result register drives DAB;
-            //    else read DMEM. Additive impulse at the first active step of sample 0.
-            AruWord dab = st.b3 ? res_ : dmem_[addr];
-            if (i == firstActive_) dab += in;     // additive injection: equals the reference's
-                                                  // dab=imp at sample 0 (DM/RES are 0 there) and
-                                                  // generalizes to continuous input on the float path
+            // 2. DAB source: the FPC input-read step takes the external A/D sample (item 7,
+            //    silent => 0, REPLACING the DMEM read); else b3 -> the CURRENT (pre-XFER) result
+            //    register drives DAB, else read DMEM.
+            AruWord dab;
+            if (i == inputStepIdx_) {
+                dab = in;                          // FPC analog input (ADC) onto the DAB
+            } else {
+                dab = st.b3 ? res_ : dmem_[addr];
+                if (inputStepIdx_ < 0 && i == firstActive_)
+                    dab += in;                     // legacy fallback (no FPC input step decoded)
+            }
             // 3. (coefficient Cs is precomputed as st.cs6 = +/-(abs(coeff)>>1))
             // 4. LS670 read-before-write: read the multiplicand FIRST, then write the bus.
             const AruWord raccIn = R_[st.ra];
@@ -288,6 +321,7 @@ private:
     AruStep  steps_[128];
     int      nActive_ = 0;
     int      firstActive_ = -1;
+    int      inputStepIdx_ = -1;   // FPC analog-input read step (item 7); -1 => legacy inject
     // Group 3: external DMEM + rate
     AruWord*   dmem_ = nullptr;
     SampleRate sampleRate_ = 0;
