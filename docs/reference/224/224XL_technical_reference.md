@@ -226,6 +226,33 @@ verify the C++ implementation.
 - **Saturation** — on positive/negative overflow force most-positive/most-negative (20-bit two-MSB XOR
   detector; sat16 at result register output).
 
+**SCHEMATIC-NET CONFIRMATION (Session 4d, owner-traced — `docs/reference/224/224XL ARU pinouts from
+060-01318.txt`).** The datapath above is now **wiring-verified**, not inferred:
+- Accumulator = 5× **74LS163** (U45–U49): `AC0..AC19`; pin1 CLR\=**ZERO/**, pin2 CP=**ARUCKE/** (per-step),
+  L\=GND (always parallel-load), ENP/ENT=GND (no count). Each ARUCKE/ edge: `AC ← PP` (data inputs PP0..19)
+  or **0 if ZERO/** (synchronous clear overrides load).
+- Adders = 5× **74F283** (U19–U23), ripple-carried: A=`AC` feedback, B=`U5..U9` (74S86 XOR = product⊕CSIGN),
+  Σ→sat-muxes; LSB Cin=`U2` 74S04=CSIGN ⇒ `AC ± product`.
+- Sat-muxes = 5× **74F157** (U33–U37): SEL=`SAT` (U42 74S86 two-MSB XOR), I0=Σ, I1=`B-IN` (sat constant),
+  Y=`PP` ⇒ `PP = saturate(AC ± product)`.
+- Result reg = 2× **74F374** (U43/U44): D=`PP3..PP18`, Q=`DAB0..DAB15`, clk=XFER CK, OE=RDRREG/ ⇒
+  **`RES = PP[3..18]` = exactly `>>3`** (reads the *combinational* PP bus, not latched AC).
+- **ZERO clears on the FIRST multiply sub-state** (the serial multiply = 2 coeff-bits/state × 3 states only
+  yields the test-vector-correct product if not cleared mid-multiply) ⇒ "clear then accumulate" = the
+  committed model. Net: the whole accumulate→saturate→transfer path + clear timing is **faithful**.
+- **Still un-traced (the only ARU gap):** the *multiplier* itself — the chips between the LS670 operand and
+  the U5–U9 XOR A-inputs (operand register + coefficient-gated/shifted partial-product). Needed for §3.2 of
+  the faithful-reconstruction plan (per-state saturation). The sat constant `B-IN`/`SAT` source also untraced.
+
+**⚠️ APPROXIMATION REGISTER — the analysis model is NOT yet fully faithful (Session 4d).** The decay-deficit
+(+1100 ppm) is the eigenvalue of the **static** WCS image; the hardware never runs static. Open shortcuts to
+fix (full spec: `docs/plans/224XL-faithful-reconstruction-plan.md`): **(1) modulation omitted** from the
+audio/λ model (frozen WCS); **(2)** modulated taps read with **linear** interpolation, not the firmware's
+**all-pass** (`0xAE72`); **(3)** LFO is **guessed**, not the firmware's `0x3cd3`/`0x3cd4`/`0x3ccd`;
+**(4)** serial multiply **collapsed** (per-state saturation unmodeled); **(5)** saturation **value** unverified;
+**(6)** Fs=34130 is **nominal** (analog LC-tank oscillator, not crystal); **(7)** FPC I/O / 12-13-bit
+converter asymmetry unmodeled; **(8)** frozen WCS vs live param de-zipper. Fix modulation FIRST.
+
 ---
 
 ## 5. Programs & microcode extraction
@@ -285,7 +312,7 @@ exactly linear, Δ16/step). CONCERT example:
 | 0 | LOW | low-band decay (2 coeffs + the modulated taps) |
 | 1 | MID | mid-band decay (16 allpass coeffs) |
 | 2 | XOV | crossover (linear coeff pair) |
-| 3 | HFD | HF damping (input-filter coeffs) |
+| 3 | HFD | **HF Decay = the manual's "Treble Decay"** — an *in-loop* air-absorption HF damping (band-split steps 40/41/92/93; Fig 4.1 puts it inside the Reverb block). **NOT** HF Bandwidth (= `HFB`, a page-2 *input* low-pass). Decode currently renders it inert — see investigation §0.10. |
 | 4 | DEP | input diffusion (8 coeffs) |
 | 5 | PDL | **predelay → DELAY steps** (42/94: 21839→147 samples), not a coeff |
 

@@ -17,11 +17,20 @@ many deep dead-ends are recorded so they are not repeated.
 > CONCERT-specific). The "missing HF damping" framing is also revised (the HFD *parameter* is inert on λ).
 > Trust §0 over any conflicting number elsewhere in this doc.
 >
-> **CURRENT PLAN / START HERE: §0.9.** §0.8 validated the topology and showed the missing loss is
-> frequency-dependent and *crossover-shaped*, but the fix is **NOT** to add a calibrated filter — it is to
-> find the **mis-modeled crossover/band-split** (LOW/MID/XOV) that is decoupled in our reconstruction. §0.9
-> has the reasoning and the concrete trace plan (steps s43–46 / s95–98, the 1-sample feedback). Do that, not
-> a fudge.
+> **CURRENT PLAN / START HERE → `docs/plans/224XL-faithful-reconstruction-plan.md` (Session 4d, 2026-06-23).**
+> The owner traced the **literal ARU schematic nets** (`docs/reference/224/224XL ARU pinouts from
+> 060-01318.txt`), which **confirms the arithmetic datapath is FAITHFUL** (74LS163 accumulator + 74F283 adders
+> + 74F157 sat-muxes + 74F374 result reg: `PP = saturate(AC ± product)`, `RES = PP[3..18] = >>3`) and the
+> **ZERO/clear timing is faithful too** (serial multiply forces clear-on-first-sub-state = our model). So the
+> ≈ **+1100 ppm uniform excess is NOT a decode/datapath bug** — it is what the **static** WCS image does, and
+> the hardware never runs static. **THE PIVOT:** the model takes **shortcuts** — it **omits the always-on
+> chorus modulation** (and approximated it with linear, not the firmware's all-pass, interpolation + a guessed
+> LFO), runs a frozen WCS, collapses the serial multiply, etc. A faithful recreation must fix **all of them**.
+> The new plan registers all 8 approximations with a faithful-impl + verify spec for each, **modulation
+> first** (the un-modeled real element most likely to close the decay). Still-true reframes: "HFD" = Treble
+> Decay (in-loop, not HFB); band-split halves are serial stages (variant J refuted); clock is an analog
+> LC-tank oscillator (Fs ≈ 34130 Hz nominal). Decay verdict must come from the **EDC of the live integer
+> model**, not the static-λ tools. Read §0.10.10 then the plan.
 
 ---
 
@@ -252,6 +261,254 @@ crossover/band-split steps and find why sweeping their coefficients barely moves
 **Status of §0.8's recommendation:** SUPERSEDED. Do **not** implement a calibrated one-pole in `ArithProfile`.
 The §0.8 results stand as evidence (topology validated; the missing loss is frequency-dependent and
 crossover-shaped), but the fix is to **repair the crossover/band-split realization**, not to add a filter.
+
+---
+
+## 0.10 SESSION 4 (2026-06-23) — the "HFD" parameter is **Treble Decay** (in-loop), and the band-split is net energy-**adding**
+
+Driven by the owner's-manual functional references the project owner added this session
+(`docs/reference/224/224X_chapter3_operation.md`, `224X_chapter4_programs.md`, incl. the **Fig 4.1**
+Concert-Hall block diagram). Correlating the documented parameters/topology with the model resolved the
+central misidentification and sharpened §0.9's "decoupled band-split" into a concrete, located mechanism.
+
+### 0.10.1 The reframe: "HFD" = HF **Decay** = **Treble Decay**, an *in-loop* damping — NOT HF Bandwidth
+- The firmware's six CONCERT param labels (NVS2 @0x9CDE) are **`LOW MID XOV HFD DEP PDL`**. These are the
+  **page-1 LARC sliders, in order** (owner's manual Table 4.2): `LF Decay · Mid Decay · Crossover · Treble
+  Decay · Depth · Predelay`. So **param 3 "HFD" = the 4th page-1 slider = "Treble Decay"** — the firmware's
+  `HFD` abbreviates **"HF Decay"**, the manual's "Treble Decay" ("sets the frequency above which sounds
+  decay at a progressively faster rate" — air absorption).
+- **Fig 4.1 places Treble Decay *inside* the "Reverb" block** (with LF/Mid Decay, Crossover, LF/Mid Stop
+  Decay, Chorus). **HF Bandwidth** is a *separate* control, drawn **at the input** (before the preecho/
+  predelay split) — a 6 dB/oct input low-pass that "does not affect the rate at which high frequencies
+  decay" (manual §3.3). Its abbreviation is **`HFB`** (NVS2 variant labels), and it is a **page-2** slider —
+  **not in the 6-param page-1 set** the sweep covers.
+- **Therefore §0.2's reasoning is wrong on a misidentified parameter.** §0.2 dismissed param 3's inertness
+  with "HFD is an input filter, so it cannot move the loop eigenvalue — confirmed inert." But param 3 is the
+  *in-loop* Treble Decay, which **must** move λ. The tech-ref §6 note "3 | HFD | HF damping (input-filter
+  coeffs)" is the same error. Param 3's inertness is **the bug**, and it is exactly the §0.8 finding (an
+  in-loop HF one-pole at ~1.6 kHz reproduces P85) and the manual's §4.2.2 Chamber warning ("may feed back
+  internally if … the Treble Decay … is set too high … defeated by lowering the Treble Decay slider").
+- **Tooling/doc corrected:** `tools/exp_paramspace_conv.py` `LBL` and tech-ref §6 relabeled HFD →
+  "HF Decay / Treble Decay (in-loop)". HFB (HF Bandwidth, input filter) is the genuinely-inert one.
+
+### 0.10.2 Param → band-split step map (from `224XL_param_sweep_01.json`, confirmed)
+First half (mirror in parentheses): **HFD/Treble** = s40,s41 (s92,s93); **LOW/LF** = s43 (s95);
+**MID** = s44 + the comb FFs s62–68… (s96 + s113–119…); **XOV** = s45,s46 (s97,s98); **PDL** = delay s42
+(s94). The decay controls live in the **band-split region s37–46 / s89–98**.
+
+### 0.10.3 What the model actually does there (direct experiments — `tools/exp_hfd*.py`, `exp_acc_trace.py`, `exp_symfix.py`)
+- **Converged λ = 1.0011206 (+1121 ppm)** (consistent with §0.1). Coupling (Δppm when a param's coeff→0):
+  **MID −1232 (decays!), XOV +802, HFD +12, LOW +10.** So **MID/XOV have loop authority; HFD/LOW are inert**
+  — the two controls the manual says set the *decay* are nearly decoupled.
+- **HFD/LOW are not reading a dead node.** In the converged mode, **R0 carries 92.7 % of the amplitude** and
+  HFD(s40/41)/LOW(s43) read R0 at **full** amplitude (RA=0). They *see* the live recirculating signal — yet
+  their coefficient is inert, so **their multiply result is discarded before any feedback write-back.**
+- **Why discarded — and a real stereo asymmetry.** ACC trace (`exp_acc_trace.py`): the first half has the
+  accumulator **ZEROed at s44 *and* s46** — so HFD(40,41)+LOW(43) accumulate then get wiped before any
+  XFER, and the s45/s46 "closers" write back ≈0. The second half has the **single** ZERO@s89, so its band-
+  split sum (incl. HFD/LOW/MID/XOV) flows to XFER@s98 and is written back. **Raw WCS bytes confirm** the two
+  halves are byte-identical **except lane2 bit7 (ZERO) at s44/s96 and s46/s98** — first half = 3 clears,
+  second = 1. A symmetric stereo tank cannot have asymmetric, triple-clear control structure → the inferred
+  XFER/ZERO decode here is at least partly wrong (the §0.9 "scan-legibility-limit" region).
+- **But the asymmetry is *secondary*.** Symmetrizing (`exp_symfix.py`):
+  - **V2** (first half → second, remove ZERO@44,46): λ **+1165 ppm** (grows *more*); HFD still ≈0.
+  - **V3** (second half → first, add ZERO@96,98 so *both* discard): λ **−112 ppm — DECAYS**; all params inert.
+  - i.e. **the more of the band-split's accumulation is written back, the more the loop GROWS.** Discarding
+    it (V3) ≈ MID→0 (−111 ppm) → decay. **The band-split is net energy-ADDING (a frequency-dependent
+    *gain*), not the LOSS it must be.** The growth rides on the band-split feedforward (MID-dominated).
+
+### 0.10.4 Refined root cause (supersedes §0.5/§0.6's "diffuse, maybe-analog" wording)
+The CONCERT decay mechanism is the **band-split frequency-dependent damping** (LF/Mid/Treble Decay split by
+the XOV crossover), realized in **s37–46 / s89–98**. Our **decode of this region inverts its function**: it
+adds energy (net positive feedback, MID-dominated) instead of removing it, and renders **Treble Decay (HFD)
+and LF Decay (LOW) nearly decoupled** from the feedback. The error is in the **band-split datapath decode** —
+the *inferred, scan-limited* fields (feedback **sign/polarity**, **XFER/ZERO**, **b3**, **RA**, intra-sample
+**ordering**, ±1-sample short-feedback **delay**) — **not** in the generic, verified datapath (MAC/sat/sign/
+field-map/Z80), which all stand. This is consistent with: §1's "feedforward over-recovers (MID→0 decays)",
+§0.8's "in-loop HF one-pole fixes it", and the manual's parameter semantics (Treble/LF/Mid Decay + Crossover
+are *the* decay controls).
+
+### 0.10.5 Next step — find the band-split decode that makes the documented controls work (oracle-driven)
+Search the band-split decode (s37–46 + mirror) for the assignment where:
+1. the loop **decays at the default** (λ ≈ 0.9999899, RT60 ≈ 20 s), and
+2. **HFD/LOW/MID each gain loop authority** — sweeping their coeff over the `224XL_param_sweep_01.json`
+   idx0–7 range moves RT60 monotonically (per manual: longer-decay ↔ longer RT60), and
+3. the two halves become **structurally symmetric**, and
+4. the §0.8 P85/V7.2 transfer-function correlation reaches the ~0.92 ceiling **without** an added filter.
+Highest-prior hypotheses (band-split is net energy-adding → likely a **polarity/structure** error): feedback
+**sign** on the band-split FF taps; **XFER/ZERO** reassignment (which sum reaches write-back, and with what
+sign); **b3** (which steps close the loop); **RA** (read source of the closers); **±1-sample** delay on the
+s45→s43 short feedback. Harness: `tools/exp_symfix.py` (`conv_lambda`, `coupling`, `setfields`); oracle:
+`tools/exp_paramspace_conv.py` (sweep authority) + `tools/modal_output.py`/`damp_grid.py` (P85 corr).
+
+New tools this session: `exp_hfd.py` (HFD coupling + band-split structure), `exp_hfd_live.py` (register
+liveness in the converged mode), `exp_acc_trace.py` (ACC flow per step — shows the discard), `exp_symfix.py`
+(symmetrisation/decode-variant harness). Manual refs: `224X_chapter3_operation.md` (parameter functions),
+`224X_chapter4_programs.md` + Fig 4.1 (Concert-Hall topology).
+
+### 0.10.6 SESSION 4b — workflow verification + variant J + the all-pass-lossless / MID-is-the-sole-decay decomposition
+
+A 10-agent workflow (`concert-bandsplit-decode`, adversarial verify → decode search → synthesis) plus direct
+follow-up experiments (`tools/exp_J_order.py`). **All three Session-4 findings independently confirmed,
+two to the firmware byte:**
+- **HFD = Treble Decay, verified in the ROM:** NVS2 `2732.BIN` @0x9CDE = ASCII `"LOW MID XOV HFD DEP PDL"`,
+  and the **adjacent label block reads `… CHO HFB DIF DEF`** — so the firmware itself uses a *distinct*
+  abbreviation **`HFB`** for HF Bandwidth. `HFD` ≠ `HFB`. (Manual Table 4.2: page-1 slider 4 = Treble Decay,
+  page-2 slider 4 = HF Bandwidth.) Reframe is byte-confirmed.
+- **Band-split net energy-adding** reproduced exactly (baseline +1120.6; MID −1232.4; HFD +11.8; LOW +10.3;
+  XOV +802.3; V3 −111.7 ppm). **Stereo asymmetry is in the NVS4 ROM** (physical file `2732.BIN`: offsets
+  0x95C=0x0E vs 0xA2C=0x8E and 0x964=0x00 vs 0xA34=0x80, XOR 0x80 = lane2 bit7 = ZERO), inside CONCERT
+  record 0 (@0xB800 id=0x01), copied verbatim to WCS at PC 0xAB67 — not a boot/copy artifact.
+
+**Variant J — the leading corrected band-split ZERO decode** (`tools/exp_J_order.py`, `J_EDITS`):
+move the accumulator-clear to **ZERO-open the damping block at s40/s92** and **drop the spurious clears at
+s44/s96 and s46/s98** (so each half is one clean `ZERO-open → MAC-accumulate(HFD+LOW+PDL+MID+XOV) → XFER-close`):
+- **All four documented decay controls gain loop authority with the correct (loss) direction:**
+  zeroing each coeff lowers λ — HFD −92, LOW −77, MID −668, XOV −33 ppm (baseline: HFD/LOW ≈ +10, inert).
+- The two halves become **structurally symmetric**, and the **P85 transfer-function correlation rises
+  0.542 → 0.685 (seed-stable 0.992) with NO added filter** (ceiling = V7.2-vs-P85 0.916). The variant that
+  merely decays by *discarding* the band-split (V3b) is **worse** at P85 (0.171) — decay-by-decoupling is
+  non-physical; J has the right shape.
+- **Caveat / not-yet-ROM-derived:** J asserts a ZERO pattern that doesn't match the decoded bits in *either*
+  half, so it is an oracle-fit hypothesis, not a clean re-read of the bytes. It may indicate our **lane2-bit7
+  = ZERO** semantics are wrong on these steps (or bit7 is conditional). Treat J as the **structural target**,
+  pending a ROM/behavioral account of why the firmware's ZERO bits differ from J.
+
+**The decisive decomposition (robust across seeds/lengths):**
+- **The all-pass tank minus MID is EXACTLY lossless: λ = 1.0000000** (true for *both* baseline and J, all
+  seeds/nsamp). So the nested all-pass network is perfectly reconstructed and **the entire CONCERT decay
+  rides on the MID mid-band feedforward** (the comb-closer FF taps s62–68/s113–119 **plus** the band-split
+  tap s44/s96 — the full 16-step MID set from `224XL_param_sweep_01.json`).
+- **MID is realized as net positive feedback (a per-pass GAIN) where it must be a small per-pass LOSS.**
+  At default it contributes **+1121 ppm (baseline) / +556 ppm (J)**; the target is **−10 ppm** (20 s).
+  J halves MID's excess (by capturing the band-split MID tap correctly) but the residual **+556 ppm is MID
+  itself**: under J, zeroing the full MID set lands the loop at exactly λ = 1.0000000.
+- **Intra-sample ordering is not the lever:** J + pre-XFER (1-sample-delayed) writeback on the s46/s98
+  closers drops λ to +292 ppm but **re-decouples** HFD/LOW (back to ≈0) — it lowers the rate only by
+  bypassing the captured decay sum. So the residual is *not* removable by band-split ordering.
+
+### 0.10.7 Root cause (two coupled loci) + next step
+1. **Band-split ZERO decode** (s37–46 / s89–98) — decouples HFD/LOW/XOV authority and inflates MID's excess.
+   Candidate fix: **variant J** (structurally validated: authority + symmetry + best P85 + exact-lossless
+   all-pass). Open: reconcile J with the ROM ZERO bits (is lane2-bit7=ZERO wrong/conditional on these steps?).
+2. **MID mid-band feedforward = net GAIN, must be a small LOSS** (the comb-closer `+0.976`/124 blocks' FF
+   taps + the band-split MID tap). This is **the decay mechanism** and it is wrong-signed/over-strong — the
+   §1/§5 "feedforward over-recovers", now established as the *central* residual (the all-pass tank around it
+   is exactly lossless). A simple global sign flip was already refuted (§5 #7: "flip is worse"), so the next
+   work is the **comb-closer feedforward realization** under variant J: the −37·d_b cross-block term (§5),
+   the third-FF tap source (s64/68/115/119 read R2), and whether the closer's `+0.976` feedback vs its FF
+   injection are correctly balanced so MID nets a ~10 ppm loss at default.
+
+**NEXT (do this):** adopt **variant J** as the working band-split decode in the reference model and re-audit
+the **MID comb-closer feedforward** under it — goal: MID nets a small per-pass *loss* (default λ ≈ 0.9999899,
+RT60 ≈ 20 s) with HFD/LOW/MID/XOV authority retained and the P85 correlation → the 0.916 ceiling without any
+added filter. Tools: `tools/exp_J_order.py` (J + ordering harness), `tools/exp_symfix.py`, `modal_output.py`
+(P85 oracle). Cross-check the residual against §0.4's uniform cross-program deficit (BRIGHT HALL also +1198
+ppm) — if MID-under-J fully closes CONCERT, the "external uniform deficit" hypothesis is wrong.
+
+New tools (4b): `exp_J_order.py` (variant-J + intra-sample-ordering λ/authority harness).
+
+### 0.10.8 SESSION 4c — schematic/builder/topology workflow: variant J REFUTED, the decode is faithful, the residual is a UNIFORM cross-hall structural excess
+
+An 8-agent schematic+firmware workflow (`concert-decode-certainty`) plus direct verification (I re-read the
+schematic crops and re-ran every number). This **answers the project owner's "are we decoding it right / how
+do we reach certainty" question** and **refutes variant J**.
+
+**Variant J is REFUTED — the two halves are SERIAL STAGES of one shared tank, not stereo mirrors:**
+- Cross-half DMEM feedback edges exist (`s38(H1)→s93(H2)` delay 1; `s91(H2)→s41(H1)` delay 253) and the
+  halves **share 6240 DMEM addresses** — impossible for isolated stereo loops. "Mirror" offset deltas are
+  non-constant (+634,+2,+600,0,+2,+22928,−2,+768,−2,−8628). Fig 4.1 shows **one** Reverb block.
+- The ZERO asymmetry (3 clears in H1: s37/44/46; 1 in H2: s89) is **authored, legitimate** serial-stage
+  control: the builder copies lane2 **verbatim** ROM→WCS (128/128, no runtime consumer of bit7; disasm of
+  the AA9F token-VM + AB55 copy loop). So J's "symmetrise the halves" premise is false; **do not adopt J.**
+
+**The decode is faithful — most of it is now SETTLED beyond reasonable doubt:**
+- **Field map** (ZERO=b7, PROT=b6, RA=b5b4, b3=b3, XFER=b2, WA=b1b0): schematic pins (`aru_botctrl`,
+  `aru_wa_ra`) + a 20-program statistical test (b7=ZERO ranks #1 of 56 candidate (ZERO,XFER) bit-pairs by
+  4-step-MAC-block coherence) + the verbatim builder. **Confirmed.**
+- **Intra-sample ordering** is **schematic-pinned, not a free parameter**: LS670 register file read-enable
+  `GR`=GND (always-on) ⇒ read-before-write is literal; XFER CK (A27) is a late edge-clock from the state
+  generator (U36B); the 74F374 result reg latches the combinational PP bus (= ACC>>3) and the b3 write-back
+  is **post-XFER**. Matches the committed model. (Corroborates §0.10.6 "ordering is not the lever".) No
+  data-dependent wait-state in the ARU datapath.
+- **Accumulator clear semantics:** the accumulators are **74LS163 (synchronous clear)** — I verified the
+  silkscreen myself (`aru_botctrl.png`, U48/U49). Consequence tested two ways:
+  - *syncclr* (only the ZERO+XFER-coincident steps s4/s46 latch the pre-clear sum into RES): λ moves **−1 ppm**
+    (1.0011196) but **collapses MID authority −1232→−39** and redistributes it to the comb closers (s39/s91
+    −629, s46/s98 +813). So part of the §0.10.6 "MID is the sole decay" picture is a decode artifact of s46.
+  - *full sync-clear-discard* (ZERO discards the current step's product): λ = **+6755 ppm (6× worse)** →
+    **REFUTED.** Our "ZERO clears then keeps this step's product" is strongly correct. Net: the ZERO
+    semantics is validated up to the sub-ppm s46 refinement.
+
+**THE PIVOT — the dominant residual is a UNIFORM, STRUCTURAL, cross-hall excess (not a CONCERT decode bug):**
+- Converged λ in the **exact float linear map (zero rounding/saturation)**: CONCERT **+1121**, BRIGHT **+1202**,
+  id-0x04 **+1056** ppm — all long halls grow ~+1100 ppm; short programs (DARK, SMALL ROOM) collapse to silence.
+- Because this is measured in the **exact linear map with no arithmetic idioms**, the excess is **structural**
+  (baked into the decoded offset/coeff/topology that all halls share), **not** rounding/saturation (re-confirms
+  §5's "rounding can't move λ") and **not** the CONCERT-specific band-split/MID/crossover (now well-validated).
+- The MID-feedforward search (agent #7) found **no** closer/FF/sign/RA/delay/fractional-delay variant crosses
+  unity; the deficit is a **uniform per-pass element common to all long halls** — exactly §0.4's cross-program
+  signature, now confirmed as the primary target.
+
+### 0.10.9 Where certainty stands + the next frontier
+**Settled (schematic/builder/stats, no hardware):** byte-exact WCS; field map incl. bit7=ZERO; serial-stage
+topology; intra-sample ordering; ZERO-keeps-product; builder copies lane2 verbatim; **variant J is overfit and
+abandoned**; the CONCERT-specific band-split/MID decode is faithful.
+**Oracle-fit / open:** the exact ZERO+XFER-coincident (s46) sub-ppm refinement; whether anything outside the
+ARU sheet gates A49 (the A49 *generation* upstream on T&C 060-02475 was not fully traced).
+**The real open problem (pivot here):** a **uniform ~+1100 ppm structural per-pass excess shared by all long
+halls.** Since it is structural and shared, the next work is **NOT** more CONCERT band-split decoding — it is
+the **generic/shared** datapath: re-examine the elements every program's recirculation uses identically (the
+near-unity all-pass closer coefficients and their exact value; the saturating-MAC sign-extension/alignment;
+the offset/position addressing) for a small shared bias that rides every pass. This is the 480L §8 hazard
+class ("a word that doesn't do what its encoding implies" / "ARU arithmetic ≠ naive fixed-point") — and the
+class a clean disassembly cannot fully settle without **behavioral hardware capture**.
+
+New tools (4c): `_wf2_recirc_graph.py` (DMEM recirculation graph → serial-stage proof), `_wf2_syncclr.py`
+(LS163 sync-clear semantics harness), `_wf2_variants.py`/`_wf2_residual.py` (closer/FF residual search),
+`_wf2_lambda_halls.py` (cross-program λ). Schematic crops read: `aru_botctrl.png` (LS163 + ZERO/XFER/RDRREG
+buses), `aru_partstable.png` (74F-series parts), `aru_resreg_ctrl.png`, redraw `…060-01318-redraw.png`.
+
+### 0.10.10 SESSION 4d — owner traced the schematic nets: the ARU datapath is FAITHFUL; the deficit is un-modeled MODULATION
+
+The project owner read the **literal nets** off ARU schematic 060-01318 (recorded verbatim in
+`docs/reference/224/224XL ARU pinouts from 060-01318.txt`). This converts the datapath from "inferred" to
+**wiring-verified**, and reframes the whole problem.
+
+**Arithmetic datapath — CONFIRMED FAITHFUL by wiring (do not re-investigate):**
+- Accumulator = 5× **74LS163** (U45–U49): pin1 `CLR\`=ZERO/, pin2 `CP`=**ARUCKE/** (per-step clock), L\=GND
+  (always load), ENP/ENT=GND (no count). `AC ← PP`, or 0 if ZERO/ (synchronous clear overrides load).
+- Adders = 5× **74F283** (U19–U23): A=`AC` feedback, B=`U5..U9` (74S86 XOR, sign-controlled product), Σ→muxes,
+  Cin(U19)=`U2` 74S04 (CSIGN). ⇒ `AC ± product`.
+- Sat-muxes = 5× **74F157** (U33–U37): SEL=`SAT` (U42 two-MSB XOR), I0=Σ, I1=`B-IN` (sat constant), Y=`PP`.
+  ⇒ `PP = saturate(AC ± product)`.
+- Result reg = 2× **74F374** (U43/U44): D=`PP3..PP18`, Q=`DAB0..DAB15`, clk=XFER CK, OE=RDRREG/. ⇒ **`RES =
+  PP[3..18]` = exactly `>>3`**, reading the *combinational* PP bus.
+- **ZERO/clear timing RESOLVED (logic, not schematic):** the multiply is serial (2 coeff-bits/state × 3
+  states); it only yields the test-vector-correct product if the accumulator is **not** cleared between the
+  3 sub-states ⇒ ZERO/ asserts on the **first** sub-state only ⇒ "clear *then* accumulate this step's
+  product" = **exactly the committed model.** The "+6755 ppm sync-clear-discard" reading is **ruled out.**
+
+**So the ≈ +1100 ppm uniform excess is NOT a datapath/decode/field-map/coefficient/timing bug.** It is the
+eigenvalue of the **static WCS image** — which the hardware **never runs**.
+
+**THE PIVOT (owner pushback, justified):** the analysis model takes **shortcuts** — above all it **omits the
+always-on chorus modulation** and runs a frozen WCS, and when modulation *was* tested it used **linear**
+interpolation (firmware uses **all-pass**, engine `0xAE72`) and a **guessed LFO** (firmware rate/depth at
+`0x3cd3`/`0x3cd4`/`0x3ccd`). The prior "modulation reduces growth but doesn't decay" verdict used that
+approximate model and is **untrustworthy.** A faithful reconstruction must model **every** real mechanism
+before any "needs hardware" conclusion. The clock is also an **analog LC-tank oscillator** (not a crystal),
+so Fs ≈ 34130 Hz is nominal/drifting, not exact.
+
+**Full approximation audit + the fix-everything plan:** see **`docs/plans/224XL-faithful-reconstruction-plan.md`**
+(the new START-HERE doc). It registers all 8 approximations (modulation omitted / linear-not-all-pass /
+guessed-LFO / collapsed serial multiply / saturation-value / sample-rate / FPC-I/O / frozen-WCS) with a
+faithful-implementation + verification spec for each, ordered modulation-first.
+
+**Status of the decay question:** OPEN, but reframed — it is no longer "find the decode bug" (the decode is
+faithful) but "**model every real mechanism faithfully, modulation first, then re-measure.**" The structural
+λ tools cannot represent a time-varying modulated tank; the decay verdict must come from the **EDC of the
+live integer model.**
 
 ---
 

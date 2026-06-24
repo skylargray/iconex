@@ -1,0 +1,319 @@
+224XL ARU pinouts from 060-01318
+
+---
+
+result register (this sets the ACC→RES transfer "shift"). Two chips, 74F374, 20 pins each
+U43 (74F374)            
+pin 1  (OE\)   = RDRREG/
+pin 2  (Q0)    = DAB5       
+pin 3  (D0)    = PP8       
+pin 4  (D1)    = PP7       
+pin 5  (Q1)    = DAB4       
+pin 6  (Q2)    = DAB7       
+pin 7  (D2)    = PP10       
+pin 8  (D3)    = PP9       
+pin 9  (Q3)    = DAB6       
+pin 10 (GND)   = Not Depicted       
+pin 11 (CP)    = XFER CK       
+pin 12 (Q4)    = DAB1       
+pin 13 (D4)    = PP4       
+pin 14 (D5)    = PP3       
+pin 15 (Q5)    = DAB0       
+pin 16 (Q6)    = DAB3       
+pin 17 (D6)    = PP6       
+pin 18 (D7)    = PP5       
+pin 19 (Q7)    = DAB2       
+pin 20 (VCC)   = Not Depicted       
+
+U44 (74F374)
+pin 1  (OE\)   = RDRREG/
+pin 2  (Q0)    = DAB13       
+pin 3  (D0)    = PP16       
+pin 4  (D1)    = PP15       
+pin 5  (Q1)    = DAB12       
+pin 6  (Q2)    = DAB15       
+pin 7  (D2)    = PP18       
+pin 8  (D3)    = PP17       
+pin 9  (Q3)    = DAB14       
+pin 10 (GND)   = Not Depicted 
+pin 11 (CP)    = XFER CK      
+pin 12 (Q4)    = DAB9       
+pin 13 (D4)    = PP12       
+pin 14 (D5)    = PP11       
+pin 15 (Q5)    = DAB8       
+pin 16 (Q6)    = DAB11       
+pin 17 (D6)    = PP14       
+pin 18 (D7)    = PP13       
+pin 19 (Q7)    = DAB10       
+pin 20 (VCC)   = Not Depicted
+
+---
+
+Five accumulator nibbles, 74LS163, 16 pins each (U45, U46, U47, U48, U49)
+Common to all:
+pin 1  (CLR\)  = ZERO/     
+pin 2  (CP)    = ARUCKE/          
+pin 7  (ENP)   = tied to ground     
+pin 8  (GND)   = Not depicted     
+pin 9  (LOAD\) = tied to ground
+pin 10 (ENT)   = tied to ground
+pin 15 (RCO/TC)= Not depicted
+pin 16 (VCC)   = Not depicted
+
+Unique to U45:
+pin 3  (D0/A)  = PP3     
+pin 4  (D1/B)  = PP2     
+pin 5  (D2/C)  = PP1     
+pin 6  (D3/D)  = PP0
+pin 11 (Q3/QD) = AC3
+pin 12 (Q2/QC) = AC2
+pin 13 (Q1/QB) = AC1
+pin 14 (Q0/QA) = AC0
+
+Unique to U46:
+pin 3  (D0/A)  = PP7    
+pin 4  (D1/B)  = PP6     
+pin 5  (D2/C)  = PP5     
+pin 6  (D3/D)  = PP4
+pin 11 (Q3/QD) = AC7
+pin 12 (Q2/QC) = AC6
+pin 13 (Q1/QB) = AC5
+pin 14 (Q0/QA) = AC4
+
+Unique to U47:
+pin 3  (D0/A)  = PP11    
+pin 4  (D1/B)  = PP10     
+pin 5  (D2/C)  = PP9     
+pin 6  (D3/D)  = PP8
+pin 11 (Q3/QD) = AC11
+pin 12 (Q2/QC) = AC10
+pin 13 (Q1/QB) = AC9
+pin 14 (Q0/QA) = AC8
+
+Unique to U48:
+pin 3  (D0/A)  = PP15    
+pin 4  (D1/B)  = PP14    
+pin 5  (D2/C)  = PP13    
+pin 6  (D3/D)  = PP12
+pin 11 (Q3/QD) = AC15
+pin 12 (Q2/QC) = AC14
+pin 13 (Q1/QB) = AC13
+pin 14 (Q0/QA) = AC12
+
+Unique to U49:
+pin 3  (D0/A)  = PP19   
+pin 4  (D1/B)  = PP18    
+pin 5  (D2/C)  = PP17    
+pin 6  (D3/D)  = PP16
+pin 11 (Q3/QD) = AC19
+pin 12 (Q2/QC) = AC18
+pin 13 (Q1/QB) = AC17
+pin 14 (Q0/QA) = AC16
+
+---
+
+Sat-muxes — 74F157, U33, U34, U35, U36, U37 (these output the PP bus):
+
+U33:
+pin 1  (SEL)   = SAT & U42 (74S86) pin 3     
+pin 2  (A1/I0a)= U19 (74F283) pin 4      
+pin 3  (B1/I1a)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8       
+pin 4  (Y1/Za) = PP0      
+pin 5  (A2/I0b)= U19 (74F283) pin 1      
+pin 6  (B2/I1b)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8      
+pin 7  (Y2/Zb) = PP1      
+pin 8  (GND)   = Not depicted
+pin 9  (Y4/Zd) = PP2      
+pin 10 (B4/I1d)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8 
+pin 11 (A4/I0d)= U19 (74F283) pin 13
+pin 12 (Y3/Zc) = PP3
+pin 13 (B3/I1c)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8 
+pin 14 (A3/I0c)= U19 (74F283) pin 10
+pin 15 (G\ strobe)= tied to ground
+pin 16 (VCC)   = Not depicted
+
+U34:
+pin 1  (SEL)   = SAT & U42 (74S86) pin 3     
+pin 2  (A1/I0a)= U20 (74F283) pin 4      
+pin 3  (B1/I1a)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8        
+pin 4  (Y1/Za) = PP4      
+pin 5  (A2/I0b)= U20 (74F283) pin 1      
+pin 6  (B2/I1b)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8       
+pin 7  (Y2/Zb) = PP5      
+pin 8  (GND)   = Not depicted
+pin 9  (Y4/Zd) = PP6      
+pin 10 (B4/I1d)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8 
+pin 11 (A4/I0d)= U20 (74F283) pin 13
+pin 12 (Y3/Zc) = PP7
+pin 13 (B3/I1c)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8 
+pin 14 (A3/I0c)= U20 (74F283) pin 10
+pin 15 (G\ strobe)= tied to ground
+pin 16 (VCC)   = Not depicted
+
+U35:
+pin 1  (SEL)   = SAT & U42 (74S86) pin 3     
+pin 2  (A1/I0a)= U21 (74F283) pin 4      
+pin 3  (B1/I1a)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8        
+pin 4  (Y1/Za) = PP8      
+pin 5  (A2/I0b)= U21 (74F283) pin 1      
+pin 6  (B2/I1b)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8       
+pin 7  (Y2/Zb) = PP9      
+pin 8  (GND)   = Not depicted
+pin 9  (Y4/Zd) = PP10      
+pin 10 (B4/I1d)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8 
+pin 11 (A4/I0d)= U21 (74F283) pin 13
+pin 12 (Y3/Zc) = PP11
+pin 13 (B3/I1c)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8 
+pin 14 (A3/I0c)= U21 (74F283) pin 10
+pin 15 (G\ strobe)= tied to ground
+pin 16 (VCC)   = Not depicted
+
+U36:
+pin 1  (SEL)   = SAT & U42 (74S86) pin 3     
+pin 2  (A1/I0a)= U22 (74F283) pin 4      
+pin 3  (B1/I1a)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8        
+pin 4  (Y1/Za) = PP12      
+pin 5  (A2/I0b)= U22 (74F283) pin 1      
+pin 6  (B2/I1b)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8       
+pin 7  (Y2/Zb) = PP13      
+pin 8  (GND)   = Not depicted
+pin 9  (Y4/Zd) = PP14      
+pin 10 (B4/I1d)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8 
+pin 11 (A4/I0d)= U22 (74F283) pin 13
+pin 12 (Y3/Zc) = PP15
+pin 13 (B3/I1c)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8 
+pin 14 (A3/I0c)= U22 (74F283) pin 10
+pin 15 (G\ strobe)= tied to ground
+pin 16 (VCC)   = Not depicted
+
+U37:
+pin 1  (SEL)   = SAT & U42 (74S86) pin 3     
+pin 2  (A1/I0a)= U23 (74F283) pin 4      
+pin 3  (B1/I1a)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8        
+pin 4  (Y1/Za) = PP16      
+pin 5  (A2/I0b)= U23 (74F283) pin 1      
+pin 6  (B2/I1b)= B-IN (my net name, none on the schematic) & U2 (74S04) pin 8      
+pin 7  (Y2/Zb) = PP17      
+pin 8  (GND)   = Not depicted
+pin 9  (Y4/Zd) = PP18      
+pin 10 (B4/I1d)= U2 pin 9 & U23 pin 11
+pin 11 (A4/I0d)= U23 (74F283) pin 13 & U42 (74S86) pin 2
+pin 12 (Y3/Zc) = PP19
+pin 13 (B3/I1c)= U2 pin 9 & U23 pin 11
+pin 14 (A3/I0c)= U23 (74F283) pin 10 & U42 (74S86) pin 1
+pin 15 (G\ strobe)= tied to ground
+pin 16 (VCC)   = Not depicted
+
+---
+
+Adders — 74F283, U19, U20, U21, U22, U23 (the 5 nibbles feeding the muxes):
+
+U19:
+pin 1  (Σ1) = U33 pin 5
+pin 2  (B1) = U5 (74S86) pin 6
+pin 3  (A1) = AC1
+pin 4  (Σ0) = U33 pin 2
+pin 5  (A0) = AC0
+pin 6  (B0) = U5 (74S86) pin 3
+pin 7  (C0 carry-in) = U2 (74S04) pin 6
+pin 8  (GND)= Not depicted
+pin 9  (C4 carry-out) = U20 pin 7
+pin 10 (Σ3) = U33 pin 14
+pin 11 (B3) = U5 (74S86) pin 11
+pin 12 (A3) = AC3
+pin 13 (Σ2) = U33 pin 11
+pin 14 (A2) = AC2
+pin 15 (B2) = U5 (74S86) pin 8
+pin 16 (VCC)= Not depicted
+
+U20:
+pin 1  (Σ1) = U34 pin 5
+pin 2  (B1) = U6 (74S86) pin 6
+pin 3  (A1) = AC5
+pin 4  (Σ0) = U34 pin 2
+pin 5  (A0) = AC4
+pin 6  (B0) = U6 (74S86) pin 3
+pin 7  (C0 carry-in) = U19 pin 9
+pin 8  (GND)= Not depicted
+pin 9  (C4 carry-out) = U21 pin 7
+pin 10 (Σ3) = U34 pin 14
+pin 11 (B3) = U6 (74S86) pin 11
+pin 12 (A3) = AC7
+pin 13 (Σ2) = U34 pin 11
+pin 14 (A2) = AC6
+pin 15 (B2) = U6 (74S86) pin 8
+pin 16 (VCC)= Not depicted
+
+U21:
+pin 1  (Σ1) = U35 pin 5
+pin 2  (B1) = U7 (74S86) pin 6
+pin 3  (A1) = AC9
+pin 4  (Σ0) = U35 pin 2
+pin 5  (A0) = AC8
+pin 6  (B0) = U7 (74S86) pin 3
+pin 7  (C0 carry-in) = U20 pin 9
+pin 8  (GND)= Not depicted
+pin 9  (C4 carry-out) = U22 pin 7
+pin 10 (Σ3) = U35 pin 14
+pin 11 (B3) = U7 (74S86) pin 11
+pin 12 (A3) = AC11
+pin 13 (Σ2) = U35 pin 11
+pin 14 (A2) = AC10
+pin 15 (B2) = U7 (74S86) pin 8
+pin 16 (VCC)= Not depicted
+
+U22:
+pin 1  (Σ1) = U36 pin 5
+pin 2  (B1) = U8 (74S86) pin 6
+pin 3  (A1) = AC13
+pin 4  (Σ0) = U36 pin 2
+pin 5  (A0) = AC12
+pin 6  (B0) = U8 (74S86) pin 3
+pin 7  (C0 carry-in) = U21 pin 9
+pin 8  (GND)= Not depicted
+pin 9  (C4 carry-out) = U23 pin 7
+pin 10 (Σ3) = U36 pin 14
+pin 11 (B3) = U8 (74S86) pin 11
+pin 12 (A3) = AC15
+pin 13 (Σ2) = U36 pin 11
+pin 14 (A2) = AC14
+pin 15 (B2) = U8 (74S86) pin 8
+pin 16 (VCC)= Not depicted
+
+U23:
+pin 1  (Σ1) = U37 pin 5
+pin 2  (B1) = U9 (74S86) pin 6
+pin 3  (A1) = AC17
+pin 4  (Σ0) = U37 pin 2
+pin 5  (A0) = AC16
+pin 6  (B0) = U9 (74S86) pin 3
+pin 7  (C0 carry-in) = U22 pin 9
+pin 8  (GND)= Not depicted
+pin 9  (C4 carry-out) = Not depicted
+pin 10 (Σ3) = U37 pin 14 & U42 (74S86) pin 1
+pin 11 (B3) = U9 (74S86) pin 11 & U2 (74S04) pin 9
+pin 12 (A3) = AC19
+pin 13 (Σ2) = U37 pin 11 & U42 (74S86) pin 2
+pin 14 (A2) = AC18
+pin 15 (B2) = U9 (74S86) pin 8
+pin 16 (VCC)= Not depicted
+
+---
+
+74S86 XORs feeding the adder B-inputs — U5, U6, U7, U8, U9 (14-pin):
+
+
+pin 1  (1A) = ?
+pin 2  (1B) = ?
+pin 3  (1Y) = ?
+pin 4  (2A) = ?
+pin 5  (2B) = ?
+pin 6  (2Y) = ?
+pin 7  (GND)= ?
+pin 8  (3Y) = ?
+pin 9  (3A) = ?
+pin 10 (3B) = ?
+pin 11 (4Y) = ?
+pin 12 (4B) = ?
+pin 13 (4A) = ?
+pin 14 (VCC)= ?

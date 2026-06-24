@@ -16,7 +16,9 @@ SW = json.load(open(os.path.join(os.path.dirname(__file__),
 TBL = {}
 for p in SW['params']:
     TBL[p['param']] = {int(k): v for k, v in p['coeff_table'].items()}
-LBL = {0: 'LOW', 1: 'MID', 2: 'XOV', 3: 'HFD', 4: 'DEP'}
+# param 3 "HFD" = the firmware's "HF Decay" = the manual's "Treble Decay" (page-1 slider 4),
+# an IN-LOOP air-absorption HF damping (Fig 4.1) -- NOT HF Bandwidth/HFB (page-2 input filter). See §0.10.
+LBL = {0: 'LOW(LFdecay)', 1: 'MID', 2: 'XOV', 3: 'HFD(TrebleDecay,in-loop)', 4: 'DEP'}
 
 
 def apply(prog, settings):
