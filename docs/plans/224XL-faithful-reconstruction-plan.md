@@ -1,5 +1,16 @@
 # 224XL Faithful Reconstruction Plan — eliminate every approximation
 
+> **✅ RESOLVED — SUPERSEDED (Session 7, 2026-06-24).** The over-unity/decay deficit this plan was built
+> around turned out to be a **microword DECODE error**, not an omitted analog/modulation mechanism. The
+> reverse-engineered field map in `aru_datapath.load_microcode` had WA, the DMEM read/write select, XFER,
+> ZERO, CSIGN, and the coefficient in the wrong microword bits. The project owner traced the real T&C
+> schematic (060-02475) → the corrected decode makes **every program a lossless (λ=1.000000) or gently
+> decaying reverb prototype — zero programs hot** (was 8/13 hot, up to λ=1.67; CONCERT → λ=1.000000). So
+> §1's "datapath is faithful" conclusion was wrong (it was confirmed only for the *arithmetic*, not the
+> *control decode*), and §3.1's modulation premise is moot. **▶ See `docs/plans/224XL-overunity-frontier.md`
+> for the full resolution + the confirmed microword bit map.** Remaining work is finishing the faithful
+> reconstruction on the corrected decode (diagnostic-pin the byte inversions, regen golden, mirror to C++).
+
 **Status:** OPEN. Created 2026-06-23 (end of Session 4). **Session 5 (2026-06-23) executed §3.1 (modulation,
 the "DO THIS FIRST" item) → REFUTED** (faithful live modulation does not produce the decay; items 1/2/3/8
 closed). See the §3.1 RESULT box and the **§4 RE-ASSESSMENT** box below, and investigation doc §0.10.11. The

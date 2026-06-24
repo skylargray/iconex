@@ -1,12 +1,37 @@
-# 224XL over-unity — START HERE (Session 7: timing fix confirmed + partial; decode is the remaining lead)
+# 224XL over-unity — RESOLVED (Session 7): it was a MICROWORD DECODE error (owner schematic trace)
 
-**Status:** SOLID, hardware-grounded: (1) Lead 1 refuted; (2) over-unity is multi-program (8/13 clean programs
-hot under base); (3) ARU datapath topology + clock/pipeline timing reconstructed from 060-01318 pinouts + the
-manual; (4) **`acc_latch` (XFER captures the accumulator BEFORE the microinstruction's own product) is PHYSICAL
-and CONFIRMED** — Service Manual §3.7 line 400 + Fig 3.4 (XFER CK & ZERO/ at AS0, product builds AS0→AS2);
-(5) **`acc_latch` is a real PARTIAL fix**: with the hardware-confirmed decode RA=(b5,b4) it pulls CONCERT from
-+1126 → **+483 ppm** (or +13 with reg_wbr), and 7–8/13 programs lossless, but **~5 programs stay hot**
-(0x05/0x06/0x10/0x12 + CONCERT residual).
+**Status: ROOT CAUSE FOUND.** The over-unity was a **microword-decode error** — the reverse-engineered field
+map in `aru_datapath.load_microcode` had WA, the DMEM read/write select, XFER, ZERO, CSIGN, and the
+coefficient in the WRONG bit positions. Rebuilt from the owner's schematic trace (the true map is in §5a),
+the eigenvalue test flips completely: **every clean program is now lossless (λ=1.000000) or gently decaying —
+ZERO programs hot, ZERO dead tanks** (vs 8/13 hot, up to λ=1.67, in the old decode). CONCERT → λ=1.000000.
+This is the textbook reverb prototype (lossless core; RT60 from a separate damping coefficient). `acc_latch`
+(the manual-confirmed pipeline timing) is a genuine secondary correction but the DECODE was the main bug.
+
+**Confirmed corrected microword map (owner trace + test):** offset OFST0–15 = MI0–15 (l0,l1); l2 byte:
+b0=DMEM read(1)/write(0), b1=DMEM-op-enable, b2,b3=WA0,WA1, b4,b5=RA0,RA1, b6=PROT(MI22, datapath-irrelevant),
+b7=CSIGN; l3 byte: b0=XFER, b1=ZERO, b2–7=coeff C0–C5. DP(=MI4)/RESET D/(=MI3) are offset bits reused on
+non-DMEM device steps (datapath-irrelevant). Tools: `tools/_hunt_rebuild.py` + `_hunt_rawcache.py`.
+
+**Remaining (small) to fully close — the EXACT byte inversions / DMEM read-write polarity.** The all-lossless
+eigenvalue test is satisfied by several inversion combos; the cleanest λ=1.000000 set is **inv2=T, inv3=T,
+readVal=1** (leading candidate). Attempted to pin it definitively with the DIAGNOSTIC programs (ZERO-DELAY =
+unity passthrough, MAX-DELAY = 0.5 s delay) via `tools/_hunt_diagpin.py` — **INCONCLUSIVE**: my diagnostic
+signal-path model is incomplete because the FPC I/O needs the **device-select decode I don't have yet**:
+(a) offset **bit15 gates DMEM-vs-FPC** (a bit15-set step is an FPC/device access, not a DMEM op — so MEMAC
+gates the LS139 MEMW//MEMR/); (b) the FPC device (A/D-in, D/A-out, result-reg-read) is picked by the U47
+2nd-half decode on **MI12/MI13**; (c) the diagnostics are 2-channel (TWO input steps: s75 off=0xBFFF and
+s125 off=0xFFFF both match the input fingerprint). My model injects one channel and miscaptures the other →
+garbage (0.0 or blow-up). To finish: trace the device-select decode (which MI12/MI13 codes = A/D-read,
+D/A-write, result-reg-read) + confirm offset-bit15 gates DMEM, then model the diagnostics correctly to pin the
+inversions; OR defer exact-inversion to the C++ reconstruction (build the full I/O datapath and run the
+diagnostics end-to-end). NONE of this affects the over-unity RESULT (decode positions are confirmed; all
+inversions kill the over-unity). Then: rebuild `load_microcode`, regen golden, mirror to C++, verify CONCERT
+IR → RT60≈20 s. Tool: `tools/_hunt_diagpin.py` (has the 2-channel/device-decode gap noted above).
+
+---
+*(Historical Session-7 narrative below — the (b3,b4) decode and acc_latch-only "partial fix" were stepping
+stones; the real answer is the full decode correction above.)*
 
 **REFUTED this turn (owner schematic trace):** the **RA=(b3,b4)** decode that gave 13/13. Owner traced
 RA1 = U19(74LS377) Q2 ← D2 ← (U18 74163 pipeline) ← net **MI21** ← DATA5. MI21 = third-byte bit 5 = the model's
@@ -157,6 +182,55 @@ So `RES = (AC + product)[3:18]` — but per the TIMING (§2a, Fig 3.4) the XFER-
 current microinstruction's product is formed, so the captured value is the prior group sum (= `acc_latch`).
 The clock phasing is now RESOLVED by the manual (Ch.3 + Fig 3.2/3.3/3.4); the only remaining unknown is the
 **RA wiring** (§5).
+
+## 5a. CONFIRMED microword bit→signal map (owner schematic trace) — DECODE IS MIS-MAPPED
+
+Owner traced U19 (74LS377) + the 74163 pipeline regs (U17/U18/U4). Confirmed (by MI bit):
+- **WA0 = MI18, WA1 = MI19** (from U17 S163 pins 12/11).
+- **RA0 = MI20, RA1 = MI21** (from U18; matches the model's b4/b5).
+- **XFER = MI24** (U19 Q5 ← D5 ← U4 pin14).
+- **ZERO = MI25** (U19 Q6 ← D6 ← U4 pin13; ZERO/ = NAND(Q6, AS0) — gated to AS0, matching Fig 3.4).
+- **DP ← MI4** (U19 Q0 ← D0 ← U34A; DP → LS27 → S1 = multiplier shift-reg control).
+- **RESET D/ ← global RESET/** (U19 Q3 ← D3 ← RESET/, NOT a microword bit).
+- **CSIGN/ = MI23** (U19 Q4 ← MI23 → U34D LS08 → U20 S112 → CSIGN/). So MI23 = coefficient sign (the
+  model's "ZERO" bit b7 = MI23 is actually CSIGN). Q7 ← (not depicted) = TBD.
+- **DMEM access decode = U47 (LS139), enable grounded, select A=MI16 B=MI17:** Y2=MEMW/ (write DMEM) when
+  MI17=1 & MI16=0 ; Y3=MEMR/ (read DMEM) when MI17=1 & MI16=1. So **MI17 = "DMEM op this step", MI16 =
+  read(1)/write(0)**. When MI17=0 → Y0/Y1 (pin4/5) = non-memory DAB sources (TBD). (U47 2nd half: A=MI12,
+  B=MI13, enable=convoluted = the X-reg/AD/DA device selects.)
+- **HUGE implication:** the model's b0,b1 (which it called WA0,WA1) are actually the **DMEM op-select
+  (MI16,MI17)**; the real WA = b2,b3 (MI18,19). And the model READS/WRITES DMEM on every step — WRONG; the
+  hardware only touches DMEM when MI17=1, else the DAB comes from the result register / A/D (Y0/Y1). So the
+  model's recirculation graph is fundamentally mis-wired. Corrected control byte (l2=MI16–23): b0=DMEM r/w,
+  b1=DMEM-op-enable, b2,b3=WA0,WA1, b4,b5=RA0,RA1, b6=TBD, b7=CSIGN; and l3: b0=XFER, b1=ZERO, b2..7=coeff?
+- **DAB source/dest is a 2-level decode.** U47 Y0(pin4)=NC (MI17=0,MI16=0 → idle). U47 Y1(pin5) (MI17=0,
+  MI16=1) → U33 inv → enables U47 2nd half (select MI12/MI13) + U49 → the non-memory selects WR DA/, WR XREG/,
+  RD AD/, RD XREG/, RDRREG/, TEST. So: MI17/MI16 = {00 idle, 01 sub-decoder, 10 write-DMEM, 11 read-DMEM};
+  sub-decoder (MI12/MI13) picks result-reg / A/D / X-reg / D/A. For the closed-loop recirc, model the DAB
+  source on non-DMEM steps as the RESULT REGISTER (refine with the exact RDRREG/ MI12/MI13 code if needed).
+- **Coefficient magnitude C0–C5 = MI26–MI31** (= l3 bits 2–7), sign **CSIGN = MI23**. So the real coeff =
+  ±((l3>>2)&0x3F)/64 with sign from l2.b7 — NOT the model's (l3&0x7F with sign=l3.b7). Full l3 byte: b0=XFER,
+  b1=ZERO, b2..7 = C0..C5.
+- **Near-complete corrected microword map** (raw stored byte → bit; polarity/inversion TBD by test):
+  l0,l1 = offset (TBD vs DP=MI4); l2: b0=DMEM-rw, b1=DMEM-op, b2=WA0, b3=WA1, b4=RA0, b5=RA1, b6=TBD(MI22),
+  b7=CSIGN; l3: b0=XFER, b1=ZERO, b2..7=C0..C5. DAB src non-DMEM steps = result reg (assume).
+- **Offset OFST0–15 = MI0–MI15 directly (confirmed)** = stored bytes l0,l1 (matches the old decode). **DP and
+  RESET D/ are NOT separate microword bits** — they are MI4 and MI3 (offset bits) REUSED, gated by U47 pin5
+  (the sub-decoder select = MI17=0 & MI16=1, a non-DMEM device op). On those steps the offset isn't a DMEM
+  address, so MI3/MI4 double as RESET D/ (→U25 S74) and DP (→S1 multiplier shift). Irrelevant to the recirc
+  eigenvalue. **DECODE NOW COMPLETE** except MI22 (l2.b6, old model's ignored "PROTECT"). Rebuilt in
+  `tools/_hunt_rebuild.py` (+ `_hunt_rawcache.py`); inversions/polarities swept; test result pending.
+
+**Implication — the model's `aru_datapath.load_microcode` decode is WRONG on almost every control field
+except RA.** The model slices the microword as 4 bytes with the 3rd byte = MI16–23 (locked by RA1=MI21).
+In that byte the model put WA at bits 0,1 (real WA = bits 2,3 = MI18,19), used bit 2 for XFER and bit 3 for
+the DMEM-write-select — **but bits 2,3 are actually WA0,WA1.** And the REAL XFER (MI24) and ZERO (MI25) live in
+the 4th byte, which the model treats as the COEFFICIENT. So the model's "comb closers" (steps it thinks write
+the result to DMEM + XFER) are really just **WA=3 (scratch-register) steps** — a coincidental structure that
+recirculates for CONCERT and goes haywire elsewhere. **This mis-decode — not a subtle timing effect — is the
+likely root of the multi-program over-unity.** acc_latch is still a real (confirmed) timing fix, but the
+decode must be rebuilt from scratch first. STILL NEEDED to rebuild (see §5):
+DMEM read/write select bit; coefficient C0–C5 + CSIGN bits; offset OFST0–15 bits; U19 Q4(MI23)/Q7 functions.
 
 ## 5. WHAT TO TRACE / RECONSTRUCT — the full microinstruction→control decode
 

@@ -1,5 +1,17 @@
 # 224XL CONCERT decay — complete investigation record
 
+> **✅ RESOLVED (Session 7, 2026-06-24): it was a MICROWORD DECODE error.** The "exact missing-loss
+> mechanism" this record hunts for never existed — the CONCERT (and multi-program) over-unity was caused by
+> the reverse-engineered microword decode in `aru_datapath.load_microcode` placing WA, the DMEM read/write
+> select, XFER, ZERO, CSIGN, and the coefficient in the WRONG bits. The owner traced the real T&C schematic
+> (060-02475); rebuilding the decode to the true field map makes **every clean program lossless
+> (λ=1.000000) or gently decaying — zero hot** (was 8/13 hot, up to λ=1.67; CONCERT → λ=1.000000). The
+> long-standing "+1100 ppm uniform growth" was an artifact of the wrong control decode, NOT analog loss or
+> modulation. (`acc_latch` pipeline timing, confirmed from the service manual Fig 3.4, is a real secondary
+> fix.) **▶ Full resolution + confirmed microword bit map: `docs/plans/224XL-overunity-frontier.md`.** The
+> record below is the (now-closed) investigation history — its dead-ends remain useful, but the conclusion
+> is the decode fix above.
+
 **Status:** OPEN (root cause characterized precisely; exact missing-loss mechanism unresolved). Last updated 2026-06-23 (Session 3).
 **Scope:** make the booted-default CONCERT reverb **decay** (RT60 ≈ 20 s) instead of sustaining/growing.
 Everything else in the ARU reconstruction is resolved, committed, and diff-harness-green.
