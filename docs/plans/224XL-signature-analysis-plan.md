@@ -312,3 +312,124 @@ The owner read Figs 3.3/3.4 and traced nets (decisive):
   read-latency. **DECODE + TIMING + memory-access are CONFIRMED — do NOT reopen. The open item is purely addressing.**
   (Owner schematic q for next session: how the OFST/ offset becomes the DRAM row/col address — are all 16 bits used,
   or do b15/b14 do something else?)
+
+---
+
+## 8. SESSION 10 LOG (2026-06-25) — DMEM schematic READ; addressing REFUTED; bug = loop gain
+
+### 8.1 DMEM schematic 060-02512 fully read (answers 7.8's open question — DEFINITIVE)
+Read both sheets of 060-02512 at native res (crops in `tools/_crops/`) + manual 3.6. Ground truth:
+- **CPC = 16-bit counter (U51 bits0-7 -> U65 bits8-15, LS393 ripple), incremented ONCE PER SAMPLE** (manual 3.6:
+  "16-bit current position counter (U51 and U65)... normally incremented once every sampling interval"). RESET clocks
+  it (U51 pin1); CPCCLR clears it. U65 pin8 = bit15 = "MSB of CPC" (matches the 5.7 DMEM signature START/STOP).
+- **addr = CPC - offset** (manual 3.6 + adder chain U49/U50/U63/U64 LS283, carry-in tied HIGH via RS 1K): the
+  hardware adds the active-low `OFST/ = ~offset` to CPC with carry-in 1 => exact 2's-complement subtract. Matches
+  the model's `addr=(pos-offset)`. The offset decode `~(l1<<8|l0)` is right; b15/b14 ARE address bits (see below).
+- **DMEM = TWO banks of 64K x1 4164 DRAMs = 128K words total** (OWNER-CORRECTED 2026-06-25 from the parts list
+  "IC, DRAM, 4164, 64KX1, 150NS" + board photo `images/224x_dmem.jpg` showing 32 chips in two rows of 16). Bank0 =
+  U20-U35 (CAS0/), bank1 = U1-U16 (CAS1/). NOTE: the SCHEMATIC DRAWS the 4116/16K footprint (U1 shows 7 addr pins
+  AD0-AD6 + 3 supplies VBB/VDD/VCC), but jumpers **J1-J4 (ECO 830126)** reconfigure the socket for 4164 — pin 9
+  becomes A7 (not VCC) and pin 8 is just +5V — so the populated part addresses **64K (A0-A7 muxed = 16 bits)** per
+  bank. Manual §3.6 documents the base 224X options ("either one bank of 64k OR two banks of 16k"); the **224XL uses
+  two banks of 64k = 128K** (an upgrade beyond those two options). Label confirms "64K x1, x16, 150 nsec".
+- **Bank select (TRACED net-by-net 2026-06-25):** the bit feeding the bank logic is **A14**, NOT U64's carry. Path:
+  net "A14" (cross-ref 1/C2 on sheet 1) -> buffer **U61A (1/8 LS244)** -> **jumper J5** pin18 -> **U58D (1/6 S04)** ->
+  the two CAS NAND gates **U43A (CAS0/)** / **U43B (CAS1/)** (each 1/3 S10, +33ohm). J5's other leg (pin20) = ground;
+  J5 selects A14 (two-bank) vs ground (one-bank). U58D makes CAS0//CAS1/ mutually exclusive. RAS/, ROWSEL, AD are
+  SHARED across banks. **=> AS DRAWN the schematic is the 16K/4116 config: bank = A14, within-bank = A0-A13 (16K),
+  two banks = 32K.** This matches the drawn footprint (7 addr pins AD0-AD6 + VBB/VDD/VCC). **U64 pin9 (carry, "A16")
+  does NOT feed the bank logic on the drawing** (my earlier "A16=bank" was inference, not traced).
+- **Reconciling with the OWNER's 4164/64K board (parts list + photo = 128K) -- J1-J4 + mux TRACED 2026-06-25:**
+  * Supply jumpers **J1/J2/J3** (U61H block, left of mux): J2 = VDD pin +12V(4116)/+5V(4164); J3 = pin-1 supply
+    -5V(4116)/+5V(4164); J1 = +5V leg. = the 4116<->4164 supply reconfig.
+  * **The address mux is wired for the FULL 16-bit address:** U36 muxes A0-3/A8-11, U18 muxes A4-7/**A12-15** ->
+    **AD0-AD7** (8 lines, U17 33ohm x8 termination). So **AD6=mux(A6/A14), AD7=mux(A7/A15)** -> A14 & A15 are
+    WITHIN-BANK row-address bits and the within-bank space is the full **64K**. (AD7 is generated+terminated but
+    drawn unconnected to chip pin9 = VCC; the 4164 config jumpers AD7->pin9=A7.)
+  * **=> CONCLUSION (resolves the contradiction):** since the mux uses A0-A15 for the within-bank 64K address, on the
+    4164 board **A14 is an address bit (AD6), NOT the bank** -- so the bank select must be **A16 (the U64 carry)** by
+    elimination. The "A14->J5" path is the **16K-only option** (4116 chips), jumpered out in 64K mode. So A16 is the
+    bank bit for the owner's board, now backed by the mux wiring (not just inference).
+  * **Honest caveat:** 060-02512 is a HYBRID multi-config sheet (shows the 16K state -- 4116 footprints, A14->J5,
+    pin9=VCC -- while the mux is wired for 64K). U64 pin9's carry is NOT explicitly drawn to J5; the exact 64K bank
+    routing lives in the board's physical jumper straps (J1-J5 + AD7->pin9). 100% confirmation = check the board.
+  * **Model for the owner's board:** flat **128K** circular buffer, within-bank `(CPC-offset)&0xFFFF`, bank = 17th
+    carry bit. Flat linear buffer, NOT a per-line partition -- loop-gain diagnosis unchanged.
+
+### 8.2 The "delay-line separation via banks" premise is REFUTED (schematic + simulation)
+- Schematically (8.1) the banks DON'T separate lines — one flat 32K buffer. The prompt's "the delay lines MUST live
+  in separate memory regions" is **not how the 224 DMEM works**.
+- Built `tools/aru_tank.py` (clean instrumented harness: corrected datapath + parameterized addressing + impulse +
+  windowed EDC). **The CONCERT impulse dies in <10 ms for EVERY buffer size {8K,16K,32K,64K,128K} x {linear,
+  program-bank} x MAC timing {immediate, deferred-product, deferred-all} x idle-source.** No addressing model revives
+  it. **=> The dead tank is NOT an addressing/memory-structure bug.** (Includes the OWNER-CORRECTED true 128K model:
+  within=(pos-offset)&0xFFFF, bank=carry — also dies instantly.) The model's `DMASK=0xFFFF` is the WITHIN-bank (64K)
+  mask; the only fidelity gap is the unmodeled bit16=bank for the 2nd 64K bank — a fidelity correction, NOT the fix.
+
+### 8.3 The real bug = LOOP GAIN in the feedback/recirculation datapath (newly localized)
+- **MAC-ordering bug (concrete, manual-grounded).** The decode contains real all-pass two-term sums, e.g. s=62-65:
+  `s62 cs=+13 RA=0 (Z=0,X=0)` then `s63 cs=-27 RA=1 (Z=1,X=1)` => the all-pass output must be `RES = +13*R0 - 27*R1`.
+  But the documented "CORRECTION 1" ordering `if ZERO:ACC=0; ACC+=prod; if XFER:RES=ACC` is **ZERO-FIRST**, so s63's
+  ZERO **wipes** s62's `+13*R0` before adding its own term => `RES = -27*R1` only. Manual 3.7 says XFER CK and ZERO
+  both act at AS0 of the NEXT cycle (AFTER the accumulate): correct order is **`ACC+=prod; if XFER:RES=ACC; if
+  ZERO:ACC=0`** (ZERO clears for the NEXT sum, after XFER captures THIS one). Applying it: peak 101719->143194 and a
+  real 50 ms comb echo appears. **Necessary but NOT sufficient** — still decays by ~0.3 s.
+- **Delay lengths (true 128K structure).** The decoded read offsets (0x7776-0xE54C) minus write offsets
+  (0x1000-0x3040) give LONG delays ~0.5-1.7 s. Tension to resolve in loop-closure: at the decoded coeff g≈0.94, a
+  50 ms comb -> RT60 2.6 s (= the default, §8.4) but a 500 ms comb -> ~28 s (= a P85-like long setting). So either
+  the recirculating combs are SHORT (and the long offsets are one-shot predelay/early-reflection taps, not feedback),
+  or the default WCS's feedback gain is lower than the move-step coeffs suggest. (An earlier "16K-wrap gives 54-165 ms
+  combs" observation was a WRONG-buffer-size artifact — the hardware is 128K, no 16K wrap — but it flags that the
+  recirculating taps must be short for a 2.6 s tail.)
+- **Decay is ~60x too fast** (RT60 ~ 0.3 s) — FAR below what the ~0.94 (=30/32) feedback coeffs would give a clean
+  comb (~2.7 s). => the loss is STRUCTURAL in the feedback ROUTING, not a coefficient scale error. The one config that
+  "sustained" (idle=hold-last-NONZERO, flat gain~1) is NON-PHYSICAL (skips the 0-driving xreg/rdad steps); the
+  physically-correct floating-bus (hold last DRIVEN value incl. 0) dies.
+
+### 8.4 TARGET CORRECTION (owner, 2026-06-25): the DEFAULT CONCERT tail is ~2.6 s, NOT 20 s
+The 20 s reference (P85) is a user-modified MAX decay-time setting (Concert Hall LF/Mid Decay range up to 70 s). The
+program's **default loaded parameters** (224X manual ch.4 §4.1.1, **Concert Hall Variation 1**) are: **Mid Decay 2.0 s,
+LF Decay 3.0 s, average running reverb decay time = 2.6 s**, Diffusion 25, Depth 33, Predelay 24.0 ms (minimum). So the
+acceptance criterion is a clean exponential EDC of **~2.6 s** (LF a bit longer than Mid, HF<LF), NOT 20 s.
+**KEY CONSISTENCY:** a 50 ms comb at the decoded feedback coeff g≈30/32=0.94 gives RT60 = 0.05·ln(1000)/(2·|ln 0.94|)
+≈ **2.6 s** — i.e. the decoded comb-delay (§8.3) and coeff already match the default target. The structure is RIGHT;
+the model's loop simply isn't closing (it decays in ~0.3 s). Closing the feedback routing at the coeff gain should
+land ~2.6 s directly. This makes the goal far more tractable than the 20 s framing implied.
+
+### 8.5b LOOP-GAIN DIVE (2026-06-25, true 128K model) — loop is DECISIVELY OPEN + over-unity-if-closed
+Scanned 30k samples of the CONCERT impulse (128K model, idle=float, add-xfer-zero). **Only 4 active samples:**
+n=0 (impulse writes 8 cells), n=1 (1 write), and **n=18230 & n=19254 where a DMEM read returns the stored −20000
+but `wr_nz=0` — NO write-back.** The delayed read value NEVER propagates to a DMEM write ⇒ the recirculation loop
+is OPEN (hence ~5 nonzero output samples in 4 s; not a tail). Step-trace of n=18230 (the 534 ms echo) shows WHY:
+- s=3 reads −20000 → R[1]. **s=4 (cs=+60 = gain 1.875) ⇒ −300000 ⇒ rails the 20-bit accumulator (−262144).** The
+  early-read coeffs are HUGE: s=2=+58, s=3=−62, s=4=+60 → **gains 1.8–1.94 (OVER-UNITY)**.
+- s=34 re-reads R[1] (−20000)×−29 → transient RES=18125, but **s=35 clears R[1]→0** (idle floats the 0 that the
+  preceding rdad drove). The DMEM writes (s=24/40/44/52) fire with stale/zero RES.
+- ⇒ the read value dies to **register-clobbering + accumulator saturation + write-timing** before any write-back.
+**KEY IMPLICATION:** the read coeffs are >1, so **a CLOSED loop here would be OVER-UNITY** (the old λ>1 problem).
+So the frontier decode likely "resolved" over-unity by *opening the loop* (no write-back), turning grow→dead — neither
+is a real reverb. The true model must CLOSE the loop with a NET per-loop gain slightly <1 (≈0.999992/sample for the
+2.6 s default). Open questions that decide this: (a) the **DAB driver on idle steps** — what carries the recirculating
+signal through the 55 idle steps (float-last-driven zeroes it via rdad/xreg; the non-physical hold-last-nonzero was
+the only thing that sustained) — this is the all-pass-diffusion feedback path; (b) how the **4-register file persists
+the comb state** from a delayed read to its write-back without being clobbered (read-before-write, WA=3 pass-through);
+(c) whether the **early-read coeffs (±58/±60/±62) are feed-FORWARD (input/early-reflection mix, gain>1 OK)** vs the
+**feedback coeffs (±29/±30, gain≈0.9)** — i.e. the loop gain is the PRODUCT around the loop, not any single coeff.
+STRONGLY RECOMMENDED next step: **diff against the OLD dense-DMEM model that produced a dense (over-unity) output** —
+it had a closing recirculation path the sparse frontier model lacks; finding that path + damping it to net<1 is the fix.
+
+### 8.5 NEXT SESSION — trace ONE comb's full recirculation loop (the open item)
+**Smoking-gun cell trace (16K + add-xfer-zero):** of 10 impulse-written cells, exactly ONE (0x0FC1, written once by
+write-head s=127 at n=0, value −20000) is ever read back — and it is read THREE times as a multi-tap: s=3 @1846 samp
+(54 ms), s=51 @2096 (61 ms), s=1 @2870 (84 ms). **It is NEVER re-written.** So the line is tapped but the tap outputs
+never feed back to re-seed the head ⇒ one burst of echoes (~54-84 ms) then silence. The recirculation loop is OPEN:
+the tap reads (early in program order: s=1,3,51) put values in R[1]/R[2], but the line's write-back (s=127, reads R[3])
+never receives them — the read→register→write-back path doesn't connect at the coeff gain.
+The bug is isolated to the **feedback routing**: a delayed DMEM read must reach the write-back of the SAME line
+through the 4-deep register file at ~unity, and currently it doesn't (echo fires ONCE, never regenerates). Steps:
+(1) pick the 50 ms comb, trace read->R[WA]->...->R[RA]->multiply->XFER->RES->write across program order; find where
+the value is lost/clobbered (4-reg pressure; WA=3 pass-through; read-before-write). (2) Nail the **idle/xreg DAB float
+behaviour** (does an undriven DAB hold? does RD XREG drive 0 or float with the SBC absent?) — it sets the feedback
+path. (3) Re-confirm MAC order add->xfer->zero vs Fig 3.4 with the owner. **DECODE + addressing + bank structure are
+SETTLED (do not reopen). Open item = loop-gain / feedback-routing closure.** Tools: `tools/aru_tank.py`, crops
+`tools/_crops/`. C++ golden UNTOUCHED.

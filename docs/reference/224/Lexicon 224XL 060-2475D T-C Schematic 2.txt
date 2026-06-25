@@ -1,0 +1,13 @@
+Lexicon 224XL 060-2475D T&C Schematic 2 of 2
+
+U19 74LS377
+
+input > bit map
+D0 pin 3 > pin 3 U34A MI4
+D1 pin 4 > pin 14 U18 MI20
+D2 pin 7 > pin 13 U18 MI21
+D3 pin 8 > RESET /
+D4 pin 13 > pin 11 U18 MI23
+D5 pin 14 > pin 14 U4 MI24
+D6 pin 17 > pin 13 U4 MI25
+D7 pin 18 > not depicted

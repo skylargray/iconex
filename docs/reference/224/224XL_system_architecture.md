@@ -1,0 +1,271 @@
+# 224X / 224XL — System Architecture (reverb signal path)
+
+> Purpose: a complete, aligned systems model of how the 224X/224XL produces reverb, so that the
+> reconstruction work targets the right subsystem. Scope is the **real-time audio signal path** and the
+> hardware that defines it. Grounded in the Service Manual §3.1–3.9 and the traced schematics (T&C
+> 060-02475, DMEM 060-02512, ARU 060-01318).
+
+---
+
+## 1. The core model: a microcoded DSP
+
+The reverb is **not** software running on the host CPU. It is a **dedicated hardware DSP** formed by three
+modules — **T&C + DMEM + ARU** — that executes a **100-step microprogram once per sample at 34.13 kHz**
+(100 micro-steps × 293 ns = 29.3 µs per sample). The 8080 host is orders of magnitude too slow to touch
+audio in real time; it only *authors and updates* the microprogram.
+
+The reverb *topology* — which delays feed which gains feed which sums — is **defined entirely by the
+microcode in the Writable Control Store (WCS)**. There is no dedicated "reverb filter" hardware. Combs,
+all-passes, the recirculating tank, predelay, and early reflections are all **emergent** from the sequence
+of micro-ops the WCS issues: *read a delayed sample, multiply-accumulate it by a coefficient, write a
+result back.* In other words the machine is a **microprogram-defined signal-flow graph executed over a
+delay memory by a multiply-accumulate engine.**
+
+```
+            ┌───────────── SBC (8080) ────────────────┐   authors/updates — NOT real-time audio
+            │ scans pots/switches; for the loaded     │
+            │ program+params computes the WCS micro-  │
+            │ code, the DMEM offsets (delay lengths), │
+            │ the 6-bit ARU coefficients, and the     │
+            │ per-frame chorus-modulation deltas      │
+            └───────────────────┬─────────────────────┘
+                                │ writes WCS / drives I-O ports
+        ┌──── T&C ─────┐   ┌───────── DMEM ─────────┐   ┌───────── ARU ────────────┐
+        │ clock+state  │   │ delay memory (DRAM) +  │   │ 4×16 register file +     │
+        │ generator +  │──>│ address generation +   │<─>│ serial 6-bit multiplier  │
+        │ WCS + micro- │   │ DRAM control/refresh + │   │ + 20-bit sat accumulator │
+        │ instr decode │   │ SBC I-O decode + XREG  │   │ + 16-bit result register │
+        └──────────────┘   └───────────┬────────────┘   └───────────┬──────────────┘
+            sequences                  │                            │
+            everything        ═════════╪══════════ DAB (16-bit) ════╪═════════
+                                       │                            │
+                              ┌────────── FPC ───────────┐
+            analog in ──> AIN │ float↔fixed conversion + │ AOUT ──> analog out
+                              │ A/D and D/A timing       │
+                              └──────────────────────────┘
+```
+
+---
+
+## 2. The Digitized Audio Bus (DAB) — the central highway
+
+Everything in the DSP communicates over the **DAB, a shared 16-bit bus.** Each 293 ns micro-cycle, **exactly
+one device drives the DAB and the others read it.** This single fact governs the entire reverb: all audio
+movement — between the delay memory, the math engine, and the analog I/O — is DAB traffic.
+
+Devices on the DAB and when each one **drives** it:
+
+| Driver | When it drives the DAB | Carries |
+|---|---|---|
+| DMEM (DRAM read) | a delay-tap **read** micro-op | a delayed audio sample out of the buffer |
+| ARU result register (RES) | result-register read / feedback, and as the **write data** for a DMEM write | the latest multiply-accumulate result |
+| FPC (RD AD/) | the **audio-input** micro-op | the current input sample (fixed-point) |
+| FPC (WR DA/) accepts | the **audio-output** micro-op | the DSP drives RES → FPC for output conversion |
+| SBC XREG | when the host reads/writes the bus (config/diagnostics) | host data into/out of the audio path |
+| *(none)* | an **idle** micro-op | bus undriven — *modeled* as holding its last driven value (**assumption**: an undriven tristate bus is not guaranteed to hold a value) |
+
+The register file (ARU) is **written every cycle** from whatever is on the DAB (to the micro-op's write
+address), so the DAB driver each step decides what enters the math. Understanding *who drives the DAB on
+each of the 100 steps* is equivalent to reading the reverb's signal-flow graph.
+
+---
+
+## 3. SBC (Single-Board Computer) — the configurator
+
+An 8080-based controller. Its ROMs (8 KB on-board + expansion on the NVS module) hold the **definitions** of
+the programs (CONCERT, PLATE, …): for each program and parameter setting, the corresponding microcode, the
+DMEM **offsets** (delay lengths), and the 6-bit **coefficients**. Its real-time responsibilities:
+
+- Scan the control head (switches, slide pots) and drive the displays.
+- On program load or parameter change, **compute and write the WCS** plus the associated offsets and
+  coefficients. The WCS can be rewritten **while the DSP is running** (gated by the microword's PROT bit and
+  a same-sample access arbiter), so parameter changes take effect on the fly.
+- **Chorus modulation (inferred mechanism).** The reverb applies always-on chorus modulation. The most likely
+  implementation is that the SBC computes an LFO and rewrites the modulated delay offsets/coefficients per frame,
+  so those delay-line lengths wobble. **This mechanism is inferred from reverse engineering — it is not stated in
+  the Service Manual or schematics, and the per-frame-rewrite hypothesis has been partly contested.**
+- Housekeeping: power-up diagnostics, NVS load/save of user setups.
+
+It **never processes an audio sample.** Treat it as the agent that *authors the signal-flow graph and
+animates the modulation*, not as part of the per-sample datapath.
+
+---
+
+## 4. T&C (Timing & Control) — the sequencer + control unit
+
+The DSP's instruction-fetch/decode/control. Three jobs:
+
+1. **Clock generation.** A PLL locks to the host's 2.048 MHz clock and multiplies it to a 30.72 MHz master
+   clock (MC). MC is divided to the **293 ns system cycle (3.41 MHz)**, which is split into **nine time slots
+   MS0–MS8**, grouped into **three ARU states AS0 / AS1 / AS2**.
+2. **State generation.** An 8-bit program counter walks the WCS; it is **reset at step 99**, giving a
+   **100-step program per sample → 34.13 kHz** sample rate.
+3. **WCS + microinstruction decode.** Four 128×8 static RAMs hold the **32-bit microinstruction (MI0–MI31)**
+   per step (loaded by the SBC). The T&C **decodes the microword into the control signals** that drive the
+   ARU and DMEM each cycle — XFER (load result register), ZERO (clear accumulator), CSIGN (coefficient sign),
+   register addresses WA/RA, MEMAC (memory op), the read/write select, etc. — and **serializes the 6-bit
+   coefficient C0–C5 into the M0/M1 bit-streams** consumed by the ARU's serial multiplier.
+
+---
+
+## 5. DMEM (Data Memory) — delay store + addressing + DRAM control + host gateway
+
+The DMEM module bundles several distinct functions. They are easy to conflate, so they are separated here.
+
+### 5.1 Data memory = the audio **delay-line storage**
+A large DRAM array (on the 4164-populated XL board: **128 K words × 16 bits**, two banks of 64 K) used as a
+**single shared circular buffer**. It holds **every delay in the reverb**: the predelay, early reflections,
+and the comb / all-pass / recirculating-tank delay lines. It is the *only* place audio persists between
+samples. Each cycle the DSP reads delayed audio out of, and/or writes new audio into, this buffer.
+
+### 5.2 Address generation = turning "delayed by D" into a DRAM address
+A 16-bit **Current Position Counter (CPC)** advances **+1 per sample**; a 16-bit adder computes
+**addr = CPC − offset**, where the `offset` from the microword *is the delay length of that tap*. This is how
+each micro-op selects a specific delay tap, plus the row/column multiplexing and bank select for the DRAM.
+**This arithmetic is what defines the reverb's delay topology — see §6.**
+
+### 5.3 Control signal generation — two unrelated things
+- **DRAM control/timing:** the RAS/CAS/refresh strobes that run the dynamic RAM (a delay-line generator,
+  U59, derived from MEMAC / DABSTB / MEMR).
+- **SBC↔DSP I/O interface:** the LS138 **port decoders (U55/U56/U57)** that decode which OUT/IN port the host
+  is accessing across all DSP modules; the **XREG** (U38–U41) — the register the SBC uses to read/write the
+  DAB, i.e. its window into the audio path; the XACK handshake; and the **run / halt / single-cycle** control
+  of the entire DSP (U53/U54). DMEM is, in effect, also the "bus interface card."
+
+### 5.4 Diagnostic hardware
+Tristate drivers let the host read the static OFST/ lines and a bus-test register; the XREG path lets the
+host inject/observe DAB data. Used by the §5.x diagnostic programs and signature analysis.
+
+---
+
+## 6. The address arithmetic that defines the delays (expanded)
+
+This is the conceptual core of the reverb and deserves its own treatment: **the delay structure of the entire
+reverb is nothing more than the set of `offset` values the microprogram uses, interpreted through one piece of
+arithmetic.** There is no filter hardware and no per-delay memory allocator — only a circular buffer and an
+adder.
+
+### 6.1 One circular buffer, one moving position
+The DMEM is a single circular buffer of N words (within a bank, N = 65 536). The **CPC is the current
+position**, advancing one cell per sample and wrapping every N samples (≈ 1.92 s within a 64 K bank). Audio
+"ages" relative to the CPC: a value written when the CPC was at position *p* sits at cell *p* and becomes
+progressively older as the CPC moves away from it.
+
+### 6.2 offset = delay in samples
+A micro-op with offset *D* accesses the cell the CPC pointed at *D* samples ago:
+
+```
+    addr = (CPC − D) mod N
+```
+
+So:
+- a **WRITE** at offset *W* stores the current value into cell `(CPC − W)`;
+- a **READ** at offset *R* retrieves whatever is in cell `(CPC − R)`.
+
+The **delay realized by a write/read pair on the same physical cell is `R − W` samples**: starting from a
+write at `(CPC − W)`, the CPC must advance by `R − W` for the read address `(CPC − R)` to land on that same
+cell. Hence:
+- `offset` is literally **"how many samples back"**; the *delay length of a tap is its offset*.
+- A delay **line** is a (small-offset **write head**, larger-offset **read tail**) pair; new audio is written
+  at the head, read out `tail − head` samples later at the tail.
+- Multi-tap delays are just **several reads at different offsets** off one write stream.
+
+### 6.3 The hardware subtract: active-low offset + carry-in
+The adder does **not** subtract directly. It adds the **active-low** offset `OFST/ = ~offset` to the CPC with
+**carry-in tied high**:
+
+```
+    addr = CPC + (~offset) + 1  ≡  CPC − offset   (two's complement)
+```
+
+(Adder chain U49/U50/U63/U64, carry-in pulled high.) The 16-bit sum is the within-bank address; the **carry-
+out is the 17th address bit** that selects between the two 64 K banks on the XL (a flat 128 K space —
+`within = (CPC − offset) & 0xFFFF`, `bank = carry`). The two banks are therefore a **single linear address
+space, not a per-delay-line partition.**
+
+### 6.4 The delay memory map is a layout problem solved at program-load
+Because every tap is just an offset into one shared buffer, the offsets are **not arbitrary** — the SBC, when
+it builds a program, must lay them out so that:
+- each line's `(write offset, read offset)` pair yields the **intended delay** (`R − W = D`);
+- a line's stored audio **survives from its write until its read** — i.e. no *other* write head sweeps through
+  that line's cells during the `R − W` interval. Equivalently, the `[W, R]` offset intervals of coexisting
+  lines must be arranged (typically disjoint, or ordered so write heads never enter a live region) so the
+  lines do not trample one another in the shared buffer.
+
+This **"delay memory map"** — the assignment of offset ranges to the predelay, the diffusers, and each tank
+line — is a real design artifact baked into the program. Reconstructing the reverb means recovering *this map*
+(the offset table) and the coefficient table, **not** modeling abstract "comb filters." The offsets **are** the
+topology; the coefficients are the gains.
+
+### 6.5 Wrap period bounds single delays; the tail comes from feedback
+Within a bank the buffer wraps every 65 536 samples (~1.92 s). Any single delay line must be shorter than the
+wrap period. A long reverb tail (seconds) is therefore **not** one long delay — it is produced by **feedback**:
+a line's read is scaled by a near-unity coefficient and **written back into the same line**, so energy
+recirculates with loop time `R − W` and per-loop gain set by the coefficient. **The reverb decay time is set by
+the loop gain, not by the raw delay length.**
+
+### 6.6 Modulation = time-varying offsets (inferred)
+The reverb applies always-on chorus modulation. The most likely mechanism is the SBC rewriting selected offsets
+by small ± deltas per frame, so those delay-line lengths wobble (a delay-modulation / chorus effect), making the
+address arithmetic time-varying — some offsets LFO-driven, animating the memory map over time. **This mechanism
+is inferred from reverse engineering; it is not stated in the manual or schematics.**
+
+### 6.7 Why this is the crux of the dead-tank problem
+A recirculating loop is exactly: **read at offset `R` → multiply-accumulate by the feedback coefficient →
+write at offset `W` of the same line**, closing every `R − W` samples. If the value read at `R` does not get
+written back onto the line it tapped — because of an offset mismatch, or because the value is lost in the
+register file / accumulator / write timing before the write fires — the loop is **open** and the tank cannot
+ring regardless of the coefficient. The offset table plus the per-step DAB routing is precisely the artifact
+that determines whether each loop closes.
+
+---
+
+## 7. ARU (Arithmetic Unit) — the ALU
+
+The datapath that executes the math. Contents and the constraints that shape the algorithm:
+
+- **4 × 16-bit register file** — the *entire* working set (only four registers), holding operands taken from
+  the DAB (a DMEM read, the FPC input, the SBC XREG, or the result-register feedback).
+- **Serial 16 × 6-bit two's-complement multiplier** with saturation logic — a shift-and-add multiply spread
+  across AS0/AS1/AS2 (two shift-adds per state). The coefficient is **6 bits** (manual §3.7). Its fixed-point
+  scaling — e.g. a /32 LSB giving roughly ±0…2.0 — is **inferred from reverse engineering (the "ADD'L MULT"
+  diagnostic), not stated in the manual.** Every gain, filter coefficient, and feedback gain is quantized to
+  these 6 bits.
+- **20-bit saturating accumulator** — on overflow it forces the most-positive / most-negative value (manual
+  §3.7) rather than wrapping; a >1 coefficient on a large operand rails it, which is part of the sound and a
+  real hazard. (The exact rail magnitude — often taken as ±2¹⁸ — is derived, not stated in the manual.)
+- **16-bit result register (RES)** — buffers the MAC output onto the DAB so the multiplier can start the next
+  product without waiting for the previous result to be consumed. RES is the **feedback node**: RES → DAB →
+  register file re-enters the math; RES → DAB → DMEM stores into a delay line.
+
+The ARU does multiply-accumulate (gains and sums) and saturation — nothing else. It has **no filters in it**;
+the filters are emergent from the WCS micro-op sequence operating over the DMEM delays (§1, §6).
+
+---
+
+## 8. Peripheral modules — what does and does not affect the reverb
+
+| Module | In the real-time signal path? | Effect on reconstruction |
+|---|---|---|
+| **FPC** (Float↔Fixed Converter) | **Yes — keep it.** | Input enters the DAB *only* via its **RD AD/** op (float→16-bit fixed); output leaves *only* via **WR DA/** (fixed→float). It also generates A/D and D/A timing. Its **16-bit fixed-point scaling** sets levels/headroom. Abstractable to "sample→16-bit on DAB; 16-bit→sample," but the RD-AD/WR-DA micro-ops must be modeled — that is how audio gets in and out. |
+| **AIN** (Audio Input) | At the analog boundary only. | Anti-alias filter + sample/hold + gain-ranger + ADC; sets the **34.13 kHz rate** and **input bandwidth (~15 kHz)**. Model as an ideal band-limited sampler; note the program's *HF Bandwidth* parameter interacts with it and shapes tone. |
+| **AOUT** (Audio Output) | At the analog boundary only. | DAC + reconstruction filter + output gain switch. No effect on the delay/feedback structure. |
+| **NVS** (Nonvolatile Storage) | No (setup only). | Holds user register setups (param values) + ROM expansion. Determines *which* program/params load (e.g. CONCERT's 2.6 s defaults), i.e. which offsets/coefficients exist — not the per-sample math. |
+| **Control Head / Transition** | No. | UI (switches/pots/display); source of parameter values the SBC reads. |
+| **Power Supplies** | No algorithmic effect. | One caveat: the ±supply jumpers determine the 4116-vs-4164 DRAM configuration (16 K vs 64 K per bank). |
+
+---
+
+## 9. The one-line model, and where the reverb lives
+
+> A **microcoded DSP (T&C sequences, ARU computes, DMEM stores delays)** executes a **100-step-per-sample
+> signal-flow graph** — defined by the WCS microcode, with delays = DMEM offsets and gains = 6-bit ARU
+> coefficients — moving audio across the **DAB**, while the **SBC** authors and animates that microcode
+> (program + params + chorus modulation) and the **FPC** bridges fixed↔float to the **AIN/AOUT** analog ends.
+
+The reverb behavior — and the open dead-tank question — lives in one corner of this model: the **per-sample
+DAB traffic that closes the comb/all-pass loops** (read a delay → MAC by a feedback coefficient → write it
+back), with the 4-register file and RES as the only scratch. The productive way to read that corner is to
+enumerate, for the loaded program's 100 steps, **the DAB driver, register read/write addresses, offset, and
+coefficient of every step**. That table *is* the signal-flow graph, and it shows exactly where each loop is
+meant to close.
