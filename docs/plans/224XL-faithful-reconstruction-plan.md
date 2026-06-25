@@ -1,5 +1,12 @@
 # 224XL Faithful Reconstruction Plan — eliminate every approximation
 
+> **▶▶ SESSION 8 (2026-06-24) — over-unity was a RED HERRING; the real bug is ARU datapath TIMING.**
+> The decode is now FULLY confirmed (Session 8 + owner schematic traces: XFER=MI24=l3.b0, ZERO=MI25=l3.b1
+> AS0-gated, C0-C5=MI26-31, inv_l3=True; multiply scale /32 not /64; FPC I/O 16-bit; topology = Fig 4.1). The
+> static-WCS reverb tank is dead because the diffused/predelayed audio never reaches the DMEM long-delay lines —
+> a pipelined-comb timing problem, NOT a decode problem. **START HERE: `docs/plans/224XL-signature-analysis-plan.md`**
+> (exact 3-state ARU model + §5.7 signature-table validation) and memory `224xl-session8-inv-l3-and-dead-tank.md`.
+
 > **✅ RESOLVED — SUPERSEDED (Session 7, 2026-06-24).** The over-unity/decay deficit this plan was built
 > around turned out to be a **microword DECODE error**, not an omitted analog/modulation mechanism. The
 > reverse-engineered field map in `aru_datapath.load_microcode` had WA, the DMEM read/write select, XFER,
@@ -11,16 +18,133 @@
 > for the full resolution + the confirmed microword bit map.** Remaining work is finishing the faithful
 > reconstruction on the corrected decode (diagnostic-pin the byte inversions, regen golden, mirror to C++).
 
-**Status:** OPEN. Created 2026-06-23 (end of Session 4). **Session 5 (2026-06-23) executed §3.1 (modulation,
-the "DO THIS FIRST" item) → REFUTED** (faithful live modulation does not produce the decay; items 1/2/3/8
-closed). See the §3.1 RESULT box and the **§4 RE-ASSESSMENT** box below, and investigation doc §0.10.11. The
-decay deficit is now proven to be an isolated linear excess that none of the remaining register items can fix.
-**This is the START-HERE document for the next session.** Read it fully before touching code.
-
 **Mandate (from the project owner, verbatim intent):** the 224XL reconstruction must be a **bit-exact,
 fully-faithful** recreation. Every place the current model approximates or omits real hardware/firmware
-behavior is a defect to be fixed — *not* a corner to be cut. Do not conclude "needs hardware" while any
-known real element is still a stand-in.
+behavior is a defect to be fixed — *not* a corner to be cut.
+
+---
+
+## ★ SESSION 7 (2026-06-24) — RESOLUTION + new reconstruction plan (START HERE)
+
+### What was accomplished (the decay/over-unity question is CLOSED)
+
+The "+1100 ppm over-unity / no-decay" deficit was a **microword DECODE error**, not an omitted analog or
+modulation mechanism. The reverse-engineered field map in `tools/aru_datapath.py:load_microcode` placed
+**WA, the DMEM read/write select, XFER, ZERO, CSIGN, and the coefficient in the wrong microword bits.** The
+owner traced the real **T&C schematic (060-02475)** and the **service-manual timing diagrams (Fig 3.2/3.3/3.4)**;
+rebuilding the decode to the true map (tools `_hunt_rawcache.py` → `_hunt_rebuild2.py`) makes **every clean
+program a lossless (λ=1.000000) or gently-decaying reverb prototype — ZERO programs hot** (was 8 of 13 hot,
+up to λ=1.67; CONCERT → λ=1.000000). Sequence of findings this session:
+- **Lead 1 (all-pass coeff matching) REFUTED** — a validated symbolic single-sample flow graph
+  (`_hunt_symflow.py`, err 1.8e-15) showed the +124 closers are NOT per-cell feedback (self-loops ≤ |0.766|).
+- **Over-unity reframed as multi-program** (8/13), not CONCERT-specific (the old "dead-tank for other halls"
+  was a single-seed power-iteration artifact; use random/multi-seed start — `_hunt_lossless.py`).
+- **`acc_latch` timing CONFIRMED from the manual** (§3.7 line 400 + Fig 3.4: the MAC is pipelined; XFER CK &
+  ZERO/ fire at AS0, so XFER captures the accumulator BEFORE the step's own product). A real secondary fix —
+  but the DECODE was the root cause. (Mid-session I wrongly retracted acc_latch from static topology, then the
+  timing diagrams reinstated it. Lesson: reconcile candidates with net topology AND timing AND microword wiring.)
+- **A mid-session (b3,b4)+acc_latch "13/13" candidate was an overfit**, refuted by the owner's RA trace
+  (RA1 = U19 Q2 ← MI21 = bit b5 ⇒ RA = (b5,b4), the documented decode).
+
+### The TRUE microword field map (owner schematic trace — this replaces §1's field map)
+
+32-bit word = 4 stored bytes l0,l1,l2,l3 (l0=MI0–7, l1=MI8–15, l2=MI16–23, l3=MI24–31; MI_n = raw DATA bit):
+
+| field | bits | notes |
+|---|---|---|
+| offset / delay OFST0–15 | **MI0–MI15** (l0,l1) | unchanged; delays were already right |
+| **DMEM read(1)/write(0)** | **MI16** | U47 LS139: MEMW/=MI17&!MI16, MEMR/=MI17&MI16 |
+| **DMEM-op enable (MEMAC)** | **MI17** | MEMAC = MI17 directly; DRAM accessed iff MI17=1 |
+| **WA0, WA1** | **MI18, MI19** | (old model wrongly had WA at MI16,17) |
+| RA0, RA1 | MI20, MI21 | unchanged (only field the old model had right) |
+| PROT | MI22 | WCS write-protect, datapath-irrelevant |
+| **CSIGN** | **MI23** | coefficient sign |
+| **XFER** | **MI24** | result-register load (acc_latch: captures pre-product ACC) |
+| **ZERO** | **MI25** | accumulator clear (NAND'd with AS0) |
+| **coeff C0–C5** | **MI26–MI31** | 6-bit magnitude; net gain = ±(C/64) |
+| DP, RESET D/ | reused MI4, MI3 | only on non-DMEM (sub-decoder) steps; datapath-irrelevant |
+
+**Device-select decode** (DAB source/dest): `MEMAC=MI17`. Sub-decoder (MI17=0 & MI16=1), DAB read source by
+(MI13,MI12): 00=idle, **01=RDRREG/** (result reg → feedback), 10=RD XREG/, **11=RD AD/** (A/D audio in);
+WR DA/ (D/A out) from the MI16/MI17 first half. (MI12,MI13 = l1 bits 4,5.) Offset bit15 does NOT gate
+DMEM-vs-FPC — MEMAC=MI17 alone does. ADC = AM25L04 (12-bit, DAB0–11, sign-extended); DAC = DAC80-CBI-V
+(12-bit, RES>>4, active-low). All in `224XL-overunity-frontier.md` §4b/§5a (the authoritative record).
+
+### Byte inversions — PINNED except one
+
+- **inv_l2 = False** (l2 used direct): "MEMAC = MI17 *directly*" ⇒ MI17 = raw l2.b1; and under inv_l2=False
+  the RD AD/ steps decode to **s75/s125** = the A/D input-fingerprint steps (inv_l2=True wrongly gives s77/s127).
+- **read_bit = 1** (MI16=1 ⇒ DMEM read).
+- l0,l1 inverted (offset = `~(l0|l1<<8)`; MI12,MI13 = `~l1` bits 4,5).
+- **inv_l3 (the l3 coeff/XFER/ZERO byte) — THE ONE REMAINING BIT.** Both polarities give all-reverbs-≤1, so
+  the eigenvalue can't separate them (weak lean inv_l3=True: yields ~18 zero-coefficient move-steps, typical
+  of real microcode). Pin it via the diagnostics — needs the full A/D→ARU→D/A datapath (see next steps).
+
+### Next steps (the reconstruction, in order)
+
+1. **Rebuild `tools/aru_datapath.py:load_microcode` to the true map above** (inv_l2=False, read_bit=1,
+   inv_l3 TBD; full device decode: MEMAC=MI17, sub-decoder RDRREG//RD AD//RD XREG, acc_latch XFER timing).
+   Keep the old decode reachable behind a flag for diffing. Reference impl: `_hunt_rebuild2.py:decode/lam`.
+2. **Pin inv_l3 with the diagnostics, end-to-end.** Build the full input→ARU→output path (12-bit ADC at the
+   RD AD/ step; 12-bit DAC = RES>>4 at the WR DA/ step; 2-channel L/R) and run **ZERO-DELAY (must be unity
+   passthrough) + MAX-DELAY (0.5 s delay, unity)**. The inv_l3 (and any residual polarity) that reproduces
+   both is correct. NOTE: the pure-Python `_hunt_diagpin2.py` could NOT model this (the WR DA/ output routing
+   + 2-channel register flow read 0) — do it in the C++ core (or extend the harness with the WR DA/ decode).
+3. **Mirror to the C++ core** `libs/sgdsp/include/sgdsp/reverb/224xl.hpp`, **regenerate the golden**
+   (`python tools/export_golden_224.py 0x01` — the golden WILL change; that is expected and correct now),
+   and re-green the gates (§5: ctest 2/2, diff_harness, mult_vectors_test).
+4. **Verify the audio**, not just λ: a real CONCERT impulse → **clean single-exponential EDC, RT60 ≈ 20 s**,
+   HF<LF, matching `IR/Lexicon 224XL/P85 - 20.0 Seconds A.wav`. The decay should now emerge from the program's
+   in-loop damping coefficients (HFD / decay-time) on a correctly-lossless prototype — NOT from any artificial
+   uniform-leak (the §4 "air absorption" idea is SUPERSEDED — that was compensating for the decode bug).
+5. **Re-confirm `acc_latch`** is in the C++ MAC timing (XFER reads the pre-product accumulator), per Fig 3.4.
+6. Then the remaining §2 items (modulation Route B, exact serial-multiply, sample-rate, FPC L/R split) are
+   genuine fidelity polish on a now-correct core — most are λ-inert and lower priority.
+
+### What in the OLD plan below is now SUPERSEDED vs still valid
+
+- **SUPERSEDED:** the whole premise ("datapath faithful; decay from omitted modulation/air-absorption"). §1's
+  *field map* bullet is WRONG (use the table above). §2 items 1/8 and the §4 "uniform physical loss" / "air
+  absorption" conclusion are moot (they were modeling around the decode bug).
+- **STILL VALID:** §1's *arithmetic-datapath* nets (accumulator/adder/sat-mux/result-register wiring — the
+  ARITHMETIC was faithful; the CONTROL DECODE was not); §3.3 (sat = ±2¹⁸); §3.5 converters (12-bit ADC/DAC);
+  the §5 gate commands; the §6 definition-of-done audio criteria.
+
+### ▶ Session-pickup prompt (paste into a new session)
+
+> Continue the 224XL reconstruction. The over-unity/decay mystery is **RESOLVED** — it was a microword decode
+> error; see `docs/plans/224XL-overunity-frontier.md` (authoritative: §5a confirmed bit map, §4b datapath +
+> device decode) and `docs/plans/224XL-faithful-reconstruction-plan.md` "★ SESSION 7" section (the true field
+> map + next steps). Do this:
+> 1. Rebuild `tools/aru_datapath.py:load_microcode` to the TRUE microword map (offset MI0–15; l2: b0=DMEM
+>    read/write, b1=DMEM-op/MEMAC, b2,b3=WA, b4,b5=RA, b6=PROT, b7=CSIGN; l3: b0=XFER, b1=ZERO, b2–7=coeff;
+>    inversions inv_l2=False, read_bit=1, l0/l1 inverted, **inv_l3 unresolved**) plus the device decode
+>    (MEMAC=MI17; sub-decoder MI17=0&MI16=1 read source by (MI13,MI12): 01=RDRREG/result-reg, 11=RD AD/input,
+>    10=RD XREG, 00=idle) and `acc_latch` MAC timing (XFER captures the accumulator BEFORE the step's own
+>    product, per service-manual Fig 3.4). Reference implementation already written: `tools/_hunt_rebuild2.py`
+>    (`decode()` + `lam()`); raw microword bytes cached in `tools/_rawcache.pkl` (`tools/_hunt_rawcache.py`).
+> 2. Pin the ONE remaining unknown, **inv_l3** (the l3 coeff/XFER/ZERO byte inversion), by building the full
+>    A/D→ARU→D/A path and running the diagnostic programs: **ZERO-DELAY must be a unity passthrough; MAX-DELAY
+>    a 0.5 s unity delay** (ADC=12-bit at the RD AD/ step; DAC=RES>>4 at WR DA/; 2-channel L/R). The pure-Python
+>    harness `tools/_hunt_diagpin2.py` could not model the WR DA/ output routing — do it in C++ or extend it.
+> 3. Sanity gate: with the corrected decode, **all 13 clean programs must be λ≤1 (no hot)** via random/3-seed
+>    power iteration (`tools/_hunt_rebuild2.py`), CONCERT → ~λ=1.0.
+> 4. Mirror to `libs/sgdsp/include/sgdsp/reverb/224xl.hpp`, regen the golden (`python tools/export_golden_224.py
+>    0x01` — it WILL change, correctly), re-green the gates (ctest 2/2, diff_harness, mult_vectors_test).
+> 5. Verify a real CONCERT impulse decays cleanly to **RT60 ≈ 20 s** (P85 EDC), the decay coming from the
+>    program's in-loop damping coeffs on a now-lossless prototype — NOT any artificial uniform leak.
+> Discipline: a result is real only if it survives the all-programs gate AND is realizable in the schematic
+> (net topology + timing), not just an eigenvalue fit. Do NOT change the C++ core/golden until the rebuilt
+> decode passes the gates.
+
+---
+
+*(Everything below is the SESSION 4–5 plan, retained for history. Its central premise is superseded by the
+Session-7 resolution above; read §1's arithmetic-datapath nets and the §5 gates as still-valid, but treat the
+field map, the modulation/air-absorption thesis, and §4's conclusion as historical.)*
+
+**Status (historical, Session 4–5):** OPEN. **Session 5 executed §3.1 (modulation) → REFUTED**; the decay
+deficit was framed as an isolated linear excess. (Session 7 found the real cause: the decode error above.)
 
 **Why this plan exists:** the long-running CONCERT-decay investigation
 (`docs/plans/224XL-concert-decay-investigation.md`) established that the booted-default CONCERT reverb (and

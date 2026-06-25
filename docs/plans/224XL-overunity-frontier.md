@@ -1,3 +1,17 @@
+> **⚠️ SUPERSEDED (Session 8, 2026-06-24) — the over-unity λ was a RED HERRING.** The power-iteration
+> eigenvalue is a recirculation mode **decoupled from the audio input** (and dominated by a frozen-DC / collapse
+> artifact); driving λ≤1 did NOT produce a working reverb. Session 8 then **fully confirmed the microword
+> decode** (incl. owner schematic traces: XFER=MI24=l3.b0, ZERO=MI25=l3.b1 AS0-gated, C0-C5=MI26-31, inv_l3=True),
+> found the **multiply scale is /32 not /64** (`prod>>5`, per the ADD'L MULT diagnostic), confirmed the FPC I/O is
+> 16-bit, and **localized the one remaining bug to ARU datapath TIMING** — the static-WCS reverb tank is dead
+> (CONCERT impulse → silence) because the diffused/predelayed signal never gets written into the DMEM long-delay
+> lines, even though every decoded field is correct. **▶ START HERE NOW: `docs/plans/224XL-signature-analysis-plan.md`**
+> (the endgame: exact 3-state ARU model + signature-table validation) and memory `224xl-session8-inv-l3-and-dead-tank.md`.
+> The Session-7 "decode error → over-unity" narrative below is HISTORICAL — the decode it produced is correct,
+> but the over-unity it chased was never the real problem.
+
+---
+
 # 224XL over-unity — RESOLVED (Session 7): it was a MICROWORD DECODE error (owner schematic trace)
 
 **Status: ROOT CAUSE FOUND.** The over-unity was a **microword-decode error** — the reverse-engineered field
@@ -13,21 +27,32 @@ b0=DMEM read(1)/write(0), b1=DMEM-op-enable, b2,b3=WA0,WA1, b4,b5=RA0,RA1, b6=PR
 b7=CSIGN; l3 byte: b0=XFER, b1=ZERO, b2–7=coeff C0–C5. DP(=MI4)/RESET D/(=MI3) are offset bits reused on
 non-DMEM device steps (datapath-irrelevant). Tools: `tools/_hunt_rebuild.py` + `_hunt_rawcache.py`.
 
-**Remaining (small) to fully close — the EXACT byte inversions / DMEM read-write polarity.** The all-lossless
-eigenvalue test is satisfied by several inversion combos; the cleanest λ=1.000000 set is **inv2=T, inv3=T,
-readVal=1** (leading candidate). Attempted to pin it definitively with the DIAGNOSTIC programs (ZERO-DELAY =
-unity passthrough, MAX-DELAY = 0.5 s delay) via `tools/_hunt_diagpin.py` — **INCONCLUSIVE**: my diagnostic
-signal-path model is incomplete because the FPC I/O needs the **device-select decode I don't have yet**:
-(a) offset **bit15 gates DMEM-vs-FPC** (a bit15-set step is an FPC/device access, not a DMEM op — so MEMAC
-gates the LS139 MEMW//MEMR/); (b) the FPC device (A/D-in, D/A-out, result-reg-read) is picked by the U47
-2nd-half decode on **MI12/MI13**; (c) the diagnostics are 2-channel (TWO input steps: s75 off=0xBFFF and
-s125 off=0xFFFF both match the input fingerprint). My model injects one channel and miscaptures the other →
-garbage (0.0 or blow-up). To finish: trace the device-select decode (which MI12/MI13 codes = A/D-read,
-D/A-write, result-reg-read) + confirm offset-bit15 gates DMEM, then model the diagnostics correctly to pin the
-inversions; OR defer exact-inversion to the C++ reconstruction (build the full I/O datapath and run the
-diagnostics end-to-end). NONE of this affects the over-unity RESULT (decode positions are confirmed; all
-inversions kill the over-unity). Then: rebuild `load_microcode`, regen golden, mirror to C++, verify CONCERT
-IR → RT60≈20 s. Tool: `tools/_hunt_diagpin.py` (has the 2-channel/device-decode gap noted above).
+**Device-select decode (owner trace) — now complete.** `MEMAC = MI17` directly (DRAM accessed iff MI17=1;
+NO offset-bit15 gating). Sub-decoder (MI17=0 & MI16=1), DAB read source by (MI13,MI12): 00=idle, **01=RDRREG/**
+(result reg → DAB = the feedback path), 10=RD XREG/, **11=RD AD/** (A/D audio input). WR DA/ (D/A out) from the
+first-half MI16/MI17 via U49. MI12,MI13 = microword bits 12,13 (l1). ⇒ the eigenvalue model must treat only the
+**RDRREG/** (MI17=0,MI16=1,MI12=1,MI13=0) steps as "result reg drives DAB"; RD AD/ injects the audio input
+(=0 in the closed loop), RD XREG/ and idle inject 0. (Earlier rebuild lumped all MI17=0 as result-reg — an
+over-approximation; full device decode now in `_hunt_rebuild2.py`.)
+
+**Byte-inversions — mostly pinned; one byte left.** PINNED (physically justified):
+- **inv_l2 = False** (l2 used direct, NOT `~`): "MEMAC = MI17 *directly*" ⇒ MI17 = raw l2.b1; and under
+  inv_l2=False the device decode identifies the RD AD/ (A/D-input) steps as **s75/s125** — exactly the A/D
+  input-fingerprint steps — whereas inv_l2=True puts them at s77/s127 (wrong). Two independent reasons.
+- **read_bit = 1** (MI16=1 ⇒ DMEM read, =0 ⇒ write), per the owner's U47 trace.
+- l0,l1 inverted (offset = `~(l0|l1<<8)`, delays already verified; MI12,MI13 = `~l1` bits 4,5).
+- **inv_l3 (the l3 coeff/XFER/ZERO byte) = the ONE remaining bit.** Both polarities give all-reverbs-≤1
+  (no hot), so the eigenvalue can't separate them. Weak lean to **inv_l3=True** (gives 18 zero-coefficient
+  move-steps, typical of real microcode; inv_l3=False makes all 110 steps nonzero-coeff). Definitive pin
+  needs the diagnostic passthrough, which my simplified harness can't run: the D/A output path (WR DA/) and
+  the 2-channel register routing aren't modeled (passthrough reads 0 in `_hunt_diagpin2.py`). **Best path to
+  finish: pin inv_l3 in the C++ reconstruction** — build the full A/D→ARU→D/A datapath and run the ZERO-DELAY
+  (unity passthrough) + MAX-DELAY (0.5 s) diagnostics end-to-end against their known behavior; that single
+  bit is the only remaining ambiguity, and it does NOT affect the over-unity result.
+
+Then: rebuild `aru_datapath.load_microcode` to the true map (inv_l2=F, read_bit=1, inv_l3 TBD), regen golden,
+mirror to C++, verify CONCERT IR → RT60≈20 s. Tools: `_hunt_rebuild2.py` (full device decode + reverb test),
+`_hunt_diagpin2.py` (diagnostic harness, has the WR DA/ output-routing gap noted above).
 
 ---
 *(Historical Session-7 narrative below — the (b3,b4) decode and acc_latch-only "partial fix" were stepping
