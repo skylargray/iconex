@@ -1,72 +1,73 @@
 # 224XL ARU microword — bit-field map (the signal-graph decoder)
 
-The linchpin decode: the full 32-bit ARU microword, recovered from four independent angles
-(firmware coefficient-packer path, empirical WCS-image correlation, cross-generation OTP/PCM60
-Rosetta, and the Service Manual §3.5–3.7), reconciled adversarially and validated by reconstructing
-CONCERT HALL's signal graph. Decoder: `tools/decode_microword.py` (`decode(power_up_id)` → per-step
-dicts). This turns the verified delay+gain tap list into an actual **signal graph** (per step: which
-register is read/written, the multiply coefficient + sign, accumulate vs transfer, delay tap).
+> **Confidence taxonomy** (see `docs/plans/224XL-validation-plan.md` §0): ✅ CONFIRMED (schematic-traced
+> and/or proven) · 🟡 PARTIAL (faithful read but interpretation/location unverified) · 🔵 INFERRED ·
+> 🟠 GUESS · ⚪ UNKNOWN.
+>
+> **⚠️ Session-11 correction.** The earlier version of this doc said the microword is read from
+> `mem[0x4000 + S*4 + lane]`. **That is wrong.** `0x4000` was never the real WCS source: for a non-FE
+> program (CHAMBER) it decodes to **all zeros**, while the firmware's actual offset table (the `0x3F4D`
+> buffer) matches the firmware load byte-for-byte. The **field-bit *meanings* below are still valid**
+> (owner schematic-traced), but **where they are read from, and the offset/coefficient *values*, must come
+> from the firmware-built image (`aru224_emulate.py`), not `0x4000`.** The decoder `tools/aru_datapath.py`
+> still reads `0x4000` and is therefore **producing wrong offsets** — see §"Source of truth".
 
-## Layout
+## The 32-bit microword — field map (bit MEANINGS) ✅/🟡
 
-WCS = 4 × (128×8) SRAM. Per step `S`, the 4 stored bytes are at `0x4000 + S*4 + lane` (lane 0–3;
-SBC address bits[1:0]=lane, [8:2]=step). 100 active steps, 34.13 kHz. **Storage is active-low**
-(the offset and control bytes are complemented; the coefficient *magnitude* is stored direct — a
-genuine mixed-polarity quirk, confirmed empirically). A step with `lane2==lane3==0xFF` = NOP/pure-delay.
+The ARU microword is 32 bits = 4 stored bytes (lanes 0–3 = MI0–7 / MI8–15 / MI16–23 / MI24–31).
+The *meaning of each field* is owner schematic-traced (060-02475/01318):
 
-| Lane | Bits | Field | Decode | Confidence |
+| Lane | Bits | Field | Meaning | Confidence |
 |---|---|---|---|---|
-| 0–1 | 16 | **OFST** | `offset = ~(lane1<<8 \| lane0) & 0xFFFF`; **delay = offset** (DMEM addr = position − offset, 2's-comp) | **HIGH** — all angles + clean taps |
-| 3 | 6:0 | **COEFF magnitude** | `lane3 & 0x7F` (**raw, not complemented**), gain = mag/127 | **HIGH** — image test 77 matches vs ≤50 for alternatives |
-| 3 | 7 | **CSIGN** | raw bit7, active-low: `1 ⇒ negative` | **HIGH** |
-| 2 | 1:0 | **WA** | `(~lane2) & 3` — register-file write addr (1 of 4; addr 3 = pass-through) | HIGH |
-| 2 | 5:4 | **RA** | `((~lane2)>>4) & 3` — register-file **read** addr (RA1,RA0) | **HIGH** — datapath-validated |
-| 2 | 3 | **RW / SRC** | `((~lane2)>>3) & 1` — DMEM read/write (or DAB-source) select | MED |
-| 2 | 2 | **XFER** | `((~lane2)>>2) & 1` — load result register / write the tank | **HIGH** |
-| 2 | 6 | **PROTECT / MAC-enable** | `((~lane2)>>6) & 1` — set on ~99% of active steps | MED |
-| 2 | 7 | **ZERO** | `((~lane2)>>7) & 1` — clear accumulator at MAC-block start | HIGH |
+| 0–1 | 16 | **OFST** | the 16-bit delay offset; `addr = CPC − offset` | ✅ map / 🟡 value (must come from `0x3F4D`, not `0x4000`) |
+| 2 | 0 | **MI16** | with MI17: device select (read/write/sub) | ✅ (owner U47 trace) |
+| 2 | 1 | **MI17 (MEMAC)** | `(MI17,MI16)`: `11`=MEMR/ read, `10`=MEMW/ write, `01`=sub-decoder, `00`=NC | ✅ |
+| 2 | 3:2 | **WA** | register-file **write** address (MI18,MI19); **addr 3 = pass-through/junk** | ✅ (= MI18/19; manual L392) |
+| 2 | 5:4 | **RA** | register-file **read** address (MI20,MI21) | ✅ |
+| 2 | 6 | **PROT / MAC-enable** | (MI22) datapath-irrelevant to audio | 🟡 |
+| 2 | 7 | **CSIGN** | coefficient sign | ✅ |
+| 3 | — | **COEFF + XFER/ZERO** | 6-bit coefficient magnitude C0–C5 + XFER (load result reg) + ZERO (clear accumulator) | ✅ fields / 🟠 byte polarity (`inv_l3`) |
+| (lane1 b4,5) | — | **MI12, MI13** | the sub-decoder select `(MI13,MI12)`; **dual-use**: also offset bits 12,13 | ✅ |
+| (offset b4) | — | **MI4 (DP)** | gates the sub-decoder (U34A pin2); also offset bit 4 | ✅ |
 
-**RA vs XFER resolved (`tools/aru_datapath.py`).** lane2[5:2] split: `b5,b4`=RA, `b3`=RW/SRC, `b2`=XFER.
-Three independent lines of evidence: (1) **XFER=b2** is set on exactly the result-transfer steps (every
-`+0.976` loop-close and DMEM-write step); (2) data-flow **liveness** favors RA including `b5` (0.727 vs
-≤0.57); (3) the manual's RA-independent-of-WA constraint rejects `(b5,b3)` (it makes RA≡WA every step);
-(4) **decisive** — running the decoded CONCERT microcode through the ARU datapath, `RA=(b5,b4)` is the
-*only* assignment that forms a coherent recirculating reverb tank (sustained energy); `(b5,b3)` and
-`(b4,b3)` collapse to silence. Lane→SRAM map confirmed by manual diag E20–E23: lane0=U49, lane1=U33,
-lane2=U18, lane3=U3.
+**Device decode (✅ owner net-traced).** `(MI17,MI16)`: `11`→**MEMR/** (DMEM read → DAB=DM[addr]);
+`10`→**MEMW/** (DMEM write, data = bus, RES driven via RDRREG); `01`→U47 **Y1** enables the sub-decoder
+**only when MI4=1**: `(MI13,MI12)` 1=**RDRREG** (RES→DAB feedback), 2=**RD XREG** (host), 3=**RD AD** (audio
+in), 0=idle; `00`→U47 **Y0 = NOT CONNECTED** (idle, DAB floats/holds). **WR DA/** (D/A output) = **U49C**
+(74LS10): `(MI17,MI16)=(0,1)` AND **MI7=1**. **RDRREG/** is additionally gated by **DAB RSTB** = f(MS1,MS8).
 
-Lane→SRAM/MI map (Service Manual): lane0=U49/MI0-7, lane1=U33/MI8-15, lane2=U18/MI16-23, lane3=U3/MI24-31.
+**Coefficient scale ✅ `/32`** (result reg PP3..PP18 = product≫3; operand≪3). **Accumulator rails at ±2¹⁸ ✅.**
 
-## Execution model (ARU, Service Manual §3.7)
+## Open / unverified about the decode
 
-4×16-bit **register file** (write addr WA, read addr RA; addr 3 = pass-through) → 16×6-bit 2's-complement
-**multiplier** (coeff C0–C5 + CSIGN, **saturating**) → 20-bit **accumulator** → 16-bit **result register**.
-Per step: read register[RA] × coeff (signed) → accumulate; write DAB→register[WA]; **ZERO** clears the
-accumulator (open a MAC block), **XFER** loads the result register from the accumulator (close a block).
-DMEM read/write at `position − offset`. The 224XL variant does "two multiplier bits at once" (dual-rank
-shift register) — but those extra LSBs are **not separately visible in the WCS image**.
+- 🟠 **`inv_l3`** — coefficient byte polarity (raw vs complemented). Only a weak lean (=True). Resolve by
+  pin-tracing C0/–C5/ on 060-02475 (Track A of the validation plan), not by what makes a reverb ring.
+- ⚪ **Offset↔control alignment** — the offsets live in the `0x3F4D` buffer (one step order), the control
+  lanes are built by the interpreter (possibly another). The per-step pairing is not established. This is
+  why naive recombination still failed in Session 11.
+- 🟡 **Which image to apply this map to** — the firmware-built WCS image (via `aru224_emulate`), not `0x4000`.
 
-## Validation — CONCERT HALL decodes to a coherent reverb graph
+## Source of truth (corrected)
 
-The control bits assemble into the documented topology, not noise:
-- **Pre-delay line** — steps 5–22: 18 fill steps at constant offset = input pre-delay.
-- **Recirculating tank** — the `+0.976` feedback coeff (`lane3=0x7C`) appears **16×**, 12 in clean 4-step
-  MAC blocks `[-c, -small, -c, +0.976]` with `WA=3, RA=3` on the feedback step, `ZERO` opening and the
-  RA/XFER phase reaching `0xF` (XFER) on the closing feedback write.
-- **Symmetric allpass diffusers** — e.g. steps 62–65 = `-0.591, -0.126, -0.591, +0.976` (matched outer
-  coefficients about a center tap = the canonical allpass signature); also `-0.748, -0.031, -0.748`.
-- **Terminal output line** — steps 125–127 read specific taps (`-0.811, -1.0, -0.157`) to the output.
+- ✅ **Real delays:** `tools/aru224_emulate.py::tap_map(recbase)` — runs the firmware's B55B builder and reads
+  the `0x3F4D` offset table (read **downward**: step *s* at `0x3F4D − 2s`). Validated byte-identical to a
+  real-boot snapshot for non-FE records. CONCERT (`0xB800`): short, sensible delays (128, 1756, 2242,
+  **6008**×4 = a 176 ms recirculating loop), range 4–176 ms. All 20 programs in
+  `docs/reference/224/224XL_record_name_map.md`. *Caveat (🟡):* "faithful read" — that these are the ARU's
+  actual delays and that `delay=−offset` is the right interpretation are pending Track A.
+- ❌ **Do not use** `mem[0x4000:0x4200]` (what `aru_datapath.py` reads). It is empty for non-FE programs and
+  gives clustered ~30 000-sample garbage for CONCERT.
 
-## Pinned vs. genuinely open
+## Execution model (ARU, Service Manual §3.7) ✅
 
-**Pinned:** OFST (lanes 0–1, active-low), COEFF magnitude + CSIGN (lane3 raw), lane2 = control byte,
-WA (bits1:0), **RA (bits5:4)**, **XFER (bit2)**, ZERO (bit7), the lane→SRAM map (manual E20–E23).
+4×16-bit **register file** (LS670 U29–U32; write addr WA, read addr RA; **addr 3 = pass-through**) → 16×6-bit
+two's-complement **multiplier** (saturating, `/32`) → 20-bit **accumulator** (±2¹⁸ rail) → 16-bit **result
+register** (LS374 U43/U44). Per step: read register[RA] × coeff (signed) → accumulate; the DAB is written to
+register[WA] every cycle; **ZERO** clears the accumulator (open a MAC block); **XFER** loads the result
+register (close a block). DMEM read/write at `CPC − offset`. The multiply pipeline completes at the end of
+AS0 of the *next* cycle (1-step deferred product). The dual-rank shift register does two multiplier bits per
+ARU state; those extra LSBs are not separately visible.
 
-**Open (the only remaining items for bit-exact, resolved when building the C++ core vs the emulator):**
-- `b3` (RW/SRC): DMEM read/write vs DAB-source select — its exact role (which steps read vs write the
-  delay memory, and the input/output FPC steps).
-- The exact **arithmetic**: the 20→16-bit accumulator shift, the coeff denominator (≈/128) and the
-  "2 extra multiplier LSBs", rounding-toward-zero, and saturation — these set the decay/gain precisely.
-  The ARU datapath model (`tools/aru_datapath.py`) already runs the routing correctly (RA/XFER pinned);
-  these arithmetic details are tuned by diffing its output against the firmware emulator.
-- Whether `b6` is the specific WCS PROTECT bit or a generic MAC-enable (doesn't affect audio).
+> **Validation status:** the field MAP is ✅; a *working reverb* built from this map has **never been
+> demonstrated end-to-end** (⚪). The old "CONCERT HALL decodes to a coherent reverb graph" claim was based on
+> the wrong (`0x4000`) offsets and is **retracted**. See `docs/plans/224XL-validation-plan.md`.

@@ -1,5 +1,13 @@
 # 224XL modulation / LFO engine
 
+> **Confidence:** 🟡 **PARTIAL overall** — the engine is decoded from the actual firmware and corroborated
+> by poking, but it has **not been run end-to-end** in a working reverb, and some numeric scalings are 🔵
+> inferred. Taxonomy: ✅ CONFIRMED · 🟡 PARTIAL · 🔵 INFERRED · 🟠 GUESS · ⚪ UNKNOWN. See
+> `docs/plans/224XL-validation-plan.md`. This doc comes from the *firmware-driven* pipeline
+> (`harvest_xl.py`/`aru224_emulate.py`), which is the better-grounded one — **not** the retired `0x4000`
+> decode. Session 11 independently corroborated the mechanism: the firmware's per-frame patch list rewrites
+> the **coefficient (lane3) bytes** of the modulated steps (CONCERT: 56,57,107,108 — matches the table below).
+
 The 224XL continuously modulates selected tank delay taps (the chorus that gives the halls/plates
 their evolving, non-metallic sound). Decoded from the firmware + validated by poking; engine at
 SBC `0xAD5C`–`0xAE9B`.

@@ -9,6 +9,46 @@ docs: `224XL_microword_fieldmap.md`, `224XL_record_name_map.md`, `224XL_param_sw
 
 ---
 
+> ## ⚠️ CONFIDENCE STATUS BANNER (Session 11, 2026-06-25) — read first
+>
+> Taxonomy: ✅ CONFIRMED · 🟡 PARTIAL (faithful but interpretation unverified) · 🔵 INFERRED · 🟠 GUESS ·
+> ⚪ UNKNOWN. Full state + validation plan: **`docs/plans/224XL-validation-plan.md`**.
+>
+> **The single biggest correction:** a *second* decode pipeline (`tools/aru_datapath.py`) read the microword
+> from **`mem[0x4000:0x4200]`** and was iterated for ~9 sessions chasing a "dead tank." **`0x4000` is the
+> wrong source** — proven in Session 11 (CHAMBER/non-FE → `0x4000` is all zeros; the firmware's real offset
+> table at **`0x3F4D`** matches the firmware load byte-for-byte). The delays in *this* doc come from the
+> **firmware-driven** pipeline (`harvest_xl.py`/`aru224_emulate.py`, the `0x3F4D` source) and are the **correct**
+> ones — short, sensible (CONCERT 4–176 ms, 176 ms recirc loop). Where this doc and `aru_datapath`/`0x4000`
+> disagree, **this doc is right.**
+>
+> **What is ✅ CONFIRMED:** the DSP architecture; the DAB one-driver/cycle + float-hold behavior; the device
+> decode (U47/U48/U49 — MEMR/MEMW/RDRREG/RD-AD/RD-XREG/WR-DA, MI4 gate); the address adder + straight OFST
+> wiring + standard DRAM mux (`addr=CPC−offset`); the register file (LS670, WA=MI18/19, RA=MI20/21, addr-3
+> pass-through); `/32` coeff scale + ±2¹⁸ rail; program names (20/20 vs directory); the program-load mechanism
+> (B55B + interpreter, FE/non-FE). The **field-bit map** (which bits mean what) is ✅.
+>
+> **What is 🟡 PARTIAL:** that `aru224`'s `0x3F4D` delays are the ARU's *actual* addresses and that
+> `delay=−offset` is the right interpretation (the read is faithful/byte-identical, but that is near-circular —
+> it reads the firmware's *own* output; needs the firmware-routine teardown, Track A). DMEM 128K/bank-select.
+> The modulation engine. The 16-bit fixed-point / FPC scaling numbers.
+>
+> **What is 🔵 INFERRED / 🟠 GUESS:** `inv_l3` coeff polarity (🟠); the FE writeptr-base/SIZE scaling (🟠);
+> MAC ordering; the offset↔control per-step alignment (⚪).
+>
+> **What is ⚪ UNKNOWN (the headline gap):** **no decode, in either pipeline, has ever been run end-to-end
+> through a faithful datapath to produce a correct 224XL reverb.** "Looks like a reverb tap map" / "decodes to a
+> coherent graph" was plausibility, never proof — the same false-confidence that made the `0x4000` error
+> persist for days. Treat every "RESOLVED/complete/verified" claim *below* against this bar: if its only support
+> is plausible structure, it is at most 🟡. The firmware's own ARU POST self-test is currently **suppressed**,
+> not passed (Track B exists to fix that).
+>
+> One internal inconsistency to flag: this doc says **128 steps/sample** (from the firmware build loop), while
+> `224XL_system_architecture.md` says **100** (from the manual). Both are cited; treat the step count as 🟡
+> until reconciled (likely 128 hardware slots with ~100 non-NOP).
+
+---
+
 ## 1. System architecture
 
 The 224XL is two computers:

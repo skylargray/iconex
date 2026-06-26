@@ -4,6 +4,18 @@
 > reconstruction work targets the right subsystem. Scope is the **real-time audio signal path** and the
 > hardware that defines it. Grounded in the Service Manual §3.1–3.9 and the traced schematics (T&C
 > 060-02475, DMEM 060-02512, ARU 060-01318).
+>
+> **Confidence taxonomy** (see `docs/plans/224XL-validation-plan.md`): ✅ CONFIRMED · 🟡 PARTIAL · 🔵 INFERRED
+> · 🟠 GUESS · ⚪ UNKNOWN. The structural model in §1–§5, §7 is ✅ (schematic-traced). The *offset-table layout*
+> reasoning in §6 is partly 🔵/🟠 and was distorted by a now-fixed bug — see the Session-11 note in §5–§6.
+>
+> **⚠️ Session-11 correction (read before §6).** Reconstruction work spent ~9 sessions decoding delay offsets
+> from `mem[0x4000:0x4200]` and got clustered ~30 000-sample garbage → a "dead tank." **That memory was the
+> wrong source.** The real delays are short and sensible (4–176 ms) and live in the firmware's `0x3F4D`
+> offset buffer (extracted by `tools/aru224_emulate.py`, validated byte-identical to the firmware load). The
+> "delay-memory-map / write-head trample" framing in §6.4/§6.7 was an artifact of the wrong offsets — keep
+> the *mechanism* described there (it's how a circular-buffer reverb works) but note the trample problem as
+> stated **did not reflect the real program.**
 
 ---
 
@@ -80,10 +92,12 @@ DMEM **offsets** (delay lengths), and the 6-bit **coefficients**. Its real-time 
 - On program load or parameter change, **compute and write the WCS** plus the associated offsets and
   coefficients. The WCS can be rewritten **while the DSP is running** (gated by the microword's PROT bit and
   a same-sample access arbiter), so parameter changes take effect on the fly.
-- **Chorus modulation (inferred mechanism).** The reverb applies always-on chorus modulation. The most likely
-  implementation is that the SBC computes an LFO and rewrites the modulated delay offsets/coefficients per frame,
-  so those delay-line lengths wobble. **This mechanism is inferred from reverse engineering — it is not stated in
-  the Service Manual or schematics, and the per-frame-rewrite hypothesis has been partly contested.**
+- **Chorus modulation (🟡 firmware-decoded).** The reverb applies always-on chorus modulation: the SBC runs a
+  triangle LFO (engine `0xAD5C`–`0xAE9B`, paced by the main loop) that **per frame rewrites the modulated taps'
+  delay + allpass-interpolation coefficient**, in anti-phase pairs (see `224XL_modulation_lfo.md` for per-program
+  targets, rate, depth). Session 11 corroborated this empirically: the firmware's per-frame patch list rewrites
+  the **coefficient (lane3) bytes** of specific steps (CONCERT: 56,57,107,108). 🟡 because the engine is decoded
+  and poke-validated but exact depth/rate scaling is partly inferred and it has not been run end-to-end.
 - Housekeeping: power-up diagnostics, NVS load/save of user setups.
 
 It **never processes an audio sample.** Treat it as the agent that *authors the signal-flow graph and
@@ -119,10 +133,14 @@ and the comb / all-pass / recirculating-tank delay lines. It is the *only* place
 samples. Each cycle the DSP reads delayed audio out of, and/or writes new audio into, this buffer.
 
 ### 5.2 Address generation = turning "delayed by D" into a DRAM address
-A 16-bit **Current Position Counter (CPC)** advances **+1 per sample**; a 16-bit adder computes
-**addr = CPC − offset**, where the `offset` from the microword *is the delay length of that tap*. This is how
-each micro-op selects a specific delay tap, plus the row/column multiplexing and bank select for the DRAM.
-**This arithmetic is what defines the reverb's delay topology — see §6.**
+A 16-bit **Current Position Counter (CPC)** advances **+1 per sample**; a 16-bit adder (U49/U50/U63/U64,
+✅ owner-traced, **OFST straight order**) computes **addr = CPC − offset** (active-low offset + carry-in high),
+where the `offset` *is the delay length of that tap*. The DRAM mux (U36/U18, ✅) is standard row(A0–7)/col(A8–15)
+— no bit scramble; physical cell = linear address. This arithmetic ✅ is what selects each delay tap — see §6.
+**🟡 Where the offset values come from:** NOT `mem[0x4000]` (the long-used wrong source) — the firmware
+*computes* the per-step offsets at program-load (B55B builder → the **`0x3F4D` buffer**) and they are short
+(4–176 ms). Use `tools/aru224_emulate.py`. *(Faithful read confirmed; that `delay=−offset` and that these are
+the ARU's actual addresses remain 🟡 pending the firmware-routine teardown — Track A of the validation plan.)*
 
 ### 5.3 Control signal generation — two unrelated things
 - **DRAM control/timing:** the RAS/CAS/refresh strobes that run the dynamic RAM (a delay-line generator,
@@ -197,6 +215,13 @@ line — is a real design artifact baked into the program. Reconstructing the re
 (the offset table) and the coefficient table, **not** modeling abstract "comb filters." The offsets **are** the
 topology; the coefficients are the gains.
 
+> **🔵→correction (Session 11):** the *real* offset table (from `0x3F4D`) is short and sensibly laid out (the
+> recovered CONCERT map: ~362 ms predelay tap, 4–176 ms diffuser/tank delays, a 176 ms recirc loop reused 4×).
+> The "write heads cluster and **trample** each other" problem that dominated Sessions 3–11 was an **artifact of
+> decoding offsets from the wrong memory (`0x4000`)** — it does **not** describe the real program. The
+> survival/disjointness reasoning above is still the correct *mechanism*, but the real layout already satisfies
+> it; recovering the map is now a matter of reading `0x3F4D` correctly, not solving a trample puzzle.
+
 ### 6.5 Wrap period bounds single delays; the tail comes from feedback
 Within a bank the buffer wraps every 65 536 samples (~1.92 s). Any single delay line must be shorter than the
 wrap period. A long reverb tail (seconds) is therefore **not** one long delay — it is produced by **feedback**:
@@ -210,13 +235,17 @@ by small ± deltas per frame, so those delay-line lengths wobble (a delay-modula
 address arithmetic time-varying — some offsets LFO-driven, animating the memory map over time. **This mechanism
 is inferred from reverse engineering; it is not stated in the manual or schematics.**
 
-### 6.7 Why this is the crux of the dead-tank problem
+### 6.7 The recirculating loop (and the resolved "dead-tank")
 A recirculating loop is exactly: **read at offset `R` → multiply-accumulate by the feedback coefficient →
 write at offset `W` of the same line**, closing every `R − W` samples. If the value read at `R` does not get
-written back onto the line it tapped — because of an offset mismatch, or because the value is lost in the
-register file / accumulator / write timing before the write fires — the loop is **open** and the tank cannot
-ring regardless of the coefficient. The offset table plus the per-step DAB routing is precisely the artifact
-that determines whether each loop closes.
+written back onto the line it tapped, the loop is **open** and the tank cannot ring.
+
+> **Resolution (Session 11):** the "dead tank" chased for ~9 sessions was **not** a real loop-closure failure
+> — it was the consequence of feeding the datapath the wrong (`0x4000`) offsets, which clustered the write
+> heads so feedback was trampled. With the **real short delays** (`0x3F4D`, 176 ms recirc loop), the structure
+> is sound: a 176 ms loop at the recovered feedback gain (~0.6) gives RT60 ≈ 2.6 s. ⚪ **What remains unproven**
+> is the end-to-end demonstration: rebuild the datapath on the real offsets + correctly-aligned control fields
+> and show a coherent, parameter-tracking decay. That is Track E of `docs/plans/224XL-validation-plan.md`.
 
 ---
 
