@@ -62,7 +62,7 @@ Devices on the DAB and when each one **drives** it:
 | FPC (RD AD/) | the **audio-input** micro-op | the current input sample (fixed-point) |
 | FPC (WR DA/) accepts | the **audio-output** micro-op | the DSP drives RES → FPC for output conversion |
 | SBC XREG | when the host reads/writes the bus (config/diagnostics) | host data into/out of the audio path |
-| *(none)* | an **idle** micro-op | bus undriven — *modeled* as holding its last driven value (**assumption**: an undriven tristate bus is not guaranteed to hold a value) |
+| *(none)* | a NOP / unselected micro-op | bus **floats and holds its last driven value** — *schematic-proven*: no pull resistors on DAB0–15 (060-02512), and on a NOP the device-select decode U47/U48 (060-02475) drives nothing |
 
 The register file (ARU) is **written every cycle** from whatever is on the DAB (to the micro-op's write
 address), so the DAB driver each step decides what enters the math. Understanding *who drives the DAB on
@@ -227,13 +227,16 @@ The datapath that executes the math. Contents and the constraints that shape the
 - **4 × 16-bit register file** — the *entire* working set (only four registers), holding operands taken from
   the DAB (a DMEM read, the FPC input, the SBC XREG, or the result-register feedback).
 - **Serial 16 × 6-bit two's-complement multiplier** with saturation logic — a shift-and-add multiply spread
-  across AS0/AS1/AS2 (two shift-adds per state). The coefficient is **6 bits** (manual §3.7). Its fixed-point
-  scaling — e.g. a /32 LSB giving roughly ±0…2.0 — is **inferred from reverse engineering (the "ADD'L MULT"
-  diagnostic), not stated in the manual.** Every gain, filter coefficient, and feedback gain is quantized to
-  these 6 bits.
-- **20-bit saturating accumulator** — on overflow it forces the most-positive / most-negative value (manual
-  §3.7) rather than wrapping; a >1 coefficient on a large operand rails it, which is part of the sound and a
-  real hazard. (The exact rail magnitude — often taken as ±2¹⁸ — is derived, not stated in the manual.)
+  across AS0/AS1/AS2 (two shift-adds per state). The coefficient is **6 bits at a /32 scale** (value 32 = ×1.0,
+  range ≈ ±2.0). **Schematic-proven** (060-01318): the result register (74F374 U43/U44) latches partial-product
+  bits **PP3..PP18** (= product ≫3), while the operand enters the multiplier with its low 3 bits tied to 0 (=
+  operand ≪3, manual §3.7) → net ×C/32. Corroborated by the firmware multiplier self-test (a +42/32 = 1.3125
+  coefficient is only representable by a 6-bit field at /32, not /64). Every gain, filter coefficient, and
+  feedback gain is quantized to these 6 bits.
+- **20-bit saturating accumulator** — on overflow the **74F157 saturation muxes (U33–U37)** force the top two
+  bits equal to the sign and the low 18 bits to its complement, giving **+0x3FFFF (+2¹⁸−1) / −0x40000 (−2¹⁸)** —
+  a **schematic-proven** rail of **±2¹⁸** (060-01318; overflow detected by the U42 XOR of the top two sum bits).
+  A >1 coefficient on a large operand rails it — real hardware behavior, part of the sound and a real hazard.
 - **16-bit result register (RES)** — buffers the MAC output onto the DAB so the multiplier can start the next
   product without waiting for the previous result to be consumed. RES is the **feedback node**: RES → DAB →
   register file re-enters the math; RES → DAB → DMEM stores into a delay line.
