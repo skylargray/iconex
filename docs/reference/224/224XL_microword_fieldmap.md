@@ -12,6 +12,15 @@
 > from the firmware-built image (`aru224_emulate.py`), not `0x4000`.** The decoder `tools/aru_datapath.py`
 > still reads `0x4000` and is therefore **producing wrong offsets** — see §"Source of truth".
 
+> **✅ 2026-06-26 validation update** (plan §5; `224XL_trackAC_results.md`, `_trackE2_results.md`). Three
+> load-bearing corrections beyond the Session-11 banner: **(1) the offset↔control alignment is SLOT-INDEX-KEYED**
+> (each bytecode slot `k` keys *both* `offset=offbuf[k]` and `coeff=mem[recbase+0xAD+4k]`) — this was the root
+> cause of the dead tank, not a value bug. **(2) The 0x4000 image's OFST decodes RAW** (`l0|l1<<8`, 120/128 vs
+> `tap_map`); `aru_datapath`'s `~` **inversion was the bug** — only ~5 structural head steps (lane0→`0x89`) are
+> genuinely repacked. **(3) Physical `delay = +offset`** (addr = CPC − offset); `delay = −offset` is refuted.
+> The control lanes 2,3 of the live 0x4000 image are byte-identical to `decode_image` (authoritative). The lone
+> open item for a working datapath is the **section grouping** (which microwords form one allpass/comb section).
+
 ## The 32-bit microword — field map (bit MEANINGS) ✅/🟡
 
 The ARU microword is 32 bits = 4 stored bytes (lanes 0–3 = MI0–7 / MI8–15 / MI16–23 / MI24–31).

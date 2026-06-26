@@ -191,3 +191,55 @@ The 224XL decode is "validated" when: (1) Track A has a written, ROM-derived off
 derivation; (2) Track B's faithful ARU passes POST unsuppressed (or the failure is fully characterized);
 (3) Track E produces a coherent, parameter-tracking reverb for ≥3 programs; and (4) every ✅ in §1 has at
 least one **non-circular** support. Anything not meeting that bar stays labeled 🟡/🔵/🟠/⚪ — honestly.
+
+---
+
+## 5. Execution results (2026-06-26)
+
+All six tracks were run as adversarial multi-agent workflows (finder → independent skeptic → synthesis;
+~30 agents). Per-track writeups: `224XL_trackAC_results.md`, `_trackB_results.md`, `_trackD_results.md`,
+`_trackE_results.md`, `_trackE2_results.md` (in `docs/reference/224/`). **Definition-of-done: items 1, 2, 4
+met; item 3 (coherent reverb) NOT met — but the blocker is now reduced to a single named sub-problem.**
+
+### ✅ Newly CONFIRMED (non-circular)
+- **`delay = f(stored bytes, SIZE)` is ROM-derived** (Track A): an independent from-scratch B55B
+  reimplementation reproduces `tap_map(0xB800)` **128/128**. Units = **samples**; no `>>1/<<1` on the offset.
+- **SIZE scaling resolved** (Track A): the "19679 vs 6008" discrepancy is the *same* recirc tap (baked 6007)
+  at SIZE=0 vs SIZE=max, via `BASE=(var_DA+1)+k·(stepscale−16)`. Retires the "176 ms vs 577 ms loop" question.
+- **Offset↔control alignment is SLOT-INDEX-KEYED, not step-sequential** (Track A): index `k` keys *both*
+  `offset=offbuf[k]` and `coeff=mem[recbase+0xAD+4k]`. **This is the root cause of Session 11's dead tank**
+  (naive same-index pairing was wrong).
+- **POST latch + register self-tests PASS un-suppressed on a faithful ARU** (Track B): non-trivially (the
+  regfile must store 4 distinct words) — validates the **register file, device decode, /32 unity path, and the
+  SBC↔ARU single-step I/O protocol** by the firmware's own checks.
+- **Physical bounds clean across all 20 programs** (Track D): 0 active delays ≥ the 65536-sample DMEM wrap,
+  0 coefficients over the 7-bit rail, even swept to max SIZE.
+- **FE and non-FE build paths encode the same predelay→recirc→multitap grammar** (Track D), 20/20.
+- **`mem[0x4000:0x4200]` is the real per-program WCS image the hardware reads directly** (Track A/C; no
+  OUT-stream upload). Its **offsets read RAW** (`l0|l1<<8`) match `tap_map` **120/128** at the live SIZE;
+  its control lanes are byte-identical to `decode_image` over 110 steps.
+
+### ❌ REFUTED / corrected
+- **`delay = −offset`** → physical **delay = +offset** (addr = CPC − offset); negatives are special
+  input/write/sentinel taps.
+- **"0x4000 is wholesale-garbage / decodes to all zeros for non-FE"** → 0x4000 is fully populated; the
+  *offsets are readable RAW* (120/128). `aru_datapath`'s bug was a **bitwise inversion** (`~`), not a repack;
+  only ~5 structural head steps (lane0→`0x89`) are genuinely repacked. The earlier "all zeros for CHAMBER"
+  was a sampling artifact (its active steps start at step 28; early steps are `0xFF` fill).
+- **The "§5.7 HP-signature" self-test** → those `29F3/3696` values are external analyzer probe readings,
+  **absent from the ROM**; the real on-board ARU POST is the latch + walking-pattern register test.
+- **The "+0x33 modulated-tank duplication" rule** (index diffs are 0x33/0x34/0x04, not constant).
+- **The `record_name_map.md` "recirc loop" column** is contaminated by shared negative sentinels
+  (−12289 in 20/20, −1 in 20/20); recompute over positive in-band taps. Unity count is **18/20**, not 19/20.
+
+### ⚪ Remaining open (the frontier)
+- **★ SECTION GROUPING (the lone blocker to a coherent reverb):** every per-microword *field* is now correct,
+  but which consecutive microwords form one allpass/comb section — i.e. which XFER/write-back closes which
+  read-tap's loop — is undetermined. With correct routing the loop *starves* (DEAD), not over-unities: the
+  recirc tap carries `cmag=0` while strong gains sit on unpaired taps, and the feedback write-back fires
+  earlier in step order than the read. This is a MAC-block / 100-microstep execution-order question.
+- **Multiplier bit-exactness** needs the gate-level modified-Booth serial multiply (value-level `(x<<3)·cs>>5`
+  is off by exactly 1 LSB on negative coefficients) — Track B (matters for the C++ golden, not the audio).
+- **CSIGN polarity** (1→pos per POST vs 1→neg per `aru_datapath`) is non-discriminating until the comb gain
+  is correctly placed on the recirc loop — resolve alongside section grouping.
+- **The 5 repacked head steps'** offset encoding (lane0→`0x89`) and the **U42 multibus** bus-test register.

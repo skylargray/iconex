@@ -1,5 +1,13 @@
 # 224XL v8.2.1 - record -> program-name + reverb-algorithm map
 
+> **⚠️ 2026-06-26 validation correction** (see `docs/plans/224XL-validation-plan.md` §5, `224XL_trackD_results.md`):
+> (1) **Delay convention is `delay = +offset`** (samples; addr = CPC − offset), NOT `delay = −offset`. The
+> sensible taps (128, 1756, 2242, 6008…) are stored *positive*. (2) The **"recirc loop" column below is
+> contaminated** — it counts the magnitudes of *shared negative sentinel* offsets (−12289 in 20/20 programs,
+> −1 in 20/20, −4097 in 19/20), not per-program feedback loops. The clean per-program recirc = the most-reused
+> **positive in-band** tap (e.g. CONCERT = 6008 samp / 176 ms). (3) **18/20 programs reach unity** (CHAMBER 0.976
+> AND M BAND DELAY 0.843 are sub-unity), not 19/20. Names + delays + gains themselves are validated.
+
 Recovered by booting the **real** v8.2.1 firmware in the Z80 emulator past its DSP power-up
 self-test and reading the program name the firmware transmits to the LARC display, then
 decoding each record's delay tap-map + coefficient gains. Tools: `tools/boot_xl.py`
