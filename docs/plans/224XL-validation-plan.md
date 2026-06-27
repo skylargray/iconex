@@ -233,11 +233,16 @@ met; item 3 (coherent reverb) NOT met — but the blocker is now reduced to a si
   (−12289 in 20/20, −1 in 20/20); recompute over positive in-band taps. Unity count is **18/20**, not 19/20.
 
 ### ⚪ Remaining open (the frontier)
-- **★ SECTION GROUPING (the lone blocker to a coherent reverb):** every per-microword *field* is now correct,
-  but which consecutive microwords form one allpass/comb section — i.e. which XFER/write-back closes which
-  read-tap's loop — is undetermined. With correct routing the loop *starves* (DEAD), not over-unities: the
-  recirc tap carries `cmag=0` while strong gains sit on unpaired taps, and the feedback write-back fires
-  earlier in step order than the read. This is a MAC-block / 100-microstep execution-order question.
+- **★ READ-TAP FEEDBACK ROUTING (the lone blocker to a coherent reverb), now pinned to the bit level:** the
+  structure is a correct multi-tap tank (−4097 write head + read taps 6835/8211/18319/20617/20873 → 320–731 ms
+  comb loops) + allpass diffuser chains. But the recirc read tap **s23** (+6835, `cmag=0`) writes its delayed
+  sample to **R3 (WA=3)** and the **next step s24** (also `WA=3`) **overwrites R3** before s25 can read it → the
+  feedback is discarded → the write head fires nonzero only on sample 0 → one echo at 10932 samp (320 ms) then
+  DEAD. **Ruled out as the fix (direct test):** all 3 MAC-capture timing models, and the corrected RAW-offset
+  decode — none close the loop. Same wall as Session 11, now confirmed under the full validated decode. **Needs
+  hardware ground truth** (060-01318): when a DMEM-read step has `WA=3 & cmag=0`, how does the read value reach
+  the accumulator — a direct DMEM-read→multiplier path bypassing the register file (Fig 3.3), or `WA=3` hold/latch
+  semantics? Can't be modeled further without fitting (forbidden).
 - **Multiplier bit-exactness** needs the gate-level modified-Booth serial multiply (value-level `(x<<3)·cs>>5`
   is off by exactly 1 LSB on negative coefficients) — Track B (matters for the C++ golden, not the audio).
 - **CSIGN polarity** (1→pos per POST vs 1→neg per `aru_datapath`) is non-discriminating until the comb gain
