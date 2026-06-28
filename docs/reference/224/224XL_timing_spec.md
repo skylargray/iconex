@@ -80,8 +80,8 @@
 | RA1,RA0 | WCS->regfile | control | microword read-addr bits | high | regfile read address valid i1.AS1 -> i2.AS0 (owner-read) |
 | S1,S0 | T&C (fixed schedule) | control | fixed per-AS schedule | high | 74194 mode: LOAD@i1.AS2, SHIFT-right@i2.AS0 & i2.AS1 (owner-read) |
 | SHIFT REGISTER | ARU | data | operand F shifted | high | operand weight per AS, i2.AS0-AS2 (owner-corrected: shifted right to start at i2.AS0) |
-| M1 | T&C U11 -> ARU Booth | control | coeff C0/-C5/ serialized (odd) by U11 | high | odd Booth stream, i2.AS0-AS2 (owner-corrected) |
-| M0 | T&C U10 -> ARU Booth | control | coeff C0/-C5/ serialized (even) by U10 | high | even Booth stream, i2.AS0-AS2 (owner-corrected) |
+| M1 | T&C U10 -> ARU Booth | control | coeff C0/-C5/ serialized (odd) by U10 | high | odd Booth stream, i2.AS0-AS2. Chip = U10 (per T&C trace 060-02475 sh.2: U10 P0/P1/P2=C1//C3//C5/, /Q3=M1/). |
+| M0 | T&C U11 -> ARU Booth | control | coeff C0/-C5/ serialized (even) by U11 | high | even Booth stream, i2.AS0-AS2. Chip = U11 (per T&C trace 060-02475 sh.2: U11 P0/P1/P2=C0//C2//C4/, /Q3=M0/). |
 | PARTIAL PRODUCT REG | ARU | data | Booth partial products | med | i2.AS0-AS2 (NOT explicitly owner-stated; kept one AS ahead of the accumulate = the pipeline register. CONFIRM) |
 | CSIGN | WCS | control | microword sign bit | high | valid i2.AS1 -> i3.AS0 (owner-read) |
 | ACCUMULATOR | ARU | data | running sum | high | accumulate i2.AS1 -> i3.AS0 (owner-corrected: shifted right one cell). ZERO/ clears it at i2.AS0 so it reads 0 at i2.AS1 |
@@ -215,8 +215,8 @@ The model generates **fixed-cadence** signals straight from the MS/AS counters; 
 | RA1,RA0 | fig34 | **NO (decode)** | microword read-addr bits |
 | S1,S0 | fig34 | yes | fixed per-AS schedule |
 | SHIFT REGISTER | fig34 | **NO (decode)** | operand F shifted |
-| M1 | fig34 | **NO (decode)** | coeff C0/-C5/ serialized (odd) by U11 |
-| M0 | fig34 | **NO (decode)** | coeff C0/-C5/ serialized (even) by U10 |
+| M1 | fig34 | **NO (decode)** | coeff C0/-C5/ serialized (odd) by U10 |
+| M0 | fig34 | **NO (decode)** | coeff C0/-C5/ serialized (even) by U11 |
 | PARTIAL PRODUCT REG | fig34 | **NO (decode)** | Booth partial products |
 | CSIGN | fig34 | **NO (decode)** | microword sign bit |
 | ACCUMULATOR | fig34 | **NO (decode)** | running sum |

@@ -25,10 +25,10 @@
 | 4 | **ARU PP/accumulator back-end** | ✅ **transcribed** (§4 — from the owner pin trace) |
 | 4F | **ARU multiplier front-end** (regfile, shifters, Booth, M0/M1, PP adders) | ✅ **transcribed + owner-confirmed** (§4F; consistency-clean — §Q) |
 | 5 | **DMEM address path / DRAM / XREG** | ✅ **transcribed** (§5 — owner hand-trace 060-02512) |
-| 2 | Device decode / DAB-driver select | 🟡 **DMEM-resident I/O decode done** (§2D, 060-02512); T&C DAB-driver select (`tc_U47/48/49`, 060-02475) still ⚪ |
-| 6 | Clock / strobe distribution | 🟡 **DMEM RAS/CAS/ROW-SEL strobe-gen done** (§6D, 060-02512; fig-3.3); T&C clock-gen (MC/MS/AS, 060-02475) still ⚪ — timing in `224XL_timing_spec.md` |
-| 3 | WCS-output → control-input wiring | ⚪ not started (060-02475 + 02512) |
-| 1 | DAB bus (full driver/receiver/enable summary) | 🟡 partial — ARU result-reg §4.8, regfile D-in §4F.1, DMEM DRAM + XREG §5.5/§5.6; full per-cycle enable summary pends group 3 |
+| 3 | **WCS-output → control-input wiring** | ✅ **transcribed** (§3 — T&C sheet 2; full microword field map §G3R) |
+| 2 | **Device decode / DAB-driver select** | ✅ **transcribed** — DMEM I/O decode (§2D) + T&C device decode `tc_U47/U49/U48` (§2T) |
+| 6 | Clock / strobe distribution | 🟡 **DMEM strobe-gen (§6D) + T&C clock *distribution* mapped**; T&C sheet-1 clock *generation* (MC/MS/AS/PLL) still ⚪ §G3T — timing already in `224XL_timing_spec.md` |
+| 1 | DAB bus (full driver/receiver/enable summary) | 🟡 enables now traced (RDRREG/, RD AD/, RD XREG/, MEMR//MEMW/); ARU result-reg §4.8, regfile §4F.1, DMEM DRAM/XREG §5.5/§5.6. FPC driver pends (scoped out) |
 
 ---
 
@@ -759,6 +759,243 @@ DMEM-resident sections (sheet 2) + the three sheet-1 sections:
 
 ---
 
+# Net-group 3 — T&C: WCS store + microword field decode  ✅
+
+**Source:** owner hand-trace `docs/reference/224/224XL TC pinouts from 060-02475-D_1.txt` (board 060-02475-D,
+**sheet 2 of 2**; sheet 1 = the clock/PLL generator + FPC + some inverter sections, still `placeholder` ⚪).
+Re-keyed to verified `parts/*.v`; pin-label-audited (every chip matches its `.v`). Board prefix `tc_`. Every net
+= **✅ owner trace** unless marked. **Sheet-1 / SBC origins** (`tcCLKA`, `ARUCK`, `ARUCKE`, `ARUCKE/`, `AS0`,
+`AS1/`, `MS6`, `MS7`, `ADR SEL/`, `ADR0–8/`, `GSTB/`, `WSTB/`, `MWTC/`, `CS`, `DAB RSTB`, `DAB RSTB/`, `HALT/`,
+SBC `DATA0–7/`) → **§G3T**. ⚠ `ARUCK`, `ARUCKE`, `ARUCKE/` are **three distinct nets** (owner-confirmed) — do
+not merge.
+
+**Chips:** `tc_U43/U29/U15/U2` MCM68B10 WCS SRAM · `tc_U44/U30/U16/U3` AM8304B transceivers ·
+`tc_U46` 74LS155 R/W decode · `tc_U42/U28` 74F157 addr mux · `tc_U14/U1` 74LS163 PC counter ·
+`tc_U45/U31` 74F374 offset latch · `tc_U17/U18/U4/U5` 74S163 (as load-registers) control fields ·
+`tc_U19` 74LS377 control output reg · `tc_U11/U10` 74195 coeff serializer · `tc_U20` 74S112 CSIGN · `tc_U25` 74S74 RESET.
+
+## 3.0 Dataflow (orientation)
+```
+ WCS store tc_U43/U29/U15/U2 (4× MCM68B10) ── MI0..31 ──► [bidirectional microword bus]
+   addr tcA0..6 ◄─ mux tc_U42/U28 (SEL=ADR SEL/) ◄─ { ADR2..8/ (SBC) | PC0..6 (tc_U14/U1) }
+   R/W ◄─ tc_U46 (LS155, from ADR0//ADR1/) ;  SBC access via tc_U44/U30/U16/U3 ◄─ DATA0..7/ ─►
+ MI0..15  ─► offset latch tc_U45/U31 (F374, clk tcCLKA) ─► OFST0..15/   → DMEM adders §5.2  [DELAY]
+ MI16..31 ─► field regs tc_U17/U18/U4/U5 (S163 load-mode) + tc_U19 (LS377, clk ARUCKE) ─►
+             MEMAC, RA0//RA1/, WA0//WA1/, PROT, XFER, DP, C0..5/
+ C0..5/   ─► serializer tc_U11/U10 (74195, clk ARUCKE, load AS1/) ─► M0//M1/   → ARU §4F.6  [GAIN/Booth]
+ CSIGN/ ◄─ tc_U20 (S112 JK, clk ARUCKE/)   → ARU §4F.8
+ device decode (net-group 2T): tc_U47/U49/U48 ─► MEMW//MEMR//RD AD//RD XREG//WR XREG//WR DA//RDRREG//ZERO/
+```
+The **microword field map is now schematic-traced** (was decode-belief): see §3.6–3.9 + the field-map table in §G3R.
+
+> **✅ Independent confirmation — Service Manual §3.5 (T&C) / §3.6 / §3.7, verbatim, 2026-06-28:**
+> - *WCS (§3.1):* "a writable control store (WCS), formed by **four 128 × 8 static RAMs (U2, U15, U29, U43)**" +
+>   "clocked by a 32-bit microinstruction register … the data on the microinstruction bus, **MI0–MI31**."
+> - *PC + addr mux (§3.4/§3.5):* "the WCS is cycled by an **eight bit program counter (U1, U14)**. A **100-step**
+>   control program … reset at count 99 by a RESET signal … the address from the counter is **multiplexed with the
+>   address from the SBC module**."
+> - *Offset (§3.6):* "the **least significant 16 bits of the WCS word** are normally used as an address for the
+>   data memory" → offset = MI0–15.
+> - *Coeff serializer (§3.9):* "the multiplier coefficient … **C0/ to C5/, is serialized into an even and an odd
+>   stream, M0/ and M1/, by shift registers U10 and U11**." (Manual doesn't say which→M0 vs M1; the trace pins
+>   **M0/←U11, M1/←U10**.)
+> - *Reg file (§3.7):* "the 4 × 16-bit register file (U29–U32) has independent **write addresses (WA0, WA1) and
+>   read addresses (RA0, RA1), controlled by the microinstruction**."
+> - *Device decode (§2T):* §3.5 names the control decoders "**U47/U48/U49/U32/U34**" — exactly the §2T chips.
+>
+> **Absent in prose (schematic-only, no conflict):** part numbers (6810/74195) and bit numbers (e.g. MEMAC=MI17).
+> **Terminology:** SM §3.7 calls the multiply "**modified shift and add**" (not "Booth"); the even/odd M0//M1/
+> serialization is the same radix-4 mechanism — we keep "Booth" but note the manual's wording.
+> **Manual-internal note:** §3.5 names the WCS RAMs U2/U15/U29/U43 (= our trace) while the §5 diagnostic names
+> them U3/U18/U33/U48 — a designator inconsistency *in the manual*; the schematic/trace designators govern.
+
+## 3.1 WCS store — `tc_U43/U29/U15/U2` (MCM68B10, 128×8) — the 32-bit microword ✅
+Four SRAMs = MI0–31 × 128 steps. **MI bus is bidirectional** (driven by the SRAM on a WCS read/run, or by the
+transceiver §3.2 on an SBC write; read by the field latches §3.6–3.7). Common per chip: GND(1)=GND, CS0(10)=**CS**,
+CS3(13)=**CS** (the two active-HIGH selects), /CS1(11)//CS2(12)//CS4(14)//CS5(15)=GND, A0..A6(pins 23,22,21,20,19,18,17)=**tcA0..tcA6**.
+| SRAM | D0–D7 (pins 2–9) | R/W (pin16) |
+|---|---|---|
+| tc_U43 | MI0..MI7 | tc_U46.pin12 & tc_U44.pin11 |
+| tc_U29 | MI8..MI15 | tc_U46.pin11 & tc_U30.pin11 |
+| tc_U15 | MI16..MI23 | tc_U46.pin10 & tc_U16.pin11 |
+| tc_U2 | MI24..MI31 | tc_U46.pin9 & tc_U3.pin11 |
+
+## 3.2 WCS data transceivers — `tc_U44/U30/U16/U3` (AM8304B) — MI ↔ SBC DATA ✅
+A-port = MI bus, B-port = SBC `DATA0–7/`; CD (chip-disable, pin9) ← U46 dec-1; T/R (direction, pin11) ← U46 dec-2
+(shared with the SRAM R/W). B0..B7 = pins 19,18,17,16,15,14,13,12 = DATA0/..DATA7/.
+| Xcvr | A0–A7 (pins 1–8) | B0–B7 = DATA0/..DATA7/ | CD (pin9) | T/R (pin11) |
+|---|---|---|---|---|
+| tc_U44 | MI0..MI7 | DATA0/..DATA7/ | tc_U46.pin4 | tc_U46.pin12 & tc_U43.pin16 |
+| tc_U30 | MI8..MI15 | DATA0/..DATA7/ | tc_U46.pin5 | tc_U46.pin11 & tc_U29.pin16 |
+| tc_U16 | MI16..MI23 | DATA0/..DATA7/ | tc_U46.pin6 | tc_U46.pin10 & tc_U15.pin16 |
+| tc_U3 | MI24..MI31 | DATA0/..DATA7/ | tc_U46.pin7 | tc_U46.pin9 & tc_U2.pin16 |
+
+## 3.3 WCS R/W decode — `tc_U46` (74LS155) ✅
+Select A(13)=**ADR0/**, B(3)=**ADR1/** pick one of the 4 microword bytes. dec-1 (1C(1)=+5V, /1G(2)=**GSTB/**) →
+the transceiver CDs; dec-2 (2C(15)=**MWTC/**, /2G(14)=**WSTB/**) → SRAM R/W + transceiver T/R.
+| out | pin | →  | out | pin | → |
+|---|---|---|---|---|---|
+| 1/Y0 | 7 | tc_U3.pin9 (CD) | 2/Y0 | 9 | tc_U3.pin11 & tc_U2.pin16 |
+| 1/Y1 | 6 | tc_U16.pin9 | 2/Y1 | 10 | tc_U16.pin11 & tc_U15.pin16 |
+| 1/Y2 | 5 | tc_U30.pin9 | 2/Y2 | 11 | tc_U30.pin11 & tc_U29.pin16 |
+| 1/Y3 | 4 | tc_U44.pin9 | 2/Y3 | 12 | tc_U44.pin11 & tc_U43.pin16 |
+
+## 3.4 WCS address mux — `tc_U42/U28` (74F157) → `tcA0..tcA6` ✅
+SEL(1)=**ADR SEL/**, /G(15)=GND. A-side = SBC ADR bus, B-side = PC (§3.5). Per 74157: SEL low→A (SBC accesses
+WCS), SEL high→B (WCS free-runs off the PC).
+| tcA | mux Y | A-input (SBC) | B-input (PC) |
+|---|---|---|---|
+| tcA0 | tc_U42.pin4 | ADR2/ (pin2) | PC0 (pin3) |
+| tcA1 | tc_U42.pin7 | ADR3/ (pin5) | PC1 (pin6) |
+| tcA2 | tc_U42.pin9 | ADR4/ (pin11) | PC2 (pin10) |
+| tcA3 | tc_U42.pin12 | ADR5/ (pin14) | PC3 (pin13) |
+| tcA4 | tc_U28.pin4 | ADR6/ (pin2) | PC4 (pin3) |
+| tcA5 | tc_U28.pin7 | ADR7/ (pin5) | PC5 (pin6) |
+| tcA6 | tc_U28.pin9 | ADR8/ (pin11) | PC6 (pin10) |
+> tc_U28 Y4(12)/B4(13)/A4(14) = n/c (only 7 address bits used; MCM68B10 = A0–A6).
+
+## 3.5 PC — microcode step counter `tc_U14/U1` (74LS163) ✅
+7-bit program counter (the WCS sequencer). Counts on **DAB RSTB/**, sync-cleared by `inv(RESET)` (tc_U33.pin12),
+count-enabled by **HALT/**. A–D = n/c, /LD = +5V → count-only.
+| | /CLR(1) | CLK(2) | ENP(7) | ENT(10) | /LD(9) | Q → PC |
+|---|---|---|---|---|---|---|
+| tc_U14 | tc_U33.pin12 & tc_U1.pin1 | DAB RSTB/ | +5V | HALT/ | +5V | QA(14)/QB(13)/QC(12)/QD(11) = PC0/PC1/PC2/PC3 |
+| tc_U1 | tc_U33.pin12 & tc_U14.pin1 | DAB RSTB/ | +5V | tc_U14.pin15 (RCO) | +5V | QA(14)/QB(13)/QC(12) = PC4/PC5/PC6; QD(11) n/c |
+> Cascade: tc_U14.pin15 (RCO) → tc_U1.pin10 (ENT). PC0–6 → the addr-mux B-side (§3.4).
+
+## 3.6 Offset latch — `tc_U45/U31` (74F374): MI0–15 → OFST0–15/ ✅ **[the delay]**
+/OE = GND (always enabled), CP = **tcCLKA**. The 74F374 D→Q pin scramble self-cancels so that **MI*n* → OFST*n*/
+bit-for-bit** (n = 0–15). Detail (tc_U45 = low byte):
+| D pin | net | Q pin | net |
+|---|---|---|---|
+| D0(3) | MI1 | Q0(2) | OFST1/ |
+| D1(4) | MI3 | Q1(5) | OFST3/ |
+| D2(7) | MI5 | Q2(6) | OFST5/ |
+| D3(8) | MI7 | Q3(9) | OFST7/ |
+| D4(13) | MI6 | Q4(12) | OFST6/ |
+| D5(14) | MI4 | Q5(15) | OFST4/ |
+| D6(17) | MI2 | Q6(16) | OFST2/ |
+| D7(18) | MI0 | Q7(19) | OFST0/ |
+> `tc_U31` is identical for MI8–15 → OFST8–15/. `OFST0–15/` → DMEM offset adders (§5.2) + DMEM read-back
+> (§5.7) + tc_U32/U47/U49/U34 (device decode, §2T). **This resolves the DMEM `OFST0–15/` origin (§G3D).**
+
+## 3.7 Control-field registers — `tc_U17/U18/U4/U5` (74S163, used as load-registers): MI16–31 ✅
+**Used as 4-bit registers, not counters:** /LD = GND, ENP = ENT = GND → load A–D into Q on each clock. CLK =
+**tcCLKA**, /CLR = **ADR SEL/**. A(3)/B(4)/C(5)/D(6) ← MI; QA(14)/QB(13)/QC(12)/QD(11) → control.
+| Reg | A/B/C/D ← | QA → | QB → | QC → | QD → |
+|---|---|---|---|---|---|
+| tc_U17 | MI16/MI17/MI18/MI19 | tc_U47.pin2 | **MEMAC** | **WA0/** | **WA1/** |
+| tc_U18 | MI20/MI21/MI22/MI23 | tc_U19.pin4 | tc_U19.pin7 | **PROT** | tc_U19.pin13 |
+| tc_U4 | MI24/MI25/MI26/MI27 | tc_U19.pin14 | tc_U19.pin17 | **C0/** | **C1/** |
+| tc_U5 | MI28/MI29/MI30/MI31 | **C2/** | **C3/** | **C4/** | **C5/** |
+> ⇒ **MEMAC = MI17**, **WA0/=MI18, WA1/=MI19**, **PROT = MI22**, **C0/–C5/ = MI26–31**. MI16 → device decode
+> (tc_U47.pin2). MI20/MI21/MI23 and MI24/MI25 pass into tc_U19 (§3.8). **Resolves DMEM `MEMAC` origin (§G3D)**
+> and ARU `WA0/WA1` origin (§G3).
+
+## 3.8 Control output register — `tc_U19` (74LS377) ✅
+/E(1) = **AS0**, CP(11) = **ARUCKE**.
+| D pin | source | Q pin | output |
+|---|---|---|---|
+| D0(3) | tc_U34.pin3 | Q0(2) | **DP** |
+| D1(4) | tc_U18.pin14 (MI20) | Q1(5) | **RA0/** |
+| D2(7) | tc_U18.pin13 (MI21) | Q2(6) | **RA1/** |
+| D3(8) | **RESET/** | Q3(9) | **RESET** (see §3.11 dual-drive flag) |
+| D4(13) | tc_U18.pin11 (MI23) | Q4(12) | tc_U34.pin13 & tc_U33.pin9 |
+| D5(14) | tc_U4.pin14 (MI24) | Q5(15) | **XFER** |
+| D6(17) | tc_U4.pin13 (MI25) | Q6(16) | tc_U48.pin12 (→ ZERO/ gate) |
+| D7(18) | n/c | Q7(19) | n/c |
+> ⇒ **RA0/=MI20, RA1/=MI21, XFER=MI24** (latched at ARUCKE). **Resolves ARU `RA0/RA1` origin (§G3).** `XFER`
+> (Q5) feeds the result-reg transfer (the ARU `XFER CK` path); `ZERO/` is formed at tc_U48 from Q6 (§2T.3).
+
+## 3.9 Coefficient serializer — `tc_U11/U10` (74195): C0–5/ → M0//M1/ ✅ **[Booth / gain]**
+/CLR = +5V, CLK = **ARUCKE**, SH//LD = **AS1/** (load when low, else shift-right). P3 = Q2 feedback (3-step serialize).
+| Reg | P0/P1/P2 | /Q3 (pin11) |
+|---|---|---|
+| **tc_U11** | C0/ / C2/ / C4/ (even) | **M0/** |
+| **tc_U10** | C1/ / C3/ / C5/ (odd) | **M1/** |
+> ⇒ **M0/ = serialized EVEN coeff (C4,C2,C0 across the 3 AS), M1/ = ODD (C5,C3,C1)** — matches fig-3.4. **NOTE
+> the chip assignment: M0/ ← tc_U11, M1/ ← tc_U10** (the timing-spec's prior "M0 by U10 / M1 by U11" was
+> reversed — corrected 2026-06-28). `M0//M1/` → ARU `aru_U54` Booth-select inverters (§4F.6). **Resolves ARU
+> `M0//M1/` origin (§G3).**
+
+## 3.10 CSIGN generator — `tc_U20` (74S112, JK FF-2) ✅
+2J(11) = tc_U34.pin11, 2K(12) = tc_U34.pin8, 2CLK(13) = **ARUCKE/**, 2/PRE(10) = +5V, 2/CLR(14) = +5V,
+2Q(9) = **CSIGN/**. (FF-1 unused.) `CSIGN/` → ARU `aru_U2.pin11/pin13` (§4F.8). **Resolves ARU `CSIGN/` origin (§G3).**
+> **⚠ CORRECTS a prior belief:** `224XL_microword_fieldmap.md` had `CSIGN = lane-2 bit 7 (≈ MI23)` as a *stored
+> microword bit*. The trace shows **CSIGN/ is NOT a direct MI bit** — it is the `tc_U20` JK-FF output: a clocked
+> (ARUCKE/), AS0-gated function of MI23 (MI23 → tc_U18.QD → tc_U19.Q4 → tc_U34 g3/g4 → JK J/K). A faithful model
+> must replicate the JK toggle, not read CSIGN as a microword bit. (Verified by the field-map cross-check, 2026-06-28.)
+
+## 3.11 RESET generator — `tc_U25` (74S74, FF-1) ✅
+1D(2) = **RESET**, 1CLK(3) = **tcCLKA**, 1/PRE(4) = +5V, 1/CLR(1) = tc_U37.pin8 (= inv MS6), 1/Q(6) = **RESET/**.
+(FF-2 unused.) `RESET/` → tc_U19.pin8 (§3.8).
+> ⚠ **RESET dual-drive — flag (§G-Q):** the `RESET` net is listed with **two outputs** — `tc_U34.pin6` (74LS08
+> 2Y, = tcWR·OFST3/) **and** `tc_U19.pin9` (74LS377 Q3) — plus loads `tc_U25.pin2`, `tc_U33.pin13`. Two
+> totem-pole drivers on one net is a conflict; confirm whether these are one net (and how the contention is
+> resolved) or two same-named nets. Transcribed faithfully; flagged for owner.
+
+---
+
+# Net-group 2 (T&C) — device decode `tc_U47/U49/U48` (+ `tc_U32/U34`)  ✅
+
+**Source:** same T&C sheet-2 trace. Turns the microword (MEMAC, MI16, offset bits) + `tcWR`/`MS7`/`DAB RSTB` into
+the bus-driver / DMEM-r/w / strobe set. (`tcWR` = inv(tc_U47.pin5) at tc_U33; `tcWR`, `MS7`, `DAB RSTB`, `AS0`
+context per §G3T.)
+
+## 2T.1 `tc_U47` (74LS139) — dual decoder ✅
+1E\(1)=GND (dec-1 always enabled); dec-1 select {1A1(3)=**MEMAC** & tc_U17.pin13, 1A0(2)=tc_U17.pin14 (=MI16)};
+dec-2 enable 2E\(15)=tc_U48.pin6, select {2A1(13)=**OFST13/**, 2A0(14)=**OFST12/**}.
+| dec-1 out | pin | net | dec-2 out | pin | net |
+|---|---|---|---|---|---|
+| 1Y0 | 4 | n/c | 2Y0 | 12 | n/c |
+| 1Y1 | 5 | tc_U33.pin3 (→ tcWR) | 2Y1 | 11 | tc_U48.pin2 |
+| 1Y2 | 6 | **MEMW/** | 2Y2 | 10 | **RD XREG/** |
+| 1Y3 | 7 | **MEMR/** | 2Y3 | 9 | **RD AD/** |
+> ⇒ when MEMAC: MI16=0→**MEMW/**, MI16=1→**MEMR/**; the {OFST12/,OFST13/} pair selects **RD XREG//RD AD/** on an
+> I/O step. **Resolves DMEM `MEMW/`+`RD XREG/` origins (§G3D)** and ARU/FPC `RD AD/` (the FPC A/D read).
+
+## 2T.2 `tc_U49` (74S10) — triple 3-input NAND (write strobes) ✅
+| Gate | inputs | output |
+|---|---|---|
+| g1 | 1A(1)=MS7, 1B(2)=tcWR, 1C(13)=OFST6/ | 1Y(12) = **WR XREG/** |
+| g2 | 2A(3)=OFST5/, 2B(4)=tcWR, 2C(5)=DAB RSTB | 2Y(6) = **TEST** |
+| g3 | 3A(9)=OFST7/, 3B(10)=+5V, 3C(11)=tcWR | 3Y(8) = **WR DA/** |
+> ⇒ **WR XREG/** = NAND(MS7,tcWR,OFST6/); **WR DA/** = NAND(OFST7/,tcWR); **TEST** = NAND(OFST5/,tcWR,DAB RSTB).
+> **Resolves DMEM `WR XREG/` origin (§G3D)**; `WR DA/` → FPC; matches plan §2 "U49C = WR DA/".
+
+## 2T.3 `tc_U48` (74S00) — quad 2-input NAND (read-reg + zero strobes) ✅
+| Gate | inputs | output |
+|---|---|---|
+| g1 | 1A(1)=MEMW/, 1B(2)=tc_U47.pin11 | 1Y(3) = tc_U48.pin9 |
+| g2 | 2A(4)=tcWR, 2B(5)=DAB RSTB | 2Y(6) = tc_U47.pin15 (dec-2 enable) |
+| g3 | 3A(9)=tc_U48.pin3, 3B(10)=DAB RSTB | 3Y(8) = **RDRREG/** |
+| g4 | 4A(12)=tc_U19.pin16, 4B(13)=AS0 | 4Y(11) = **ZERO/** |
+> ⇒ **RDRREG/** (ARU result-reg output enable, §4.8) and **ZERO/** (ARU accumulator clear, §4.9) are formed here.
+> **Resolves ARU `RDRREG/` + `ZERO/` origins (§G3).**
+
+## 2T.4 `tc_U32` (74LS08) — OFST8–11/ → SDAA–D (to FPC) ✅
+Four AND gates, **both inputs tied to the same OFST/ bit** (owner-confirmed buffers): OFST8/→**SDAD** (pin3),
+OFST9/→**SDAC** (pin11), OFST10/→**SDAB** (pin6), OFST11/→**SDAA** (pin8). All four `SDAx` "used in FPC sheet 1"
+(the D/A output-channel select — the offset low bits double as the D/A select on a D/A step).
+
+## 2T.5 `tc_U34` (74LS08) + inverters `tc_U33` (74LS04) / `tc_U37` (74S04) — glue ✅
+| Chip | gate/sec | net |
+|---|---|---|
+| tc_U34 (AND) | g1 | 1A(1)=tcWR, 1B(2)=OFST4/, 1Y(3)=tc_U19.pin3 (→ DP) |
+| | g2 | 2A(4)=tcWR, 2B(5)=OFST3/, 2Y(6)=**RESET** & tc_U25.pin2 |
+| | g3 | 3A(9)=tc_U33.pin8, 3B(10)=AS0, 3Y(8)=tc_U20.pin12 (CSIGN 2K) |
+| | g4 | 4A(12)=AS0, 4B(13)=tc_U33.pin9 & tc_U19.pin12, 4Y(11)=tc_U20.pin11 (CSIGN 2J) |
+| tc_U33 (LS04) | inv2 | 2A(3)=tc_U47.pin5, 2Y(4)=**tcWR** |
+| | inv4 | 4A(9)=tc_U34.pin13 & tc_U19.pin12, 4Y(8)=tc_U34.pin9 |
+| | inv6 | 6A(13)=RESET, 6Y(12)=tc_U14.pin1 & tc_U1.pin1 (PC /CLR) |
+| | (inv1 n/c; inv3/inv5 on sheet 1) | |
+| tc_U37 (S04) | inv4 | 4A(9)=MS6, 4Y(8)=tc_U25.pin1 (RESET FF clear) |
+| | (inv3 n/c; inv1/2/5/6 on sheet 1) | |
+> `tcWR` = inv(tc_U47.pin5 = dec-1 1Y1) — active when MEMAC=0 & MI16=1. `CSIGN/` JK (tc_U20) is driven from
+> tc_U34 g3/g4 (AS0-gated). `DP` = tc_U19.Q0 latched from tc_U34 g1 (tcWR·OFST4/).
+
+---
+
 # GAPS / QUESTIONS FOR OWNER
 
 > Per Ground Rule 3 these are flagged, not guessed. The ARU-internal gaps are now closed by the owner's expanded
@@ -772,17 +1009,21 @@ adders, carry chain, Σ→product-register feed). Internal-consistency verified.
 Traced in **§4F.8**: `CSIGN/` enters at aru_U2.pin11/pin13; aru_U2 generates both sub-ctrl rails and the adder
 carry-in. `CSIGN/` itself is a WCS/T&C signal (see §G3).
 
-### §G3 — Cross-board signal origins (T&C / WCS) — ⚪ OPEN (next net-groups)
-These are wired/consumed on the ARU but **generated on T&C**: `RDRREG/`, `XFER CK`, `ARUCK`, `ARUCKE/`, `ZERO/`,
-`DAB WSTB/`, `S0`, `S1`, the regfile addresses `RA0/RA1/WA0/WA1`, the Booth selects `M0//M1/`, and `CSIGN/`.
-Resolved by net-groups 2/3/6 (060-02475 + figs 3.2/3.4). `SAT` is generated **on the ARU** (aru_U42, §4.5) ✅.
+### §G3 — Cross-board ARU signal origins (T&C / WCS) — 🟡 MOSTLY RESOLVED by T&C sheet 2
+These are consumed on the ARU but **generated on T&C**. Status after folding 060-02475-D sheet 2:
+- ✅ **Resolved (sheet 2):** `RDRREG/` (§2T.3), `ZERO/` (§2T.3), `RA0//RA1/` (§3.8), `WA0//WA1/` (§3.7),
+  `M0//M1/` (§3.9, M0/←tc_U11 / M1/←tc_U10), `CSIGN/` (§3.10), and `XFER` (§3.8; the microword bit — the
+  `XFER CK` *strobe gating* is on sheet 1, §G3T).
+- ⚪ **Still open (T&C sheet 1 = clock gen, `placeholder`):** `ARUCK`, `ARUCKE`, `ARUCKE/` (three distinct nets),
+  `DAB WSTB/`, `S0`, `S1`, and the `XFER CK` edge. → **§G3T**.
+- `SAT` is generated **on the ARU** (aru_U42, §4.5) ✅.
 
-### §G3D — DMEM cross-board origins + unpopulated structure
-**Consumed on DMEM, generated off-board (⚪ origins, next net-groups on 060-02475 / SBC):**
-- *From the SBC I/O bus:* `ADR0–7/`, `IORC/`, `IOWC/`, `RESET` (the unslashed CPC count-clock / handshake net —
-  its source/role beyond the pin is **not traced**, §5.1), `RD XREG/`, `WR XREG/` (host read/write of the XREG,
-  buffered by dmem_U61E/G).
-- *From T&C:* `MEMAC`, `MEMW/`, `DAB RSTB`, `MC`, `MS1`, and the microword offset `OFST0–15/`.
+### §G3D — DMEM cross-board origins + unpopulated structure — 🟡 MOSTLY RESOLVED by T&C sheet 2
+**Consumed on DMEM, generated off-board. Status after folding 060-02475-D sheet 2:**
+- ✅ **Resolved on T&C (sheet 2):** `MEMAC` = MI17 (§3.7); `MEMW/` (§2T.1); `RD XREG/` (§2T.1); `WR XREG/`
+  (§2T.2); the microword offset `OFST0–15/` = MI0–15 (§3.6); `RESET` (§3.11/§2T.5, = tcWR·OFST3/ via tc_U34).
+- ⚪ **Still open (T&C sheet 1 / SBC):** `DAB RSTB`, `DAB RSTB/`, `MC`, `MS1` (sheet-1 clock gen); `ADR0–7/`,
+  `IORC/`, `IOWC/` (SBC I/O bus). → **§G3T**.
 - *Generated **on** the DMEM* (not gaps): the `WRH/WRL/RDH/RDL XREG/` + `DPORT0–5/` strobes (§2D decoders),
   `CPC CLR` (dmem_U58F), `XACK/`/`HALT/`/`HR//HR1/` (handshake), and `RAS//CAS0//ROW SEL/WR/` (§6D).
 
@@ -794,6 +1035,45 @@ Resolved by net-groups 2/3/6 (060-02475 + figs 3.2/3.4). `SAT` is generated **on
    share net names with the live generator but drive/are-driven-by nothing populated. **Ignore for modeling;**
    the live path is dmem_U43/U44/U45/**U46A**/U59 (§6D). Every dead endpoint is tagged `[dead]` in §6D and in
    the source txt. (`dmem_U58B`, `dmem_U61C`, `dmem_U61D` are likewise dead — they feed only U47/U60.)
+
+### §G3T — Remaining origins: T&C **sheet 1** (clock/PLL gen + FPC) + SBC — ⚪ OPEN
+The only ⚪ left in the netlist. T&C sheet 1 (`placeholder` in the trace txt) holds:
+- **Clock generation:** `MC`, `MS0–8`, `AS0`, `AS1/`, `AS2`, `ARUCK`, `ARUCKE`, `ARUCKE/`, `tcCLKA`,
+  `DAB RSTB`, `DAB RSTB/`, `DAB WSTB/`, `S0`, `S1`, the `XFER CK` edge, `MS6`/`MS7` taps. (mc4044 PLL + counters
+  + MS shift-register + AS grouping.) **Timing already pinned** by `224XL_timing_spec.md` (figs 3.2/3.4) — the
+  model generates these from a counter, so the gate-level gen can be skipped per the agreed scope.
+- **WCS bus-access / SBC interface:** `ADR0–8/`, `ADR SEL/`, `GSTB/`, `WSTB/`, `MWTC/`, `CS`, `IORC/`, `IOWC/`,
+  `HALT/`, SBC `DATA0–7/`. (Program-load path; programs are loaded via the firmware boot, so not needed for the
+  per-sample DSP model.)
+
+### §G3R — ✅ Microword field map (MI0–31) — now SCHEMATIC-TRACED (was decode-belief)
+T&C sheet 2 pins the entire 32-bit microword → control mapping by designator (supersedes the faith-level
+`224XL_microword_fieldmap.md`):
+| MI bits | Field | Where | Destination |
+|---|---|---|---|
+| **MI0–15** | **OFFSET** (delay) | tc_U45/U31 (F374) → OFST0–15/ | DMEM adders §5.2 |
+| MI16 | device-select | tc_U17.QA → tc_U47.pin2 | with MEMAC → MEMW//MEMR/ |
+| **MI17** | **MEMAC** | tc_U17.QB | DMEM access enable |
+| MI18 / MI19 | **WA0/ / WA1/** | tc_U17.QC / QD | ARU regfile write addr |
+| MI20 / MI21 | **RA0/ / RA1/** | tc_U18.QA→U19.Q1 / QB→U19.Q2 | ARU regfile read addr |
+| MI22 | **PROT** | tc_U18.QC | (protect) |
+| MI23 | (gate) | tc_U18.QD → tc_U19.Q4 | → tc_U34/U33 logic |
+| **MI24** | **XFER** | tc_U4.QA → tc_U19.Q5 | ARU result-reg transfer |
+| MI25 | (ZERO gate) | tc_U4.QB → tc_U19.Q6 | → tc_U48 ZERO/ |
+| **MI26–31** | **COEFFICIENT** C0/–C5/ | tc_U4.QC/QD + tc_U5.QA–QD | → serializer → M0//M1/ (gain/Booth) |
+> `CSIGN/` and `DP` are formed combinationally (tc_U20 JK / tc_U19.Q0 from tc_U34), AS0-gated — **not a single MI
+> bit**. This map is the authoritative replacement for the abstract field map. **Field-map cross-check (2026-06-28)
+> vs `224XL_microword_fieldmap.md`:** 7/8 beliefs ✅ CONFIRMED (offset=MI0–15, MI16=device-select, MEMAC=MI17,
+> WA=MI18/19, RA=MI20/21, PROT=MI22, XFER=MI24, coeff=MI26–31), with two refinements (active-low WA//RA//C polarities;
+> exact lane-3 order MI24=XFER / MI25=ZERO-gate / MI26–31=coeff). **The ONE correction: `CSIGN`** — the prior doc
+> had it as a stored bit (lane-2 bit 7 ≈ MI23); it is actually the tc_U20 JK output (§3.10). SM §3.5/§3.6/§3.7
+> confirm the WCS/PC/offset/coeff-serializer/regfile/decoder structure verbatim by designator (no contradictions).
+
+### §G-Q — Open question (flag, not guessed): RESET dual-drive
+The `RESET` net (T&C) shows **two outputs** — `tc_U34.pin6` (74LS08 2Y = tcWR·OFST3/) and `tc_U19.pin9`
+(74LS377 Q3) — plus loads `tc_U25.pin2`, `tc_U33.pin13`. Two totem-pole drivers on one net is a contention.
+Confirm: one net (how is contention avoided?) or two same-named nets, or is one the source that the other
+re-registers on a distinct net? (§3.11.) Transcribed faithfully pending owner.
 
 ### §G4 — Not-depicted power/unused pins — owner directive: assume correctly connected
 Owner: Vcc/GND and a few outputs (e.g. aru_U23.pin9 top carry-out, aru_U45-49 RCO) are left off the drawing for
