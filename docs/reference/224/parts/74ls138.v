@@ -10,13 +10,13 @@
 //
 // PINOUT (DIP-16):
 //    1  A        16  VCC
-//    2  B        15  /Y0
-//    3  C        14  /Y1
-//    4  /G2A     13  /Y2
-//    5  /G2B     12  /Y3
-//    6  G1       11  /Y4
-//    7  /Y7      10  /Y5
-//    8  GND       9  /Y6
+//    2  B        15  Y0
+//    3  C        14  Y1
+//    4  /G2A     13  Y2
+//    5  /G2B     12  Y3
+//    6  G1       11  Y4
+//    7  Y7       10  Y5
+//    8  GND       9  Y6
 //
 // FUNCTION:
 //   Enabled only when G1 = HIGH AND /G2A = LOW AND /G2B = LOW.

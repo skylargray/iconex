@@ -12,13 +12,13 @@
 //
 // PINOUT (DIP-16):
 //    1  SEL      16  VCC      SEL = A/B select          (pin 1)
-//    2  1A       15  /G       /G  = output enable, LOW  (pin 15)
-//    3  1B       14  4A
-//    4  1Y       13  4B
-//    5  2A       12  4Y
-//    6  2B       11  3A
-//    7  2Y       10  3B
-//    8  GND       9  3Y
+//    2  A1       15  /G       /G  = output enable, LOW  (pin 15)
+//    3  B1       14  A4
+//    4  Y1       13  B4
+//    5  A2       12  Y4
+//    6  B2       11  A3
+//    7  Y2       10  B3
+//    8  GND       9  Y3
 //
 // FUNCTION:
 //   /G = HIGH -> all outputs 1Y..4Y forced LOW (SEL ignored).

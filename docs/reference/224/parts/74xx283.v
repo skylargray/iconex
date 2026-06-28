@@ -10,13 +10,13 @@
 //             DMEM (7.5): U49,U50,U63,U64 (74S/LS283, the CPC-offset address adder).
 //
 // PINOUT (DIP-16):   (S=Sigma sum.  A1/B1/S1 = LSB = bit0 ... A4/B4/S4 = MSB = bit3)
-//    1  S2       16  VCC
-//    2  B2       15  B3
-//    3  A2       14  A3
-//    4  S1       13  S3
-//    5  A1       12  A4
-//    6  B1       11  B4
-//    7  C0 (Cin) 10  S4
+//    1  S1       16  VCC
+//    2  B1       15  B2
+//    3  A1       14  A2
+//    4  S0       13  S2
+//    5  A0       12  A3
+//    6  B0       11  B3
+//    7  C0 (Cin) 10  S3
 //    8  GND       9  C4 (Cout)
 //
 // FUNCTION:

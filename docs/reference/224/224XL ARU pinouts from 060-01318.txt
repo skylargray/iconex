@@ -2,7 +2,7 @@
 
 ---
 
-result register (this sets the ACC→RES transfer "shift"). Two chips, 74F374, 20 pins each
+result register - Two chips, 74F374, 20 pins each
 U43 (74F374)            
 pin 1  (OE\)   = RDRREG/
 pin 2  (Q0)    = DAB5       
@@ -209,91 +209,91 @@ pin 16 (VCC)   = Not depicted
 Adders — 74F283, U19, U20, U21, U22, U23 (the 5 nibbles feeding the muxes):
 
 U19:
-pin 1  (Σ1) = U33 pin 5
+pin 1  (S1) = U33 pin 5
 pin 2  (B1) = U5 (74S86) pin 6
 pin 3  (A1) = AC1
-pin 4  (Σ0) = U33 pin 2
+pin 4  (S0) = U33 pin 2
 pin 5  (A0) = AC0
 pin 6  (B0) = U5 (74S86) pin 3
 pin 7  (C0 carry-in) = U2 (74S04) pin 6
 pin 8  (GND)= Not depicted
 pin 9  (C4 carry-out) = U20 pin 7
-pin 10 (Σ3) = U33 pin 14
+pin 10 (S3) = U33 pin 14
 pin 11 (B3) = U5 (74S86) pin 11
 pin 12 (A3) = AC3
-pin 13 (Σ2) = U33 pin 11
+pin 13 (S2) = U33 pin 11
 pin 14 (A2) = AC2
 pin 15 (B2) = U5 (74S86) pin 8
 pin 16 (VCC)= Not depicted
 
 U20:
-pin 1  (Σ1) = U34 pin 5
+pin 1  (S1) = U34 pin 5
 pin 2  (B1) = U6 (74S86) pin 6
 pin 3  (A1) = AC5
-pin 4  (Σ0) = U34 pin 2
+pin 4  (S0) = U34 pin 2
 pin 5  (A0) = AC4
 pin 6  (B0) = U6 (74S86) pin 3
 pin 7  (C0 carry-in) = U19 pin 9
 pin 8  (GND)= Not depicted
 pin 9  (C4 carry-out) = U21 pin 7
-pin 10 (Σ3) = U34 pin 14
+pin 10 (S3) = U34 pin 14
 pin 11 (B3) = U6 (74S86) pin 11
 pin 12 (A3) = AC7
-pin 13 (Σ2) = U34 pin 11
+pin 13 (S2) = U34 pin 11
 pin 14 (A2) = AC6
 pin 15 (B2) = U6 (74S86) pin 8
 pin 16 (VCC)= Not depicted
 
 U21:
-pin 1  (Σ1) = U35 pin 5
+pin 1  (S1) = U35 pin 5
 pin 2  (B1) = U7 (74S86) pin 6
 pin 3  (A1) = AC9
-pin 4  (Σ0) = U35 pin 2
+pin 4  (S0) = U35 pin 2
 pin 5  (A0) = AC8
 pin 6  (B0) = U7 (74S86) pin 3
 pin 7  (C0 carry-in) = U20 pin 9
 pin 8  (GND)= Not depicted
 pin 9  (C4 carry-out) = U22 pin 7
-pin 10 (Σ3) = U35 pin 14
+pin 10 (S3) = U35 pin 14
 pin 11 (B3) = U7 (74S86) pin 11
 pin 12 (A3) = AC11
-pin 13 (Σ2) = U35 pin 11
+pin 13 (S2) = U35 pin 11
 pin 14 (A2) = AC10
 pin 15 (B2) = U7 (74S86) pin 8
 pin 16 (VCC)= Not depicted
 
 U22:
-pin 1  (Σ1) = U36 pin 5
+pin 1  (S1) = U36 pin 5
 pin 2  (B1) = U8 (74S86) pin 6
 pin 3  (A1) = AC13
-pin 4  (Σ0) = U36 pin 2
+pin 4  (S0) = U36 pin 2
 pin 5  (A0) = AC12
 pin 6  (B0) = U8 (74S86) pin 3
 pin 7  (C0 carry-in) = U21 pin 9
 pin 8  (GND)= Not depicted
 pin 9  (C4 carry-out) = U23 pin 7
-pin 10 (Σ3) = U36 pin 14
+pin 10 (S3) = U36 pin 14
 pin 11 (B3) = U8 (74S86) pin 11
 pin 12 (A3) = AC15
-pin 13 (Σ2) = U36 pin 11
+pin 13 (S2) = U36 pin 11
 pin 14 (A2) = AC14
 pin 15 (B2) = U8 (74S86) pin 8
 pin 16 (VCC)= Not depicted
 
 U23:
-pin 1  (Σ1) = U37 pin 5
+pin 1  (S1) = U37 pin 5
 pin 2  (B1) = U9 (74S86) pin 6
 pin 3  (A1) = AC17
-pin 4  (Σ0) = U37 pin 2
+pin 4  (S0) = U37 pin 2
 pin 5  (A0) = AC16
 pin 6  (B0) = U9 (74S86) pin 3
 pin 7  (C0 carry-in) = U22 pin 9
 pin 8  (GND)= Not depicted
 pin 9  (C4 carry-out) = Not depicted
-pin 10 (Σ3) = U37 pin 14 & U42 (74S86) pin 1
+pin 10 (S3) = U37 pin 14 & U42 (74S86) pin 1
 pin 11 (B3) = U9 (74S86) pin 11 & U2 (74S04) pin 9
 pin 12 (A3) = AC19
-pin 13 (Σ2) = U37 pin 11 & U42 (74S86) pin 2
+pin 13 (S2) = U37 pin 11 & U42 (74S86) pin 2
 pin 14 (A2) = AC18
 pin 15 (B2) = U9 (74S86) pin 8
 pin 16 (VCC)= Not depicted
@@ -301,7 +301,7 @@ pin 16 (VCC)= Not depicted
 ---
 
 74S86 XORs feeding the adder B-inputs — U5, U6, U7, U8, U9 (14-pin):
-Control pattern (ALL five): pins 2,5,10,13 commoned -> subtract-control rail (CS33N/ via U2)
+Control pattern (ALL five): pins 2,5,10,13 commoned -> subtract-control rail (CSIGN/ via U2)
 
 U5:
 pin 1  (1A) = U12 pin 15    
@@ -357,44 +357,44 @@ Product Register
 U10 (74F374)           
 pin 1  (OE\)   = tied to ground   
 pin 2  (Q0)    = U9 pin 12        
-pin 3  (D0)    = U24 pin 10 (Σ3)  
-pin 4  (D1)    = U24 pin 13 (Σ2)  
+pin 3  (D0)    = U24 pin 10 (S3)  
+pin 4  (D1)    = U24 pin 13 (S2)  
 pin 5  (Q1)    = U9 pin 9         
 pin 6  (Q2)    = U9 pin 4         
-pin 7  (D2)    = U24 pin 1  (Σ1)  
-pin 8  (D3)    = U24 pin 4  (Σ0)  
+pin 7  (D2)    = U24 pin 1  (S1)  
+pin 8  (D3)    = U24 pin 4  (S0)  
 pin 9  (Q3)    = U9 pin 1         
 pin 10 (GND)   = Not depicted
 pin 11 (CP)    = ARUCK
 pin 12 (Q4)    = U8 pin 12        
-pin 13 (D4)    = U38 pin 10 (Σ3)  
-pin 14 (D5)    = U38 pin 13 (Σ2)  
+pin 13 (D4)    = U38 pin 10 (S3)  
+pin 14 (D5)    = U38 pin 13 (S2)  
 pin 15 (Q5)    = U8 pin 9         
 pin 16 (Q6)    = U8 pin 4         
-pin 17 (D6)    = U38 pin 1  (Σ1)  
-pin 18 (D7)    = U38 pin 4  (Σ0)  
+pin 17 (D6)    = U38 pin 1  (S1)  
+pin 18 (D7)    = U38 pin 4  (S0)  
 pin 19 (Q7)    = U8 pin 1         
 pin 20 (VCC)   = Not depicted
 
 U11 (74F374)            
 pin 1  (OE\)   = tied to ground   
 pin 2  (Q0)    = U7 pin 12        
-pin 3  (D0)    = U25 pin 10 (Σ3)  
-pin 4  (D1)    = U25 pin 13 (Σ2)  
+pin 3  (D0)    = U25 pin 10 (S3)  
+pin 4  (D1)    = U25 pin 13 (S2)  
 pin 5  (Q1)    = U7 pin 9         
 pin 6  (Q2)    = U7 pin 4         
-pin 7  (D2)    = U25 pin 1  (Σ1)  
-pin 8  (D3)    = U25 pin 4  (Σ0)  
+pin 7  (D2)    = U25 pin 1  (S1)  
+pin 8  (D3)    = U25 pin 4  (S0)  
 pin 9  (Q3)    = U7 pin 1         
 pin 10 (GND)   = Not depicted
 pin 11 (CP)    = ARUCK
 pin 12 (Q4)    = U6 pin 12        
-pin 13 (D4)    = U39 pin 10 (Σ3)  
-pin 14 (D5)    = U39 pin 13 (Σ2)  
+pin 13 (D4)    = U39 pin 10 (S3)  
+pin 14 (D5)    = U39 pin 13 (S2)  
 pin 15 (Q5)    = U6 pin 9         
 pin 16 (Q6)    = U6 pin 4         
-pin 17 (D6)    = U39 pin 1  (Σ1)  
-pin 18 (D7)    = U39 pin 4  (Σ0)  
+pin 17 (D6)    = U39 pin 1  (S1)  
+pin 18 (D7)    = U39 pin 4  (S0)  
 pin 19 (Q7)    = U6 pin 1         
 pin 20 (VCC)   = Not depicted
 
@@ -402,16 +402,515 @@ U12 (74S175)
 pin 1  (CLR\)  = +5 (tied high)
 pin 2  (Q0)    = U5 pin 12        
 pin 3  (Q0\)   = n/c
-pin 4  (D0)    = U13 pin 10 (Σ3)  
-pin 5  (D1)    = U13 pin 13 (Σ2)  
+pin 4  (D0)    = U13 pin 10 (S3)  
+pin 5  (D1)    = U13 pin 13 (S2)  
 pin 6  (Q1\)   = n/c
 pin 7  (Q1)    = U5 pin 9         
 pin 8  (GND)   = Not depicted
 pin 9  (CP)    = ARUCK
 pin 10 (Q2)    = U5 pin 4         
 pin 11 (Q2\)   = n/c
-pin 12 (D2)    = U13 pin 1  (Σ1)  
-pin 13 (D3)    = U13 pin 4  (Σ0)  
+pin 12 (D2)    = U13 pin 1  (S1)  
+pin 13 (D3)    = U13 pin 4  (S0)  
 pin 14 (Q3\)   = n/c
 pin 15 (Q3)    = U5 pin 1         
-pin 16 (VCC)   = Not depicted  
+pin 16 (VCC)   = Not depicted 
+
+---
+
+Register File U29 U30 U31 U32 (LS670)
+
+U29:
+pin 1  (D2)    = DAB14
+pin 2  (D3)    = DAB13   
+pin 3  (D4)    = DAB12
+pin 4  (RB)    = RA0_inv  
+pin 5  (RA)    = RA1_inv  
+pin 6  (Q4)    = F12
+pin 7  (Q3)    = F13        
+pin 8  (GND)   = Not depicted
+pin 9  (Q2)    = F14
+pin 10 (Q1)    = F15         
+pin 11 (/GR)   = tied to ground
+pin 12 (/GW)   = DAB WSTB/ 
+pin 13 (WB)    = WA0_inv  
+pin 14 (WA)    = WA1_inv
+pin 15 (D1)    = DAB15         
+pin 16 (VCC)   = Not depicted
+
+U30:
+pin 1  (D2)    = DAB10
+pin 2  (D3)    = DAB9   
+pin 3  (D4)    = DAB8
+pin 4  (RB)    = RA0_inv  
+pin 5  (RA)    = RA1_inv 
+pin 6  (Q4)    = F8
+pin 7  (Q3)    = F9        
+pin 8  (GND)   = Not depicted
+pin 9  (Q2)    = F10
+pin 10 (Q1)    = F11         
+pin 11 (/GR)   = tied to ground
+pin 12 (/GW)   = DAB WSTB/ 
+pin 13 (WB)    = WA0_inv  
+pin 14 (WA)    = WA1_inv
+pin 15 (D1)    = DAB11         
+pin 16 (VCC)   = Not depicted
+
+U31:
+pin 1  (D2)    = DAB6
+pin 2  (D3)    = DAB5   
+pin 3  (D4)    = DAB4
+pin 4  (RB)    = RA0_inv  
+pin 5  (RA)    = RA1_inv  
+pin 6  (Q4)    = F4
+pin 7  (Q3)    = F5        
+pin 8  (GND)   = Not depicted
+pin 9  (Q2)    = F6
+pin 10 (Q1)    = F7         
+pin 11 (/GR)   = tied to ground
+pin 12 (/GW)   = DAB WSTB/ 
+pin 13 (WB)    = WA0_inv  
+pin 14 (WA)    = WA1_inv
+pin 15 (D1)    = DAB7         
+pin 16 (VCC)   = Not depicted
+
+U32:
+pin 1  (D2)    = DAB2
+pin 2  (D3)    = DAB1   
+pin 3  (D4)    = DAB0
+pin 4  (RB)    = RA0_inv  
+pin 5  (RA)    = RA1_inv  
+pin 6  (Q4)    = F0
+pin 7  (Q3)    = F1        
+pin 8  (GND)   = Not depicted
+pin 9  (Q2)    = F2
+pin 10 (Q1)    = F3         
+pin 11 (/GR)   = tied to ground
+pin 12 (/GW)   = DAB WSTB/ 
+pin 13 (WB)    = WA0_inv  
+pin 14 (WA)    = WA1_inv
+pin 15 (D1)    = DAB3         
+pin 16 (VCC)   = Not depicted
+
+---
+
+Dual Rank Shift Register U3 U4 U15 U16 U17 U18 (LS194)
+
+U3:
+pin 1  (/CLR)    = +5V
+pin 2  (SR_SER)  = SR4  
+pin 3  (A)       = tied to ground
+pin 4  (B)       = tied to ground
+pin 5  (C)       = Not depicted  
+pin 6  (D)       = Not depicted
+pin 7  (SL_SER)  = Not depicted     
+pin 8  (GND)     = Not depicted
+pin 9  (S0)      = net called "S0"
+pin 10 (S1)      = net called "S1"       
+pin 11 (CLK)     = ARUCK (NOT ARUCKE/)
+pin 12 (QD)      = Not depicted 
+pin 13 (QC)      = Not depicted
+pin 14 (QB)      = SR0
+pin 15 (QA)      = SR2         
+pin 16 (VCC)     = Not depicted
+
+U4:
+pin 1  (/CLR)    = +5V
+pin 2  (SR_SER)  = SR5  
+pin 3  (A)       = F0
+pin 4  (B)       = tied to ground
+pin 5  (C)       = Not depicted  
+pin 6  (D)       = Not depicted
+pin 7  (SL_SER)  = Not depicted     
+pin 8  (GND)     = Not depicted
+pin 9  (S0)      = net called "S0"
+pin 10 (S1)      = net called "S1"       
+pin 11 (CLK)     = ARUCK (NOT ARUCKE/)
+pin 12 (QD)      = Not depicted 
+pin 13 (QC)      = Not depicted
+pin 14 (QB)      = SR1
+pin 15 (QA)      = SR3         
+pin 16 (VCC)     = Not depicted
+
+U15:
+pin 1  (/CLR)    = +5V
+pin 2  (SR_SER)  = SR19   
+pin 3  (A)       = F15
+pin 4  (B)       = F14
+pin 5  (C)       = F12  
+pin 6  (D)       = F10
+pin 7  (SL_SER)  = Not depicted     
+pin 8  (GND)     = Not depicted
+pin 9  (S0)      = net called "S0"
+pin 10 (S1)      = net called "S1"       
+pin 11 (CLK)     = ARUCK (NOT ARUCKE/)
+pin 12 (QD)      = SR13 
+pin 13 (QC)      = SR15
+pin 14 (QB)      = SR17
+pin 15 (QA)      = SR19         
+pin 16 (VCC)     = Not depicted
+
+U16:
+pin 1  (/CLR)    = +5V
+pin 2  (SR_SER)  = SR18   
+pin 3  (A)       = F15
+pin 4  (B)       = F13
+pin 5  (C)       = F11 
+pin 6  (D)       = F9
+pin 7  (SL_SER)  = Not depicted     
+pin 8  (GND)     = Not depicted
+pin 9  (S0)      = net called "S0"
+pin 10 (S1)      = net called "S1"       
+pin 11 (CLK)     = ARUCK (NOT ARUCKE/)
+pin 12 (QD)      = SR12 
+pin 13 (QC)      = SR14
+pin 14 (QB)      = SR16
+pin 15 (QA)      = SR18         
+pin 16 (VCC)     = Not depicted
+
+U17:
+pin 1  (/CLR)    = +5V
+pin 2  (SR_SER)  = SR12   
+pin 3  (A)       = F7
+pin 4  (B)       = F5
+pin 5  (C)       = F3  
+pin 6  (D)       = F1
+pin 7  (SL_SER)  = Not depicted     
+pin 8  (GND)     = Not depicted
+pin 9  (S0)      = net called "S0"
+pin 10 (S1)      = net called "S1"       
+pin 11 (CLK)     = ARUCK (NOT ARUCKE/)
+pin 12 (QD)      = SR4 
+pin 13 (QC)      = SR6
+pin 14 (QB)      = SR8
+pin 15 (QA)      = SR10         
+pin 16 (VCC)     = Not depicted
+
+U18:
+pin 1  (/CLR)    = +5V
+pin 2  (SR_SER)  = SR13   
+pin 3  (A)       = F8
+pin 4  (B)       = F6
+pin 5  (C)       = F4  
+pin 6  (D)       = F2
+pin 7  (SL_SER)  = Not depicted     
+pin 8  (GND)     = Not depicted
+pin 9  (S0)      = net called "S0"
+pin 10 (S1)      = net called "S1"       
+pin 11 (CLK)     = ARUCK (NOT ARUCKE/)
+pin 12 (QD)      = SR5 
+pin 13 (QC)      = SR7
+pin 14 (QB)      = SR9
+pin 15 (QA)      = SR11         
+pin 16 (VCC)     = Not depicted
+
+---
+
+NAND Gates (LS00) U14 U26 U27 U28 U40 U41 U50 U51 U52 U53
+
+U14:
+pin 1  (1A)  = SR3
+pin 2  (1B)  = U54 pin 12   
+pin 3  (1Y)  = U13 pin 14
+pin 4  (2A)  = SR4
+pin 5  (2B)  = U54 pin 12  
+pin 6  (2Y)  = U13 pin 12
+pin 7  (GND) = Not depicted     
+pin 8  (3Y)  = U13 pin 5
+pin 9  (3A)  = SR1
+pin 10 (3B)  = U54 pin 12       
+pin 11 (4Y)  = U13 pin 3
+pin 12 (4A)  = SR2 
+pin 13 (4B)  = U54 pin 12
+pin 14 (VCC) = Not depicted
+
+U26:
+pin 1  (1A)  = SR11
+pin 2  (1B)  = U54 pin 12   
+pin 3  (1Y)  = U25 pin 14
+pin 4  (2A)  = SR9
+pin 5  (2B)  = U54 pin 12  
+pin 6  (2Y)  = U25 pin 5
+pin 7  (GND) = Not depicted     
+pin 8  (3Y)  = U25 pin 12
+pin 9  (3A)  = SR12
+pin 10 (3B)  = U54 pin 12       
+pin 11 (4Y)  = U25 pin 3
+pin 12 (4A)  = SR8 
+pin 13 (4B)  = U54 pin 12
+pin 14 (VCC) = Not depicted
+
+U27:
+pin 1  (1A)  = SR9
+pin 2  (1B)  = U54 pin 10   
+pin 3  (1Y)  = U25 pin 2
+pin 4  (2A)  = SR10
+pin 5  (2B)  = U54 pin 10  
+pin 6  (2Y)  = U25 pin 15
+pin 7  (GND) = Not depicted     
+pin 8  (3Y)  = U25 pin 6
+pin 9  (3A)  = SR8
+pin 10 (3B)  = U54 pin 10       
+pin 11 (4Y)  = U25 pin 11
+pin 12 (4A)  = SR11 
+pin 13 (4B)  = U54 pin 10
+pin 14 (VCC) = Not depicted
+
+U28:
+pin 1  (1A)  = SR3
+pin 2  (1B)  = U54 pin 10   
+pin 3  (1Y)  = U13 pin 11
+pin 4  (2A)  = SR1
+pin 5  (2B)  = U54 pin 10  
+pin 6  (2Y)  = U13 pin 2
+pin 7  (GND) = Not depicted     
+pin 8  (3Y)  = U13 pin 15
+pin 9  (3A)  = SR2
+pin 10 (3B)  = U54 pin 10       
+pin 11 (4Y)  = U13 pin 6
+pin 12 (4A)  = SR0 
+pin 13 (4B)  = U54 pin 10
+pin 14 (VCC) = Not depicted
+
+U40:
+pin 1  (1A)  = SR3
+pin 2  (1B)  = U54 pin 10   
+pin 3  (1Y)  = U39 pin 2
+pin 4  (2A)  = SR7
+pin 5  (2B)  = U54 pin 10  
+pin 6  (2Y)  = U39 pin 11
+pin 7  (GND) = Not depicted     
+pin 8  (3Y)  = U39 pin 6
+pin 9  (3A)  = SR4
+pin 10 (3B)  = U54 pin 10       
+pin 11 (4Y)  = U39 pin 15
+pin 12 (4A)  = SR6 
+pin 13 (4B)  = U54 pin 10
+pin 14 (VCC) = Not depicted
+
+U41:
+pin 1  (1A)  = SR7
+pin 2  (1B)  = U54 pin 12   
+pin 3  (1Y)  = U39 pin 14
+pin 4  (2A)  = SR8
+pin 5  (2B)  = U54 pin 12  
+pin 6  (2Y)  = U39 pin 12
+pin 7  (GND) = Not depicted     
+pin 8  (3Y)  = U39 pin 5
+pin 9  (3A)  = SR5
+pin 10 (3B)  = U54 pin 12       
+pin 11 (4Y)  = U39 pin 3
+pin 12 (4A)  = SR6 
+pin 13 (4B)  = U54 pin 12
+pin 14 (VCC) = Not depicted
+
+U50:
+pin 1  (1A)  = SR12
+pin 2  (1B)  = U54 pin 10   
+pin 3  (1Y)  = U38 pin 6
+pin 4  (2A)  = SR13
+pin 5  (2B)  = U54 pin 10  
+pin 6  (2Y)  = U38 pin 2
+pin 7  (GND) = Not depicted     
+pin 8  (3Y)  = U38 pin 15
+pin 9  (3A)  = SR14
+pin 10 (3B)  = U54 pin 10       
+pin 11 (4Y)  = U38 pin 11
+pin 12 (4A)  = SR15 
+pin 13 (4B)  = U54 pin 10
+pin 14 (VCC) = Not depicted
+
+U51:
+pin 1  (1A)  = SR13
+pin 2  (1B)  = U54 pin 12   
+pin 3  (1Y)  = U38 pin 5
+pin 4  (2A)  = SR12
+pin 5  (2B)  = U54 pin 12  
+pin 6  (2Y)  = U38 pin 3
+pin 7  (GND) = Not depicted     
+pin 8  (3Y)  = U38 pin 14
+pin 9  (3A)  = SR15
+pin 10 (3B)  = U54 pin 12       
+pin 11 (4Y)  = U38 pin 12
+pin 12 (4A)  = SR16 
+pin 13 (4B)  = U54 pin 12
+pin 14 (VCC) = Not depicted
+
+U52:
+pin 1  (1A)  = SR17
+pin 2  (1B)  = U54 pin 10   
+pin 3  (1Y)  = U24 pin 2
+pin 4  (2A)  = SR18
+pin 5  (2B)  = U54 pin 10  
+pin 6  (2Y)  = U24 pin 15
+pin 7  (GND) = Not depicted     
+pin 8  (3Y)  = U24 pin 11
+pin 9  (3A)  = SR19
+pin 10 (3B)  = U54 pin 10       
+pin 11 (4Y)  = U24 pin 6
+pin 12 (4A)  = SR16 
+pin 13 (4B)  = U54 pin 10
+pin 14 (VCC) = Not depicted
+
+U53:
+pin 1  (1A)  = SR17
+pin 2  (1B)  = U54 pin 12   
+pin 3  (1Y)  = U24 pin 5
+pin 4  (2A)  = SR18
+pin 5  (2B)  = U54 pin 12  
+pin 6  (2Y)  = U24 pin 3
+pin 7  (GND) = Not depicted     
+pin 8  (3Y)  = U24 pin 12
+pin 9  (3A)  = SR19
+pin 10 (3B)  = U54 pin 12       
+pin 11 (4Y)  = U24 pin 14
+pin 12 (4A)  = SR19 
+pin 13 (4B)  = U54 pin 12
+pin 14 (VCC) = Not depicted
+
+---
+
+Adders (74F283) U13 U24 U25 U38 U39
+
+U13:
+pin 1  (S1)  = U12 pin 12
+pin 2  (B1)  = U28 pin 6
+pin 3  (A1)  = U14 pin 11
+pin 4  (S0)  = U12 pin 13
+pin 5  (A0)  = U14 pin 8
+pin 6  (B0)  = U28 pin 11
+pin 7  (C0)  = +5V
+pin 8  (GND) = Not depicted
+pin 9  (C4)  = U39 pin 7
+pin 10 (S3)  = U12 pin 4
+pin 11 (B3)  = U28 pin 3
+pin 12 (A3)  = U14 pin 6
+pin 13 (S2)  = U12 pin 5
+pin 14 (A2)  = U14 pin 3
+pin 15 (B2)  = U28 pin 8
+pin 16 (VCC) = Not depicted
+
+U24:
+pin 1  (S1)  = U10 pin 7
+pin 2  (B1)  = U52 pin 3
+pin 3  (A1)  = U53 pin 6
+pin 4  (S0)  = U10 pin 8
+pin 5  (A0)  = U53 pin 3
+pin 6  (B0)  = U52 pin 11
+pin 7  (C0)  = U38 pin 9
+pin 8  (GND) = Not depicted
+pin 9  (C4)  = Not connected
+pin 10 (S3)  = U10 pin 3
+pin 11 (B3)  = U52 pin 8
+pin 12 (A3)  = U53 pin 8
+pin 13 (S2)  = U10 pin 4
+pin 14 (A2)  = U53 pin 11
+pin 15 (B2)  = U52 pin 6
+pin 16 (VCC) = Not depicted
+
+U25:
+pin 1  (S1)  = U11 pin 7
+pin 2  (B1)  = U27 pin 3
+pin 3  (A1)  = U26 pin 11
+pin 4  (S0)  = U11 pin 8
+pin 5  (A0)  = U26 pin 6
+pin 6  (B0)  = U27 pin 8
+pin 7  (C0)  = U39 pin 9
+pin 8  (GND) = Not depicted
+pin 9  (C4)  = U38 pin 7
+pin 10 (S3)  = U11 pin 3
+pin 11 (B3)  = U27 pin 11
+pin 12 (A3)  = U26 pin 8
+pin 13 (S2)  = U11 pin 4
+pin 14 (A2)  = U26 pin 3
+pin 15 (B2)  = U27 pin 6
+pin 16 (VCC) = Not depicted
+
+U38:
+pin 1  (S1)  = U10 pin 17
+pin 2  (B1)  = U50 pin 6
+pin 3  (A1)  = U51 pin 6
+pin 4  (S0)  = U10 pin 18
+pin 5  (A0)  = U51 pin 3
+pin 6  (B0)  = U50 pin 3
+pin 7  (C0)  = U25 pin 9
+pin 8  (GND) = Not depicted
+pin 9  (C4)  = U24 pin 7
+pin 10 (S3)  = U10 pin 13
+pin 11 (B3)  = U50 pin 11
+pin 12 (A3)  = U51 pin 11
+pin 13 (S2)  = U10 pin 14
+pin 14 (A2)  = U51 pin 8
+pin 15 (B2)  = U50 pin 8
+pin 16 (VCC) = Not depicted
+
+U39:
+pin 1  (S1)  = U11 pin 17
+pin 2  (B1)  = U40 pin 3
+pin 3  (A1)  = U41 pin 11
+pin 4  (S0)  = U11 pin 18
+pin 5  (A0)  = U41 pin 8
+pin 6  (B0)  = U40 pin 8
+pin 7  (C0)  = U13 pin 9
+pin 8  (GND) = Not depicted
+pin 9  (C4)  = U25 pin 7
+pin 10 (S3)  = U11 pin 13
+pin 11 (B3)  = U40 pin 6
+pin 12 (A3)  = U41 pin 6
+pin 13 (S2)  = U11 pin 14
+pin 14 (A2)  = U41 pin 3
+pin 15 (B2)  = U40 pin 11
+pin 16 (VCC) = Not depicted
+
+---
+
+MISC
+
+U2 (74S04) hex inverter:
+pin 1  (1A)  = not connected
+pin 2  (1Y)  = not connected 
+pin 3  (2A)  = not connected
+pin 4  (2Y)  = not connected
+pin 5  (3A)  = U5 pins 2, 5, 10, 13; U6 pins 2, 5, 10, 13
+pin 6  (3Y)  = U19 pin 7
+pin 7  (GND) = Not depicted     
+pin 8  (4Y)  = U33 pins 3, 6, 10, 13; U34 pins 3, 6, 10, 13; U35 pins 3, 6, 10, 13; U36 pins 3, 6, 10, 13; U37 pins 3, 6
+pin 9  (4A)  = U37 pins 10, 13; U23 pin 11; U9 pin 11
+pin 10 (5Y)  = U5 pins 2, 5, 10, 13; U6 pins 2, 5, 10, 13    
+pin 11 (5A)  = CSIGN/
+pin 12 (6Y)  = U7 pins 2, 5, 10, 13; U8 pins 2, 5, 10, 13; U9 pins 2, 5, 10, 13
+pin 13 (6A)  = CSIGN/
+pin 14 (VCC) = Not depicted
+
+U42 (74S86) XOR gate:
+pin 1  (1A)  = U37 pin 14; U23 pin 10
+pin 2  (1B)  = U37 pin 11; U23 pin 13
+pin 3  (1Y)  = U37 pin 1; U36 pin 1; U35 pin 1; U34 pin 1; U33 pin 1; SAT
+pin 4  (2A)  = +5V via 1K series resistor
+pin 5  (2B)  = ARUCKE/
+pin 6  (2Y)  = ARUCK (NOT ARUCKE/)
+pin 7  (GND) = Not depicted
+pin 8  (3Y)  = not connected
+pin 9  (3A)  = not connected
+pin 10 (3B)  = not connected
+pin 11 (4Y)  = not connected
+pin 12 (4A)  = not connected
+pin 13 (4B)  = not connected
+pin 14 (VCC) = Not depicted
+
+
+U54 (74S04) hex inverter:
+pin 1  (1A)  = RA0
+pin 2  (1Y)  = RA0_inv 
+pin 3  (2A)  = WA0
+pin 4  (2Y)  = WA0_inv
+pin 5  (3A)  = RA1
+pin 6  (3Y)  = RA1_inv
+pin 7  (GND) = Not depicted     
+pin 8  (4Y)  = WA1_inv
+pin 9  (4A)  = WA1 
+pin 10 (5Y)  = U27 pin 2, 5, 13, 10; U28 pin 2, 5, 13, 10; U40 pin 2, 5, 13, 10; U50 pin 2, 5, 13, 10; U52 pin 2, 5, 13, 10;  
+pin 11 (5A)  = M1/
+pin 12 (6Y)  = U14 pin 2, 5, 13, 10; U26 pin 2, 5, 13, 10; U41 pin 2, 5, 13, 10; U51 pin 2, 5, 13, 10; U53 pin 2, 5, 13, 10;
+pin 13 (6A)  = M0/
+pin 14 (VCC) = Not depicted

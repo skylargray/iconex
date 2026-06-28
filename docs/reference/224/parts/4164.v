@@ -11,9 +11,9 @@
 //
 // PINOUT (DIP-16):
 //    1  NC        16  GND (VSS)
-//    2  Din       15  /CAS
-//    3  /WE       14  Dout
-//    4  /RAS      13  A6
+//    2  Din       15  CAS/
+//    3  WR/       14  Dout
+//    4  RAS/      13  A6
 //    5  A0        12  A3
 //    6  A2        11  A4
 //    7  A1        10  A5

@@ -212,8 +212,8 @@ schematic"*). Status vs the 25 `.v` files:
   owner-confirmed: IN=1, TAP1=12/TAP2=4/TAP3=10/TAP4=6/TAP5=8, GND=7, Vcc=14). Owner-created files verified by me
   vs datasheet: `74ls393.v` ✓, `4164.v` ✓ (confirms pin2=Din/pin14=Dout), `mcm68b10.v` → **had CS3/CS4 polarity
   swapped, FIXED** (CS3=pin13 active-HIGH, /CS4=pin14 active-LOW; the two active-high selects are CS0 & CS3).
-  Owner-added `am8304.v` (AMD octal transceiver) & `mc4044.v` (Motorola PLL phase detector) — owner-verified from
-  owner-provided datasheets not in `datasheets/`, so **not yet independently re-checked by me**.
+  Owner-added `am8304.v` (AMD octal transceiver, 1 per WCS SRAM) & `mc4044.v` (Motorola PLL phase detector,
+  T&C U27) — **owner-verified** ✅.
 
 ## M0a status: COMPLETE
 All 25 pre-existing `parts/*.v` files are **datasheet-verified** (23 match exactly — 2 of those differ only on
@@ -224,5 +224,5 @@ were missing** (74xx283, 74ls393, 74xx02, mcm6810, 4164, dl630b) → every verif
 **31 parts datasheet-verified ✅** (downloaded / owner-provided → rendered with PyMuPDF → read by the assistant →
 archived in `datasheets/`). Every overlap with the owner's ARU pin trace matches. **Three real `.v` pinout errors
 (`74ls670`, `74ls123`, `mcm68b10`) were caught and corrected** from the datasheets. The part-spec foundation for
-**M0b** (the netlist) is solid. (Two owner-added parts — `am8304`, `mc4044` — await their datasheets in `datasheets/`
-for independent check.)
+**M0b** (the netlist) is solid. (Owner-added `am8304` + `mc4044` are owner-verified ✅.) **Every part now has a
+datasheet-verified `.v`.** M0b kickoff prompt: `docs/plans/224XL-M0b-netlist-prompt.md`.

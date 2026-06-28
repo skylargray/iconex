@@ -8,7 +8,7 @@
 > (λ=1.000000) or gently decaying — zero hot** (was 8/13 hot, up to λ=1.67; CONCERT → λ=1.000000). The
 > long-standing "+1100 ppm uniform growth" was an artifact of the wrong control decode, NOT analog loss or
 > modulation. (`acc_latch` pipeline timing, confirmed from the service manual Fig 3.4, is a real secondary
-> fix.) **▶ Full resolution + confirmed microword bit map: `docs/plans/224XL-overunity-frontier.md`.** The
+> fix.) **▶ Full resolution + confirmed microword bit map: `docs/plans/006 - 224XL-overunity-frontier.md`.** The
 > record below is the (now-closed) investigation history — its dead-ends remain useful, but the conclusion
 > is the decode fix above.
 
@@ -29,7 +29,7 @@ many deep dead-ends are recorded so they are not repeated.
 > CONCERT-specific). The "missing HF damping" framing is also revised (the HFD *parameter* is inert on λ).
 > Trust §0 over any conflicting number elsewhere in this doc.
 >
-> **CURRENT PLAN / START HERE → `docs/plans/224XL-faithful-reconstruction-plan.md` (Session 4d, 2026-06-23).**
+> **CURRENT PLAN / START HERE → `docs/plans/007 - 224XL-faithful-reconstruction-plan.md` (Session 4d, 2026-06-23).**
 > The owner traced the **literal ARU schematic nets** (`docs/reference/224/224XL ARU pinouts from
 > 060-01318.txt`), which **confirms the arithmetic datapath is FAITHFUL** (74LS163 accumulator + 74F283 adders
 > + 74F157 sat-muxes + 74F374 result reg: `PP = saturate(AC ± product)`, `RES = PP[3..18] = >>3`) and the
@@ -512,7 +512,7 @@ approximate model and is **untrustworthy.** A faithful reconstruction must model
 before any "needs hardware" conclusion. The clock is also an **analog LC-tank oscillator** (not a crystal),
 so Fs ≈ 34130 Hz is nominal/drifting, not exact.
 
-**Full approximation audit + the fix-everything plan:** see **`docs/plans/224XL-faithful-reconstruction-plan.md`**
+**Full approximation audit + the fix-everything plan:** see **`docs/plans/007 - 224XL-faithful-reconstruction-plan.md`**
 (the new START-HERE doc). It registers all 8 approximations (modulation omitted / linear-not-all-pass /
 guessed-LFO / collapsed serial multiply / saturation-value / sample-rate / FPC-I/O / frozen-WCS) with a
 faithful-implementation + verification spec for each, ordered modulation-first.
@@ -865,7 +865,7 @@ truncation-cliff or dead-zone "decay". Bonus cross-check: reducing LOW/MID per t
 move the model toward V7.2's ~4.86 s.
 
 **Reference docs:** `docs/reference/224/224XL_technical_reference.md` (§2–§4, §9, §10),
-`docs/plans/224XL-authoring-progress.md`, `docs/plans/480L_reversing_roadmap.md` §8 (the "words that don't do
+`docs/plans/004 - 224XL-authoring-progress.md`, `docs/plans/002 - 480L_reversing_roadmap.md` §8 (the "words that don't do
 what the encoding implies" hazard). Schematics: `docs/reference/224/*.png` (ARU #060-01318 incl. the
 redraw/zoom crops, T&C #060-02475, DMEM #060-02512). Param curves: `docs/reference/224/224XL_param_sweep_01.json`.
 

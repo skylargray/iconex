@@ -1,0 +1,771 @@
+224X DMEM pinouts from 060-02512 sheet 1
+
+---
+
+DRAM — 4164 (64K×1), 16 pins each
+U1–U16 (lower bank) and U20–U35 (upper bank) are identical
+IMPORTANT NOTE: U1 to U16 ARE NOT POPULATED!
+
+Common to all U1–U16 and U20–U35:
+pin 1  (NC)   = not connected
+pin 2  (DIN)  = see below
+pin 3  (WR/)  = WR/
+pin 4  (RAS/) = RAS/
+pin 5  (A0)   = AD0
+pin 6  (A2)   = AD2
+pin 7  (A1)   = AD1
+pin 8  (VCC)  = +5V
+pin 9  (A7)   = AD7
+pin 10 (A5)   = AD5
+pin 11 (A4)   = AD4
+pin 12 (A3)   = AD3
+pin 13 (A6)   = AD6
+pin 14 (DOUT) = see below
+pin 15 (CAS/) = see below
+pin 16 (VSS)  = tied to ground
+
+Specific to individual memory ICs:
+U1-U16: each corresponding pin of each IC is connected in parallel.
+pin 15 (CAS/) = CAS1/
+
+
+U20-U35: each corresponding pin of each IC is connected in parallel.
+pin 15 (CAS/) = CAS0/
+
+U1, U20:
+pin 2 (DIN)   = DAB0
+pin 14 (DOUT) = DAB0
+
+U2, U21:
+pin 2 (DIN)   = DAB1
+pin 14 (DOUT) = DAB1
+
+U3, U22:
+pin 2 (DIN)   = DAB2
+pin 14 (DOUT) = DAB2
+
+U4, U23:
+pin 2 (DIN)   = DAB3
+pin 14 (DOUT) = DAB3
+
+U5, U24:
+pin 2 (DIN)   = DAB4
+pin 14 (DOUT) = DAB4
+
+U6, U25:
+pin 2 (DIN)   = DAB5
+pin 14 (DOUT) = DAB5
+
+U7, U26:
+pin 2 (DIN)   = DAB6
+pin 14 (DOUT) = DAB6
+
+U8, U27:
+pin 2 (DIN)   = DAB7
+pin 14 (DOUT) = DAB7
+
+U9, U28:
+pin 2 (DIN)   = DAB8
+pin 14 (DOUT) = DAB8
+
+U10, U29:
+pin 2 (DIN)   = DAB9
+pin 14 (DOUT) = DAB9
+
+U11, U30:
+pin 2 (DIN)   = DAB10
+pin 14 (DOUT) = DAB10
+
+U12, U31:
+pin 2 (DIN)   = DAB11
+pin 14 (DOUT) = DAB11
+
+U13, U32:
+pin 2 (DIN)   = DAB12
+pin 14 (DOUT) = DAB12
+
+U14, U33:
+pin 2 (DIN)   = DAB13
+pin 14 (DOUT) = DAB13
+
+U15, U34:
+pin 2 (DIN)   = DAB14
+pin 14 (DOUT) = DAB14
+
+U16, U35:
+pin 2 (DIN)   = DAB15
+pin 14 (DOUT) = DAB15
+
+---
+
+Current Position Counter — 74LS393, 14 pins each
+
+U51 (74LS393)
+pin 1  (1CP)  = RESET (not RESET/)   [datasheet facts only: pin 1 = 1CP, the '393 clock input (a '393 increments on the FALLING edge of CP); the async CLEAR is MR = the "CPC CLR" net on pins 2/12. NOT VERIFIED: where this "RESET" net comes from, or that it actually advances the CPC per sample — that role is inferred from the wiring, not traced.]
+pin 2  (1MR)  = CPC CLR
+pin 3  (1QA)  = U49 pin 5
+pin 4  (1QB)  = U49 pin 3
+pin 5  (1QC)  = U49 pin 14
+pin 6  (1QD)  = U49 pin 12
+pin 7  (GND)  = Not depicted
+pin 8  (2QD)  = U50 pin 12
+pin 9  (2QC)  = U50 pin 14
+pin 10 (2QB)  = U50 pin 3
+pin 11 (2QA)  = U50 pin 5
+pin 12 (2MR)  = CPC CLR
+pin 13 (2CP)  = U51 pin 6, U49 pin 12
+pin 14 (VCC)  = Not depicted
+
+U65 (74LS393)
+pin 1  (1CP)  = U51 pin 8, U50 pin 12
+pin 2  (1MR)  = CPC CLR
+pin 3  (1QA)  = U63 pin 5
+pin 4  (1QB)  = U63 pin 3
+pin 5  (1QC)  = U63 pin 14
+pin 6  (1QD)  = U63 pin 12
+pin 7  (GND)  = Not depicted
+pin 8  (2QD)  = U64 pin 12
+pin 9  (2QC)  = U64 pin 14
+pin 10 (2QB)  = U64 pin 3
+pin 11 (2QA)  = U64 pin 5
+pin 12 (2MR)  = CPC CLR
+pin 13 (2CP)  = U65 pin 6, U63 pin 12
+pin 14 (VCC)  = Not depicted
+
+---
+
+Offset adders — 74F283, 16 pins each
+
+NOTE on net names (A0..A15 are NOT the same as the "(A0)..(A3)" pin labels):
+  The nets A0..A15 are the adder SUM outputs (on the S0..S3 pins) = the DRAM ADDRESS bus
+  (= CPC - OFST). The chip pins labeled "(A0)..(A3)" are the adders' A-OPERAND INPUTS,
+  fed by the CPC counter (U51/U65) — a different signal entirely.
+  Read every line as "(pin label) = net":
+    e.g.  pin 5  (A0) = U51 pin 3   -> input pin A0, driven by CPC bit 0
+          pin 4  (S0) = A0          -> output pin S0, drives ADDRESS net A0
+  So "A0" as a net = adder S0 output; "A0" as a pin label = adder operand input. Don't conflate.
+
+U49 (74F283)
+pin 1  (S1)   = A1
+pin 2  (B1)   = OFST1/
+pin 3  (A1)   = U51 pin 4
+pin 4  (S0)   = A0
+pin 5  (A0)   = U51 pin 3
+pin 6  (B0)   = OFST0/
+pin 7  (C0)   = +5V
+pin 8  (GND)  = Not depicted
+pin 9  (C4)   = U50 pin 7
+pin 10 (S3)   = A3
+pin 11 (B3)   = OFST3/
+pin 12 (A3)   = U51 pin 6, U51 pin 13
+pin 13 (S2)   = A2
+pin 14 (A2)   = U51 pin 5
+pin 15 (B2)   = OFST2/
+pin 16 (VCC)  = Not depicted
+
+U50 (74F283)
+pin 1  (S1)   = A5
+pin 2  (B1)   = OFST5/
+pin 3  (A1)   = U51 pin 10
+pin 4  (S0)   = A4
+pin 5  (A0)   = U51 pin 11
+pin 6  (B0)   = OFST4/
+pin 7  (C0)   = U49 pin 9
+pin 8  (GND)  = Not depicted
+pin 9  (C4)   = U63 pin 7
+pin 10 (S3)   = A7
+pin 11 (B3)   = OFST7/
+pin 12 (A3)   = U51 pin 8, U65 pin 1
+pin 13 (S2)   = A6
+pin 14 (A2)   = U51 pin 9
+pin 15 (B2)   = OFST6/
+pin 16 (VCC)  = Not depicted
+
+U63 (74LS283)
+pin 1  (S1)   = A9
+pin 2  (B1)   = OFST9/
+pin 3  (A1)   = U65 pin 4
+pin 4  (S0)   = A8
+pin 5  (A0)   = U65 pin 3
+pin 6  (B0)   = OFST8/
+pin 7  (C0)   = U50 pin 9
+pin 8  (GND)  = Not depicted
+pin 9  (C4)   = U64 pin 7
+pin 10 (S3)   = A11
+pin 11 (B3)   = OFST11/
+pin 12 (A3)   = U65 pin 6, U65 pin 13
+pin 13 (S2)   = A10
+pin 14 (A2)   = U65 pin 5
+pin 15 (B2)   = OFST10/
+pin 16 (VCC)  = Not depicted
+
+U64 (74LS283)
+pin 1  (S1)   = A13
+pin 2  (B1)   = OFST13/
+pin 3  (A1)   = U65 pin 10
+pin 4  (S0)   = A12
+pin 5  (A0)   = U65 pin 11
+pin 6  (B0)   = OFST12/
+pin 7  (C0)   = U63 pin 9
+pin 8  (GND)  = Not depicted
+pin 9  (C4)   = not connected
+pin 10 (S3)   = A15
+pin 11 (B3)   = OFST15/
+pin 12 (A3)   = U65 pin 8
+pin 13 (S2)   = A14
+pin 14 (A2)   = U65 pin 9
+pin 15 (B2)   = OFST14/
+pin 16 (VCC)  = Not depicted
+
+---
+
+Muxes — 74LS157, 16 pins each
+
+U18 (74LS157)
+pin 1  (SEL)  = ROW SEL
+pin 2  (A1)   = A12
+pin 3  (B1)   = A4
+pin 4  (Y1)   = 33R resistor > AD4
+pin 5  (A2)   = A13
+pin 6  (B2)   = A5
+pin 7  (Y2)   = 33R resistor > AD5
+pin 8  (GND)  = Not depicted
+pin 9  (Y3)   = 33R resistor > AD6
+pin 10 (B3)   = A6
+pin 11 (A3)   = A14
+pin 12 (Y4)   = 33R resistor > AD7
+pin 13 (B4)   = A7
+pin 14 (A4)   = A15
+pin 15 (G\)   = tied to ground
+pin 16 (VCC)  = Not depicted
+
+U36 (74LS157)
+pin 1  (SEL)  = ROW SEL
+pin 2  (A1)   = A8
+pin 3  (B1)   = A0
+pin 4  (Y1)   = 33R resistor > AD0
+pin 5  (A2)   = A9
+pin 6  (B2)   = A1
+pin 7  (Y2)   = 33R resistor > AD1
+pin 8  (GND)  = Not depicted
+pin 9  (Y3)   = 33R resistor > AD2
+pin 10 (B3)   = A2
+pin 11 (A3)   = A10
+pin 12 (Y4)   = 33R resistor > AD3
+pin 13 (B4)   = A3
+pin 14 (A4)   = A11
+pin 15 (G\)   = tied to ground
+pin 16 (VCC)  = Not depicted
+
+---
+
+Buffers — 74LS244, 20 pins each
+
+U48 (74LS244)
+pin 1  (1G\)  = DPORT0/
+pin 2  (1A1)  = OFST6/
+pin 3  (2Y4)  = DATA7/
+pin 4  (1A2)  = OFST1/
+pin 5  (2Y3)  = DATA0/
+pin 6  (1A3)  = OFST2/
+pin 7  (2Y2)  = DATA5/
+pin 8  (1A4)  = OFST3/
+pin 9  (2Y1)  = DATA4/
+pin 10 (GND)  = Not depicted
+pin 11 (2A1)  = OFST4/
+pin 12 (1Y4)  = DATA3/
+pin 13 (2A2)  = OFST5/
+pin 14 (1Y3)  = DATA2/
+pin 15 (2A3)  = OFST0/
+pin 16 (1Y2)  = DATA1/
+pin 17 (2A4)  = OFST7/
+pin 18 (1Y1)  = DATA6/
+pin 19 (2G\)  = DPORT0/
+pin 20 (VCC)  = Not depicted
+
+U62 (74LS244)
+pin 1  (1G\)  = DPORT1/
+pin 2  (1A1)  = OFST11/
+pin 3  (2Y4)  = DATA4/
+pin 4  (1A2)  = OFST10/
+pin 5  (2Y3)  = DATA5/
+pin 6  (1A3)  = OFST9/
+pin 7  (2Y2)  = DATA0/
+pin 8  (1A4)  = OFST14/
+pin 9  (2Y1)  = DATA7/
+pin 10 (GND)  = Not depicted
+pin 11 (2A1)  = OFST15/
+pin 12 (1Y4)  = DATA6/
+pin 13 (2A2)  = OFST8/
+pin 14 (1Y3)  = DATA1/
+pin 15 (2A3)  = OFST13/
+pin 16 (1Y2)  = DATA2/
+pin 17 (2A4)  = OFST12/
+pin 18 (1Y1)  = DATA3/
+pin 19 (2G\)  = DPORT1/
+pin 20 (VCC)  = Not depicted
+
+---
+
+X Register latches — 74LS374, 20 pins each
+
+U38 (74LS374)
+pin 1  (OE\)  = RDL XREG/
+pin 2  (Q0)   = DATA0/
+pin 3  (D0)   = DAB0
+pin 4  (D1)   = DAB1
+pin 5  (Q1)   = DATA1/
+pin 6  (Q2)   = DATA2/
+pin 7  (D2)   = DAB2
+pin 8  (D3)   = DAB3
+pin 9  (Q3)   = DATA3/
+pin 10 (GND)  = Not depicted
+pin 11 (CP)   = U61 pin 12, U40 pin 11
+pin 12 (Q4)   = DATA4/
+pin 13 (D4)   = DAB4
+pin 14 (D5)   = DAB5
+pin 15 (Q5)   = DATA5/
+pin 16 (Q6)   = DATA6/
+pin 17 (D6)   = DAB6
+pin 18 (D7)   = DAB7
+pin 19 (Q7)   = DATA7/
+pin 20 (VCC)  = Not depicted
+
+U39 (74LS374)
+pin 1  (OE\)  = U61 pin 14, U41 pin 1
+pin 2  (Q0)   = DAB0
+pin 3  (D0)   = DATA0/
+pin 4  (D1)   = DATA1/
+pin 5  (Q1)   = DAB1
+pin 6  (Q2)   = DAB2
+pin 7  (D2)   = DATA2/
+pin 8  (D3)   = DATA3/
+pin 9  (Q3)   = DAB3
+pin 10 (GND)  = Not depicted
+pin 11 (CP)   = WRL XREG/
+pin 12 (Q4)   = DAB4
+pin 13 (D4)   = DATA4/
+pin 14 (D5)   = DATA5/
+pin 15 (Q5)   = DAB5
+pin 16 (Q6)   = DAB6
+pin 17 (D6)   = DATA6/
+pin 18 (D7)   = DATA7/
+pin 19 (Q7)   = DAB7
+pin 20 (VCC)  = Not depicted
+
+U40 (74LS374)
+pin 1  (OE\)  = RDH XREG/
+pin 2  (Q0)   = DATA0/
+pin 3  (D0)   = DAB8
+pin 4  (D1)   = DAB9
+pin 5  (Q1)   = DATA1/
+pin 6  (Q2)   = DATA2/
+pin 7  (D2)   = DAB10
+pin 8  (D3)   = DAB11
+pin 9  (Q3)   = DATA3/
+pin 10 (GND)  = Not depicted
+pin 11 (CP)   = U61 pin 12, U38 pin 11
+pin 12 (Q4)   = DATA4/
+pin 13 (D4)   = DAB12
+pin 14 (D5)   = DAB13
+pin 15 (Q5)   = DATA5/
+pin 16 (Q6)   = DATA6/
+pin 17 (D6)   = DAB14
+pin 18 (D7)   = DAB15
+pin 19 (Q7)   = DATA7/
+pin 20 (VCC)  = Not depicted
+
+U41 (74LS374)
+pin 1  (OE\)  = U61 pin 14, U39 pin 1
+pin 2  (Q0)   = DAB8
+pin 3  (D0)   = DATA0/
+pin 4  (D1)   = DATA1/
+pin 5  (Q1)   = DAB9
+pin 6  (Q2)   = DAB10
+pin 7  (D2)   = DATA2/
+pin 8  (D3)   = DATA3/
+pin 9  (Q3)   = DAB11
+pin 10 (GND)  = Not depicted
+pin 11 (CP)   = WRH XREG/, U42 pin 11
+pin 12 (Q4)   = DAB12
+pin 13 (D4)   = DATA4/
+pin 14 (D5)   = DATA5/
+pin 15 (Q5)   = DAB13
+pin 16 (Q6)   = DAB14
+pin 17 (D6)   = DATA6/
+pin 18 (D7)   = DATA7/
+pin 19 (Q7)   = DAB15
+pin 20 (VCC)  = Not depicted
+
+---
+
+Bus Test Register — 74LS374, 20 pins
+
+U42 (74LS374)
+pin 1  (OE\)  = DPORT2/
+pin 2  (Q0)   = DATA7/
+pin 3  (D0)   = DATA7/
+pin 4  (D1)   = DATA6/
+pin 5  (Q1)   = DATA6/
+pin 6  (Q2)   = DATA5/
+pin 7  (D2)   = DATA5/
+pin 8  (D3)   = DATA4/
+pin 9  (Q3)   = DATA4/
+pin 10 (GND)  = Not depicted
+pin 11 (CP)   = WRH XREG/, U41 pin 11
+pin 12 (Q4)   = DATA3/
+pin 13 (D4)   = DATA3/
+pin 14 (D5)   = DATA2/
+pin 15 (Q5)   = DATA2/
+pin 16 (Q6)   = DATA1/
+pin 17 (D6)   = DATA1/
+pin 18 (D7)   = DATA0/
+pin 19 (Q7)   = DATA0/
+pin 20 (VCC)  = Not depicted
+
+---
+
+Octal buffer — 74LS244, cell designations E, G, H
+
+U61 (74LS244) — sections E, G, H used
+pin 6   (E section) = RD XREG/
+pin 14  (E section) = U39 pin 1, U41 pin 1
+pin 8   (G section) = WR XREG/
+pin 12  (G section) = U38 pin 11, U40 pin 11
+pin 9   (H section) = 33R resistor > U20 pin 3 & U1 pin 3
+pin 11  (H section) = MEMW/
+
+---
+
+224X DMEM pinouts from 060-02512 sheet 2
+
+---
+
+NOTE — UNPOPULATED PARTS / DEAD PATHS (this product rev):
+  U47 (74S74) and U60 (74S02) are NOT POPULATED on this rev. Together they form an
+  ALTERNATE RAS/CAS/ROW-SEL timing generator that was never stuffed. The LIVE timing
+  path is U43, U44, U45, U46A, U58D, U59.
+  Three sections of populated chips drive ONLY unpopulated loads and are therefore also
+  dead: U46B (U46 is populated only for its live A section), U58B, U61C, U61D.
+  Every connection to a dead pin is tagged inline below as "[dead: <pin> — not populated]".
+  Where a live net also lists a dead endpoint, the live driver is named in the tag.
+  FOR MODELING: ignore U47, U60, U46B, U58B, U61C, U61D entirely.
+
+---
+
+U52 (74LS03) — open-collector NAND, 2-input
+pin 8 (3Y)   = +5V (via 1K resistor), U52 pin 13
+pin 9 (3A)   = IORC/, U56 pin 5, U57 pin 5
+pin 10 (3B)  = IOWC/, U55 pin 5
+pin 11 (4Y)  = XACK/
+pin 12 (4A)  = U58 pin 10
+pin 13 (4B)  = +5V (via 1K resistor), U52 pin 8
+[VCC/GND on package — not depicted on this section]
+
+---
+
+U53 (74LS00) — quad 2-input NAND, all four sections used
+
+U53A (¼ LS00)
+pin 1  (1A)  = U55 pin 7
+pin 2  (1B)  = U53B pin 6
+pin 3  (1Y)  = U53D pin 12, U53B pin 4
+
+U53B (¼ LS00)
+pin 4  (2A)  = U53A pin 3, U53D pin 12
+pin 5  (2B)  = U55 pin 9
+pin 6  (2Y)  = U53A pin 2
+
+U53C (¼ LS00)
+pin 8  (3Y)  = U54A pin 5, HALT/
+pin 9  (3A)  = U54A pin 6
+pin 10 (3B)  = U55 pin 11
+
+U53D (¼ LS00)
+pin 11 (4Y)  = U54A pin 4
+pin 12 (4A)  = U53A pin 3, U53B pin 4
+pin 13 (4B)  = RESET (NOT RESET/)
+
+[U53 VCC pin 14, GND pin 7 — not depicted]
+
+---
+
+U54 (74LS20) — dual 4-input NAND, both sections used
+
+U54A (½ LS20)
+pin 1  (1A)  = +5V
+pin 2  (1B)  = U55 pin 10
+pin 4  (1C)  = U53D pin 11
+pin 5  (1D)  = U53C pin 8, HALT/
+pin 6  (1Y)  = U53C pin 9
+
+U54B (½ LS20)
+pin 8  (2Y)  = U58 pin 11, U55 pin 4, U56 pin 4, U57 pin 4
+pin 9  (2A)  = ADR4/
+pin 10 (2B)  = ADR5/
+pin 12 (2C)  = ADR7/
+pin 13 (2D)  = ADR6/
+
+[U54 VCC pin 14, GND pin 7 — not depicted]
+
+---
+
+U55 (74LS138) — 3-to-8 decoder, 16 pins
+
+U55 (LS138)
+pin 1  (A)   = U56 pin 1, U57 pin 1, ADR0/
+pin 2  (B)   = U56 pin 2, U57 pin 2, ADR1/
+pin 3  (C)   = U56 pin 3, U57 pin 3, ADR2/
+pin 4  (G2A\)= U54B pin 8, U56 pin 4, U57 pin 4
+pin 5  (G2B\)= U52 pin 10, IOWC/
+pin 6  (G1)  = ADR3/, U56 pin 6, U58C pin 5 
+pin 7  (Y7)  = U53A pin 1
+pin 8  (GND) = Not depicted
+pin 9  (Y6)  = U53B pin 5
+pin 10 (Y5)  = U54A pin 2
+pin 11 (Y4)  = U53C pin 10
+pin 12 (Y3)  = not connected
+pin 13 (Y2)  = U58F pin 13
+pin 14 (Y1)  = WRL XREG/
+pin 15 (Y0)  = WRH XREG/
+pin 16 (VCC) = Not depicted
+
+U56 (74LS138) — 3-to-8 decoder, 16 pins
+pin 1  (A)   = U55 pin 1, U57 pin 1, ADR0/
+pin 2  (B)   = U55 pin 2, U57 pin 2, ADR1/
+pin 3  (C)   = U55 pin 3, U57 pin 3, ADR2/
+pin 4  (G2A\)= U54B pin 8, U55 pin 4, U57 pin 4
+pin 5  (G2B\)= U52 pin 9, U57 pin 5, IORC/
+pin 6  (G1)  = ADR3/, U55 pin 6, U58C pin 5 
+pin 7  (Y7)  = DPORT0/
+pin 8  (GND) = Not depicted
+pin 9  (Y6)  = DPORT1/
+pin 10 (Y5)  = DPORT2/
+pin 11 (Y4)  = DPORT3/
+pin 12 (Y3)  = DPORT4/
+pin 13 (Y2)  = DPORT5/
+pin 14 (Y1)  = RDL XREG/
+pin 15 (Y0)  = RDH XREG/
+pin 16 (VCC) = Not depicted
+
+U57 (74LS138) — 3-to-8 decoder, 16 pins
+pin 1  (A)   = U55 pin 1, U56 pin 1, ADR0/
+pin 2  (B)   = U55 pin 2, U56 pin 2, ADR1/
+pin 3  (C)   = U55 pin 3, U56 pin 3, ADR2/
+pin 4  (G2A\)= U54B pin 8, U55 pin 4, U56 pin 4
+pin 5  (G2B\)= U52 pin 9, U56 pin 5, IORC/
+pin 6  (G1)  = U58C pin 6
+pin 7  (Y7)  = HR1/
+pin 8  (GND) = Not depicted
+pin 9  (Y6)  = HR/
+pin 10 (Y5)  = not connected
+pin 11 (Y4)  = not connected
+pin 12 (Y3)  = not connected
+pin 13 (Y2)  = not connected
+pin 14 (Y1)  = not connected
+pin 15 (Y0)  = not connected
+pin 16 (VCC) = Not depicted
+
+---
+
+U58 (74S04) — hex inverter, sections B, C, D, E, F used
+
+U58B (⅙ S04)   [DEAD SECTION — output feeds only unpopulated U60]
+pin 3  (2A)  = U61 pin 16
+pin 4  (2Y)  = U60 pin 11   [dead: U60 pin 11 — U60 not populated; U58B's only load -> section dead]
+
+U58C (⅙ S04) - mislabeled on the schematic as a duplicate "U58B"
+pin 5  (3A)  = ADR3/, U56 pin 6, U55 pin 6
+pin 6  (3Y)  = U57 pin 6
+
+U58D (⅙ S04)
+pin 8  (4Y)  = U43 pin 3
+pin 9  (4A)  = tied to ground, U43 pin 9  
+
+U58E (⅙ S04)
+pin 10 (5Y)  = U52 pin 12
+pin 11 (5A)  = U54 pin 8, U55 pin 4, U56 pin 4, U57 pin 4
+
+
+U58F (⅙ S04)
+pin 12 (6Y)  = CPC CLR
+pin 13 (6A)  = U55 pin 13
+
+[U58 VCC pin 14, GND pin 7 — not depicted]
+
+---
+
+U59 (DL6308) — Digital Delay Module (discrete block)
+pin 1  (IN)          = U46 pin 5, U45 pin 10
+pin 2  (NC)          = not connected
+pin 3  (NC)          = not connected
+pin 4  (TAP2 60ns)   = U45 pin 12, U44 pin 12
+pin 5  (NC)          = not connected
+pin 6  (TAP4 120ns)  = U46 pin 4
+pin 7  (GND)         = tied to ground
+pin 8  (TAP5 150 ns) = U44 pin 4, U44 pin 5
+pin 9  (NC)          = not connected
+pin 10 (TAP3 90 ns)  = not connected
+pin 11 (NC)          = not connected
+pin 12 (TAP1 30 ns)  = U45 pin 13, U45 pin 9
+pin 13 (NC)          = not connected
+pin 14 (VCC)         = +5V
+
+---
+
+U43 (74S10) — triple 3-input NAND, sections B (called "A" on the schematic) and C (called "B" on the schematic) used
+
+U43A (⅓ S10)
+pin 3  (2A)  = U58 pin 8
+pin 4  (2B)  = U43 pin 11, U44 pin 11, U60 pin 1   [dead: U60 pin 1 — U60 not populated; net driven by U44C pin 11]
+pin 5  (2C)  = U43 pin 10, U61 pin 16, U58 pin 3
+pin 6  (2Y)  = 33R resistor > CAS0/
+
+U43B (⅓ S10)
+pin 8  (3Y)  = 33R resistor > CAS1/
+pin 9  (3A)  = tied to ground, U58 pin 9
+pin 10 (3B)  = U43 pin 5, U61 pin 16, U58 pin 3
+pin 11 (3C)  = U43 pin 4, U44 pin 11, U60 pin 1   [dead: U60 pin 1 — U60 not populated; net driven by U44C pin 11]
+
+[U43 VCC pin 14, GND pin 7 — not depicted]
+
+---
+
+U44 (74S00) — quad 2-input NAND, sections B, C, D used (labeled A B C on the schematic)
+
+U44A (¼ S00)
+pin 4  (2A)  = U44 pin 5, U59 pin 8
+pin 5  (2B)  = U44 pin 4, U59 pin 8
+pin 6  (2Y)  = U44 pin 9
+
+U44B (¼ S00)
+pin 8  (3Y)  = U44 pin 13
+pin 9  (3A)  = U44 pin 6
+pin 10 (3B)  = U46 pin 3, U61 pin 7, U60 pin 8   [dead: U60 pin 8 — U60 not populated; net driven by U61F pin 7]
+
+U44C (¼ S00)
+pin 11 (4Y)  = U43 pin 11, U43 pin 4, U60 pin 1   [dead: U60 pin 1 — U60 not populated; this pin (U44C 4Y) is the live driver]
+pin 12 (4A)  = U45 pin 12, U59 pin 4
+pin 13 (4B)  = U44 pin 8
+
+[U44 VCC pin 14, GND pin 7 — not depicted]
+
+---
+
+U45 (74S08) — quad 2-input AND, sections C and D used (labeled A B on the schematic)
+
+U45A (¼ S08)
+pin 8   (3Y)  = 33R resistor > RAS/, U47 pin 2, U47 pin 9, U60 pin 9   [dead: U47 pin 2, U47 pin 9, U60 pin 9 — U47 & U60 not populated; this pin (U45A 3Y) is the live RAS/ driver]
+pin 9   (3A)  = U45 pin 13, U59 pin 12
+pin 10  (3B)  = U59 pin 1, U46 pin 5
+
+U45B (¼ S08)
+pin 11  (4Y)  = ROW SEL, U60 pin 12, U47 pin 5   [dead: U60 pin 12, U47 pin 5 — U47 & U60 not populated; this pin (U45B 4Y) is the live ROW SEL driver]
+pin 12  (4A)  = U44 pin 12, U59 pin 4
+pin 13  (4B)  = U45 pin 9, U59 pin 12
+
+[U45 VCC pin 14, GND pin 7 — not depicted]
+
+---
+
+U46 (74S74) — dual D flip-flop. Section B is drawn on this sheet; section A is drawn in
+the RAS/CAS timing section (below). LIVE = section A only; section B is DEAD. U46 is
+populated solely for its A section.
+
+U46B (½ S74)   [DEAD SECTION — unused; all signal connections terminate on unpopulated U47/U60]
+pin 8  (2Q\)   = U60 pin 2, U60 pin 3   [dead: U60 not populated]
+pin 9  (2Q)    = not connected
+pin 10 (2PRE\) = +5V via 1K resistor
+pin 11 (2CLK)  = U47 pin 3, U47 pin 11, U61 pin 3   [dead: U47 not populated; U61 pin 3 = U61C, itself dead]
+pin 12 (2D)    = U60 pin 13   [dead: U60 pin 13 — U60 not populated; U46B's D input has no live driver]
+pin 13 (2CLR\) = +5V via 1K resistor
+
+[U46 VCC pin 14, GND pin 7 — not depicted]
+[U46A appears in RAS/CAS timing section]
+
+U46A (½ S74)
+pin 1  (1CLR\) = +5V via 1K resistor 
+pin 2  (1D)    = tied to ground
+pin 3  (1CLK)  = U61 pin 7, U60 pin 8, U44 pin 10   [dead: U60 pin 8 — U60 not populated; net driven by U61F pin 7]
+pin 4  (1PRE\) = U59 pin 6
+pin 5  (1Q)    = U59 pin 1, U45 pin 10
+pin 6  (1Q\)   = not connected
+
+---
+
+U47 (74S74) — dual D flip-flop, both sections A and B used
+IMPORTANT NOTE: THIS PART IS NOT POPULATED!
+
+U47A (½ S74)
+pin 1  (1CLR\) = +5V via 1K resistor 
+pin 2  (1D)    = U47 pin 9, U60 pin 9, U45 pin 8, R33 resistor > RAS/
+pin 3  (1CLK)  = U61 pin 3, U47 pin 11, U46 pin 11
+pin 4  (1PRE\) = +5V via 1K resistor
+pin 5  (1Q)    = U60 pin 12, U45 pin 11, ROW SEL
+pin 6  (1Q\)   = not connected
+
+U47B (½ S74)
+pin 8  (2Q\)   = not connected
+pin 9  (2Q)    = U47 pin 2, U60 pin 9, U45 pin 8, 33R resistor > RAS/
+pin 10 (2PRE\) = +5V via 1K resistor
+pin 11 (2CLK)  = U47 pin 3, U46 pin 11, U61 pin 3
+pin 12 (2D)    = U60 pin 4
+pin 13 (2CLR\) = +5V via 1K resistor
+
+[U47 VCC pin 14, GND pin 7 — not depicted]
+
+---
+
+U60 (74S02) — quad 2-input NOR, all four sections used
+IMPORTANT NOTE: THIS PART IS NOT POPULATED!
+
+U60A (¼ S02)
+pin 1  (1Y)  = U44 pin 11, U43 pin 11
+pin 2  (1A)  = U60 pin 3, U46 pin 8
+pin 3  (1B)  = U60 pin 2, U46 pin 8
+
+U60B (¼ S02)
+pin 4  (2Y)  = U47 pin 12
+pin 5  (2A)  = U60 pin 10
+pin 6  (2B)  = U61 pin 5
+
+U60C (¼ S02)
+pin 8  (3A)  = U61 pin 7, U46 pin 3, U44 pin 10
+pin 9  (3B)  = U47 pin 2, U47 pin 9, U45 pin 8, 33R resistor > RAS/
+pin 10 (3Y)  = U60 pin 5
+
+U60D (¼ S02)
+pin 11 (4A)  = U58 pin 4
+pin 12 (4B)  = U47 pin 5, U45 pin 11, ROW SEL
+pin 13 (4Y)  = U46 pin 12
+
+[U60 VCC pin 14, GND pin 7 — not depicted]
+
+---
+
+U61 (74LS244) — octal buffer, sections A, B, C, D, F used on this sheet
+[Remainder of U61 sections appear on sheet 1]
+
+U61A (⅛ LS244)
+pin 2  (1A1) = not connected
+pin 18 (1Y1) = not connected
+
+U61C (⅛ LS244)   [DEAD SECTION — buffers MC to only unpopulated/dead loads]
+pin 17 (2A4) = MC
+pin 3  (2Y4) = U47 pin 11, U47 pin 3, U46 pin 11   [dead: U47 not populated + U46 pin 11 = U46B (dead section) — no live load]
+
+U61D (⅛ LS244)   [DEAD SECTION — buffers MS1 to only unpopulated U60]
+pin 15 (2A3) = MS1
+pin 5  (2Y3) = U60 pin 6   [dead: U60 pin 6 — U60 not populated; U61D's only load -> section dead]
+
+U61B (⅛ LS244) mislabeled "U61G" on schematic
+pin 4  (1A2) = MEMAC
+pin 16 (1Y2) = U58 pin 3, U43 pin 5, U43 pin 10
+
+U61F (⅛ LS244)
+pin 13 (2A2) = DAB RSTB
+pin 7  (2Y2) = U46 pin 3, U60 pin 8, U44 pin 10   [dead: U60 pin 8 — U60 not populated; live loads = U46A pin 3, U44B pin 10]
+pin 1 (1G\)  = tied to ground
+pin 19 (2G\) = tied to ground
+
+[U61 OE\ pins and VCC/GND — not depicted on individual sections]

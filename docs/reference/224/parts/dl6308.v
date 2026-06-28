@@ -1,5 +1,5 @@
 //============================================================================
-// DL630B - 5-tap digital delay line  (Bel Fuse 0447-0150-02)
+// DL6308 - 5-tap digital delay line  (Bel Fuse 0447-0150-02)
 //----------------------------------------------------------------------------
 // PART:       TTL active 5-tap digital delay line, 14-pin DIP. One input pulse
 //             reappears at 5 tap outputs, each delayed 30 ns more than the last:

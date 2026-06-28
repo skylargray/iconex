@@ -11,11 +11,11 @@
 // PINOUT (DIP-14):
 //    1  1CP      14  VCC
 //    2  1MR      13  2CP
-//    3  1Q0      12  2MR
-//    4  1Q1      11  2Q0
-//    5  1Q2      10  2Q1
-//    6  1Q3       9  2Q2
-//    7  GND       8  2Q3
+//    3  1QA      12  2MR
+//    4  1QB      11  2QA
+//    5  1QC      10  2QB
+//    6  1QD       9  2QC
+//    7  GND       8  2QD
 //
 // FUNCTION (per counter; Q0 = LSB):
 //   MR = HIGH -> Q0..Q3 = 0 (asynchronous).

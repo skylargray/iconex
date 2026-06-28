@@ -5,7 +5,7 @@
 > found the **multiply scale is /32 not /64** (`prod>>5`, per the ADD'L MULT diagnostic), confirmed the FPC I/O is
 > 16-bit, and **localized the one remaining bug to ARU datapath TIMING** — the static-WCS reverb tank is dead
 > (CONCERT impulse → silence) because the diffused/predelayed signal never gets written into the DMEM long-delay
-> lines, even though every decoded field is correct. **▶ START HERE NOW: `docs/plans/224XL-signature-analysis-plan.md`**
+> lines, even though every decoded field is correct. **▶ START HERE NOW: `docs/plans/008 - 224XL-signature-analysis-plan.md`**
 > (the endgame: exact 3-state ARU model + signature-table validation) and memory `224xl-session8-inv-l3-and-dead-tank.md`.
 > The Session-7 "decode error → over-unity" narrative below is HISTORICAL — the decode it produced is correct,
 > but the over-unity it chased was never the real problem.
@@ -79,7 +79,7 @@ DEAD; decode reconstruction is the path. Lesson: reconcile candidates with BOTH 
 actual microword wiring before believing an eigenvalue fit.
 
 Session 7 (2026-06-24). Supersedes the Session-6 framing below. Full prior record:
-`docs/plans/224XL-concert-decay-investigation.md`. C++ core state: memory `224xl-cpp-scaffold`.
+`docs/plans/005 - 224XL-concert-decay-investigation.md`. C++ core state: memory `224xl-cpp-scaffold`.
 
 ---
 

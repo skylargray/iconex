@@ -72,8 +72,8 @@ Full annotated stack with per-layer detail: [`224XL-interp-stack.md`](224XL-inte
 | `tools/boot_xl.py`, `tools/z80emu.py` | **RETIRED** old boot + emulator | `z80emu.py` has the 8080 parity bug — do not use for new work |
 
 ### Docs (read these)
-- `docs/plans/224XL-interp-stack.md` — **live status board** (update as you go).
-- `docs/plans/224XL-validation-plan.md` — the earlier adversarial validation plan (Tracks A–F) + §5 results.
+- `docs/plans/012 - 224XL-interp-stack.md` — **live status board** (update as you go).
+- `docs/plans/009 - 224XL-validation-plan.md` — the earlier adversarial validation plan (Tracks A–F) + §5 results.
 - `docs/reference/224/224XL_system_architecture.md` — **§5–6 = the address arithmetic** (offset→addr, banks).
 - `docs/reference/224/224XL_microword_fieldmap.md` — the L4 bit-map (the thing to verify).
 - `docs/reference/224/224XL_track{AC,B,D,E,E2}_results.md` — prior multi-agent investigation results.

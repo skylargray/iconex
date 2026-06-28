@@ -4,7 +4,7 @@
 > The decode is now FULLY confirmed (Session 8 + owner schematic traces: XFER=MI24=l3.b0, ZERO=MI25=l3.b1
 > AS0-gated, C0-C5=MI26-31, inv_l3=True; multiply scale /32 not /64; FPC I/O 16-bit; topology = Fig 4.1). The
 > static-WCS reverb tank is dead because the diffused/predelayed audio never reaches the DMEM long-delay lines —
-> a pipelined-comb timing problem, NOT a decode problem. **START HERE: `docs/plans/224XL-signature-analysis-plan.md`**
+> a pipelined-comb timing problem, NOT a decode problem. **START HERE: `docs/plans/008 - 224XL-signature-analysis-plan.md`**
 > (exact 3-state ARU model + §5.7 signature-table validation) and memory `224xl-session8-inv-l3-and-dead-tank.md`.
 
 > **✅ RESOLVED — SUPERSEDED (Session 7, 2026-06-24).** The over-unity/decay deficit this plan was built
@@ -14,7 +14,7 @@
 > schematic (060-02475) → the corrected decode makes **every program a lossless (λ=1.000000) or gently
 > decaying reverb prototype — zero programs hot** (was 8/13 hot, up to λ=1.67; CONCERT → λ=1.000000). So
 > §1's "datapath is faithful" conclusion was wrong (it was confirmed only for the *arithmetic*, not the
-> *control decode*), and §3.1's modulation premise is moot. **▶ See `docs/plans/224XL-overunity-frontier.md`
+> *control decode*), and §3.1's modulation premise is moot. **▶ See `docs/plans/006 - 224XL-overunity-frontier.md`
 > for the full resolution + the confirmed microword bit map.** Remaining work is finishing the faithful
 > reconstruction on the corrected decode (diagnostic-pin the byte inversions, regen golden, mirror to C++).
 
@@ -113,8 +113,8 @@ DMEM-vs-FPC — MEMAC=MI17 alone does. ADC = AM25L04 (12-bit, DAB0–11, sign-ex
 ### ▶ Session-pickup prompt (paste into a new session)
 
 > Continue the 224XL reconstruction. The over-unity/decay mystery is **RESOLVED** — it was a microword decode
-> error; see `docs/plans/224XL-overunity-frontier.md` (authoritative: §5a confirmed bit map, §4b datapath +
-> device decode) and `docs/plans/224XL-faithful-reconstruction-plan.md` "★ SESSION 7" section (the true field
+> error; see `docs/plans/006 - 224XL-overunity-frontier.md` (authoritative: §5a confirmed bit map, §4b datapath +
+> device decode) and `docs/plans/007 - 224XL-faithful-reconstruction-plan.md` "★ SESSION 7" section (the true field
 > map + next steps). Do this:
 > 1. Rebuild `tools/aru_datapath.py:load_microcode` to the TRUE microword map (offset MI0–15; l2: b0=DMEM
 >    read/write, b1=DMEM-op/MEMAC, b2,b3=WA, b4,b5=RA, b6=PROT, b7=CSIGN; l3: b0=XFER, b1=ZERO, b2–7=coeff;
@@ -147,7 +147,7 @@ field map, the modulation/air-absorption thesis, and §4's conclusion as histori
 deficit was framed as an isolated linear excess. (Session 7 found the real cause: the decode error above.)
 
 **Why this plan exists:** the long-running CONCERT-decay investigation
-(`docs/plans/224XL-concert-decay-investigation.md`) established that the booted-default CONCERT reverb (and
+(`docs/plans/005 - 224XL-concert-decay-investigation.md`) established that the booted-default CONCERT reverb (and
 every long hall) **grows** at a uniform **≈ +1100 ppm/pass** in our model instead of decaying to RT60 ≈ 20 s.
 Session 4 proved — by the owner tracing the actual ARU schematic nets — that the **arithmetic datapath is
 faithful** (see §1), so the deficit is **not** a decode/datapath bug. It is instead masked/explained by the
@@ -487,7 +487,7 @@ hardware is explicitly flagged (not silently approximated).
 
 ## 7. Key references
 
-- **This session's full record:** `docs/plans/224XL-concert-decay-investigation.md` (§0.10 — read §0.10.8–
+- **This session's full record:** `docs/plans/005 - 224XL-concert-decay-investigation.md` (§0.10 — read §0.10.8–
   0.10.10 for the schematic-confirmation + the approximation pivot).
 - **Schematic ground-truth (owner-traced nets):** `docs/reference/224/224XL ARU pinouts from 060-01318.txt`.
 - **Master technical reference:** `docs/reference/224/224XL_technical_reference.md` (§2 datapath, §4
