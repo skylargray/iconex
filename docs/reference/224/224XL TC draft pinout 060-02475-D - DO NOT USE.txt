@@ -1,0 +1,421 @@
+IMPORTANT NOTE: THIS DOC NOT VERIFIED. DO NOT USE.
+
+SCHEMATIC: 060-02475-D Sheet 1 — Merged TC1 + TC2
+SECTIONS: PLL / LC TANK OSCILLATOR / DIVIDER / CLOCK DRIVER / COUNTER CHAIN / CLOCK DISTRIBUTION LOGIC
+TILES: TC1 (PLL+oscillator+divider partial), TC2 (divider full+clock driver+counter chain+logic)
+DATE: 2026-06-27
+NOTE: ? = uncertain reading; pin numbers from IC type where not printed on schematic
+
+================================================================================
+COMPONENTS
+================================================================================
+IMPORTANT NOTE: COMPONENTS NOT FULLY VERIFIED
+
+--- PLL ---
+
+U27   MC4044   Phase-frequency detector / charge pump
+      Visible pins: 1, 2, 3, 4, 5, 10, 11, 13
+
+U29   VCO      Part number not legible in any crop — only pins 8, 9 visible
+      ?type (possibly MC1648 or similar LC-tuned VCO)
+
+--- LC TANK OSCILLATOR ---
+
+Q1    2N5910   NPN transistor (LC oscillator core)
+Q2    2N5910   NPN transistor (divider buffer / clock output)
+
+L1    0.10 UH  inductor
+C12   5-30 PF  trimmer capacitor
+C13   33 PF    capacitor (OPT.)
+C14   0.01/16  bypass capacitor
+C15   0.01/16  bypass capacitor (BYPASS)
+C17   120 PF   capacitor
+C18   15 PF    capacitor
+C19   10 PF    capacitor
+
+R5    1K       resistor
+R6    1K       resistor
+R7    3K       resistor
+R8    100      resistor (Q2 collector load)
+R9    270      resistor
+
+TP1   OSC TEST POINT
+
+--- PLL FILTER / VCO BIASING ---
+
+C31   300 PF   capacitor
+C32   1000 PF  capacitor
+C44   0.01/16  bypass capacitor (BYPASS)
+C45   0.22/100 POLY  polyester capacitor
+CR1   MV209    varactor diode
+R10   1K       resistor
+R11   1K       resistor
+R12   1K       resistor
+R13   680      resistor
+
+--- CONNECTORS ---
+
+J5    connector  — top row pin 13, bottom row pin 11 visible; full count ?
+J6    connector  — top row pin visible (unlabeled in crop), bottom row pin visible
+J7    connector  — top row pin 26(? — see TC1 note), bottom row pin 25 visible
+J8    connector  — top row pin 26, bottom row pin 25 visible
+      NOTE: J5–J8 top pins connect to common +5V rail; bottom pins to GND bus
+      Pin numbers beyond 11/13/25/26 extend off crop edges — full count ?
+
+A28   buffer / line driver  (2-input triangle symbol; d1, d2 labeled)
+      ? part type
+
+--- DIVIDER ---
+
+U26   S112     JK flip-flop (DIVIDER section)
+      Visible pins: 10 (SD/, active-low set, → +5V), 11 (J), 12 (K), 13 (CLK, active-low triangle),
+                    14 (GND), 9 (Q output)
+      NOTE: SD/ = preset, active-low (bubble on pin 10); CLK = falling-edge triggered (bubble on pin 13);
+            pin 14 → +5V (? — arrow shown; verify polarity — may be VSS tie or external +5V shown as power symbol)
+
+--- CLOCK DRIVER ---
+
+C46   30 PF    capacitor
+R14   1.2K     resistor
+R15   220      resistor
+R16   20       resistor
+Q3    2N5910   NPN transistor (clock driver output stage)
+
+U40D  74S00 gate D  (NAND, 2-input)
+      Visible pins: 12 (Vss/GND tie → +5V shown), 13 (input A), 11 (output, inverted)
+      NOTE: pin 12 shown tied to +5V — consistent with 74S00 Vcc on package but
+            Vcc is pin 14 (off-crop); verify whether pin 12 is actually an input tied high
+
+--- COUNTER / DIVIDE CHAIN ---
+
+U41   74S163   4-bit binary counter (DIVIDER, prescaler)
+      Visible pins: 1 (CLR/ — active-low), 2 (CLK), 3 (A — data), 4 (B), 5 (C), 6 (D), 7 (P),
+                    9 (QA), 10 (T), 11 (QD output), ?15 (RCO carry-out)
+      NOTE: pin 9 (QD label visible in TC1 as "QD" at pin 11 row; TC2 shows "11 QD" at bottom)
+            — confirmed QD exits bottom right toward U40A; CLK comes from Q2:C via TP1 net
+
+U40A  74S00 gate A  (NAND, 2-input, with bubble = NAND not AND)
+      Visible pins: 1 (input, upper — from U41:15/QD or RCO ?), 2 (input, lower — from U41:QD net), 3 (output)
+      NOTE: two left pins feed from U41 outputs; output feeds U56:CLK
+
+U56   74S163   4-bit binary counter (second stage prescaler)
+      Visible pins: 1 (CLR/ — active-low, bubble), 2 (CLK ← U40A:3), 6 (D input — data),
+                    7 (P), 9 (L/ — load, active-low, bubble), 10 (T), 11 (QD / MS4 output),
+                    15 (RCO carry-out → U39 chain), 3 (A), 4 (B), 5 (C)
+      Data inputs: pin 6 (D) → +5V; pins 3,4,5 (A,B,C) connections ? (TC2 shows '3 ↑+5V' for pin 6 only)
+      MS4 net: U56:11 (QD) labeled MS4 — feeds top of MS4 brace
+
+U39   74S74 (or equivalent D-FF; labeled "U39" on multiple cells in ripple chain)
+      Three D-FF cells visible, labeled U39 each:
+        Cell 1: pin 3 (D ← MS3 net / U56:15), pin 2 (Q → next cell D / pin 4)
+        Cell 2: pin 4 (D ← cell1:Q), pin 5 (Q → next cell D / pin 7); CF net at CLK (?)
+        Cell 3: pin 7 (D ← cell2:Q), pin 6 (Q → exits right)
+      CLK source for U39 cells: common CLK bus (? — source not fully resolved in crop)
+      NOTE: "MS3" net label on U39 cell 1 D-input; "CF" net label near cell 2 CLK
+
+--- CLOCK DISTRIBUTION LOGIC ---
+
+U38   74LS27   3-input NOR gate
+      Visible pins: 11 (input ← MS8), 10 (input ← MS2), 3 (input ← MS5), 8 (output, inverted → U25:D/pin 12)
+      Additional inputs at gate: IZD3 (net, inverted via overbar), IZA8 (net), IZA4 (net) — fed to same gate
+      NOTE: IZA8 connects through bubble to pin 11 node; IZD3/IZA4 are further inputs — LS27 is 3-input NOR,
+            but 6 signal labels shown; likely MS8/MS2/MS5 are bussed from the IZ net labels — verify topology
+
+U25   74S74    D flip-flop (single cell shown)
+      Visible pins: 10 (SD/ → +5V), 11 (CLK, active-low ← U38:8 via pin 12), 12 (D ← U38:8),
+                    13 (CD/ ← GND via +5V symbol? — pin 13 → +5V shown), 8 (Q/ output), 9 (Q output)
+      NOTE: SD/ = preset pin 10 → +5V (not asserted); CD/ = clear pin 13 → +5V; CLK on pin 11
+
+U23A  74LS175  D flip-flop cell A (quad D-FF package)
+      Visible pins: 4 (D ← +5V), 9 (CLK ← common CLK bus), 2 (Q output → exits right), 3 (Q/ output)
+                    1 (CLR/ → GND, active-low — bubble visible)
+      NOTE: CLR/ tied low (active) — holds U23A in reset? Verify intended logic state
+
+U40B  74S00 gate B  (NAND, 2-input)
+      Visible pins: 4 (input A), 5 (input B → +5V), 6 (output, inverted → U40C:9)
+      NOTE: pin 5 tied to +5V → effectively inverter on pin 4
+
+U40C  74S00 gate C  (NAND, 2-input)
+      Visible pins: 9 (input A ← U40B:6), 10 (input B → +5V), 8 (output, inverted → exits right)
+      NOTE: pin 10 tied to +5V → effectively inverter on pin 9; cascaded inverter pair with U40B
+
+================================================================================
+NET CONNECTIONS
+================================================================================
+
+--- PLL ---
+
+A28:out1      → U27:1
+A28:out2      → U27:2
+U27:5         → R11:1
+R11:2         → R12:1
+R12:2         → U29:9
+U27:10        → C32:1
+C32:2         → GND
+U29:8         → C31:1
+C31:2         → GND
+R10:1         → +5V
+R10:2         → R13:1
+R13:2         → U29:9
+C45:1         → U29:9
+C45:2         → U29:8
+C44:1         → +5V
+C44:2         → GND
+CR1:A         → U29:9          (? — varactor tuning; polarity from MV209 symbol)
+CR1:K         → GND            (?)
+
+--- LC TANK OSCILLATOR ---
+
++5V           → R6:1
+R6:2          → R9:1
+R9:2          → Q1:C
+R6:2          → Q1:B           (bias divider tap; R7 also here)
+R7:1          → Q1:B
+R7:2          → GND
+Q1:E          → L1:1
+L1:2          → C12:1
+C12:2         → GND
+L1:2          → C13:1          (C13 parallel with C12)
+C13:2         → GND
+C14:1         → Q1:E           (bypass at emitter)
+C14:2         → GND
+C15:1         → +5V
+C15:2         → GND
+Q1:C          → C19:1
+C19:2         → C18:1          (? — series or node — verify with higher-res crop)
+C18:2         → GND
+C19:2         → C17:1
+C17:2         → R5:1
+R5:2          → Q2:B
+
+--- DIVIDER ---
+
+R8:1          → +5V
+R8:2          → Q2:C
+Q2:E          → GND
+Q2:C          → TP1            (OSC TEST POINT)
+Q2:C          → U26:13         (oscillator signal → JK flip-flop CLK)
+U26:10        → +5V            (SD/ preset, not asserted)
+U26:11        → Q2:C           (J input — same as CLK net? verify if separate)  ?
+U26:12        → GND            (K input)                                         ?
+U26:14        → GND            (VSS / GND tie)
+U26:9         → U41:2          (Q output → U41 CLK)
+U26:13        → Q2:C           (CLK input, active-falling edge)
+
+--- COUNTER / PRESCALER CHAIN ---
+
+U41:2         → U26:9          (CLK ← Q of JK divider)
+U41:1         → GND            (CLR/ — tied low = always enabled)               ?
+U41:7         → +5V            (P — count-enable, tied high)
+U41:10        → +5V            (T — ripple carry enable, tied high)
+U41:3..6      → +5V or data    (A,B,C,D — preset data; connections ? off-crop)
+U41:9         → U40A:1         (QA output → U40A upper input)
+U41:11        → U40A:2         (QD output → U40A lower input)
+U41:15        → U40A:1         (RCO carry → U40A upper input?)  ? — TC2 shows "15" at U40A:1
+
+NOTE: U41 pins 9 and 15 both appear to feed U40A:1 — likely only one of them does.
+      QD is more probable; RCO feed also possible for synchronous reset. Verify.
+
+U40A:3        → U56:2          (NAND out → U56 CLK)
+
+U56:1         → U40A:3         (CLR/ — verify; may be separate reset net)       ?
+U56:7         → +5V            (P)
+U56:10        → +5V            (T)
+U56:9         → +5V or data    (L/ — load; if tied high, counting freely)        ?
+U56:6         → +5V            (D data input)
+U56:11        → MS4            (QD output → net label MS4)
+U56:15        → U39-cell1:3    (RCO carry → first U39 D input, net label MS3)
+
+--- U39 RIPPLE REGISTER CHAIN ---
+
+U39-cell1:3   (D) ← U56:15 / MS3 net
+U39-cell1:2   (Q) → U39-cell2:4 (D)
+U39-cell2:4   (D) ← U39-cell1:Q
+U39-cell2:5   (Q) → U39-cell3:7 (D)
+U39-cell3:7   (D) ← U39-cell2:Q
+U39-cell3:6   (Q) → exits right (further logic, off TC2 crop)
+CF            → U39-cell2 CLK  (net label "CF"; source not in crop)
+Common CLK    → all U39 cells  (? — CLK source not traced to origin in these tiles)
+
+--- CLOCK DRIVER ---
+
+U26:9         → C46:1          (Q output drives clock driver input via cap)
+C46:2         → R14:1
+C46:2         → R15:1          (junction: C46 feeds both R14 and R15)
+R14:2         → GND
+R15:2         → R16:1
+R16:2         → Q3:B
+Q3:C          → +5V (via R16:2 node — verify; arrow points to +5V at R16 right end)
+Q3:E          → GND
+Q3:C          → U40D:13        (clock output into NAND gate input)
+U40D:12       → +5V            (second input — tied high → U40D acts as inverter)
+U40D:11       → exits right    (inverted clock output — clock distribution bus)
+
+--- CLOCK DISTRIBUTION LOGIC ---
+
+MS8           → U38:11
+MS2           → U38:10
+MS5           → U38:3
+IZD3 (net/)   → U38:11         (? — may be same net as MS8 with inverting flag)
+IZA8 (net/)   → U38:11 (via bubble)  (? — active-low qualifier on same node)
+IZA4 (net/)   → U38 input      (? — 3-input NOR; third input position)
+IZD4 (net/)   → U38 input      (? — seen in crop near bottom of U38 box; fourth net label)
+U38:8         → U25:12         (NOR output → D-FF D input)
+U38:8         → U25:11         (same net → D-FF CLK?)                            ?
+              NOTE: U25 CLK and D both appear to connect to U38:8 — possible single node
+                    feeding both, or separate — verify from wider crop
+
+U25:10        → +5V            (SD/ not asserted)
+U25:13        → +5V            (CD/ — GND symbol shown, but arrow = +5V; verify polarity) ?
+U25:9         → U23A:4 and U40B:4  (Q output fans out)
+U25:8         → U40B input     (Q/ output)                                        ?
+
+U23A:4        (D) ← U25:9
+U23A:9        (CLK) ← common CLK bus
+U23A:1        (CLR/) → GND     (active-low, held low — keep in reset? verify)
+U23A:2        (Q) → exits right
+U23A:3        (Q/) → exits right
+
+U40B:4        (A) ← U25:9 (or upstream — verify)
+U40B:5        (B) → +5V        (tied high → inverter behavior)
+U40B:6        (Y/) → U40C:9
+
+U40C:9        (A) ← U40B:6
+U40C:10       (B) → +5V        (tied high → inverter behavior)
+U40C:8        (Y/) → exits right (clock output net)
+
+--- CONNECTORS ---
+
+J5:13         → +5V (upper pin row)
+J5:11         → GND or data bus (lower row)  ?
+J6            → U41 data/control lines  (routed via staircase wiring above U41)  ?
+J7:26         → U41 top pin row  ?
+J8:25         → U41/GND bus  ?
+NOTE: Connector wiring above U41 forms a staircase to pins 1,3,4,5,6,9 of U41 —
+      suggests J5–J8 provide preset data or control to U41 ABCD and CLR/ENP/ENT.
+      Exact per-pin assignments not traceable without higher-res crop of that staircase.
+
+--- BUS / OFF-SHEET NETS (from TC1 bottom) ---
+
+2/Z02 XFER    → (net label exits right, destination off-sheet)
+2/Z02 DP      → (net label exits right)
+ADRF/         → pin 44 of component off right edge of TC1
+ADRE/         → pin 43
+ADRD/         → pin 46
+ADRE/         → U33:11
+U33:10        → exits right (ADRE/ buffered — IZB? net)                          ?
+
+--- φ2 / MASTER CLOCK OUTPUT ---
+
+U27:?         → φ2 net        (PLL output; source pin on U27 not resolved)       ?
+φ2            → IZB4 (cross-reference flag: "/B4")
+
+================================================================================
+RESOLVED UNCERTAINTIES (from TC2)
+================================================================================
+
+TC1 open item                          Resolution
+-------------------------------        ------------------------------------------------
+U41 pin numbers unknown                Confirmed: CLR=1, CLK=2, A=3, B=4, C=5, D=6,
+                                       P=7, QA=9, T=10, QD=11 (standard 74S163)
+U41:T(10), P(7) connections            TC2: both appear tied to +5V (count always enabled)
+U41:CLK source                         TC2: from U26:Q (pin 9 of S112 JK FF)
+Q2 collector destination               TC2: confirmed Q2:C → TP1 and U26:13 (CLK)
+J7/J8 pin 25/26 confirmed             TC2 connector view: pin 26 top row, pin 25 bottom row
+                                       Upper row → +5V; lower row → GND bus
+A28 still not type-confirmed           Unchanged — buffer triangle, 2 inputs d1/d2
+φ2 source pin on U27                   Still unresolved
+
+================================================================================
+OPEN ITEMS / UNCERTAINTIES
+================================================================================
+
+- U29 part number: not legible in any tile
+- U41: pins feeding U40A — QA(9) vs QD(11) vs RCO(15) — need single-pin resolution
+- U56:1 CLR/ source: separate reset net or tied to U40A:3?
+- U39 CLK source: "CF" net origin not in these tiles
+- U38 inputs: 6 net labels (IZD3, IZA8, IZA4, MS8, MS2, MS5) into a 3-input NOR —
+              topology ambiguous; some may be the same nets with /overbar notation
+- U25 CLK vs D pin: both appear to connect to U38:8 — verify
+- U25:13 CD/ polarity: symbol shows +5V arrow but context suggests GND; verify
+- U23A CLR/ tied low: intentional reset state or wiring artifact?
+- U40B/C input sources beyond +5V tie: confirm fan-in from U25:Q or other
+- J5–J8 per-pin assignments to U41 ABCD/CLR/ENP/ENT: staircase wiring not resolved
+- A28 component type not confirmed
+- φ2 source pin on U27 not resolved
+- U33 gate identity within 74LS04 package: not confirmed (TC1 only partial)
+- Bus nets ADRF/, ADRD/ destinations: IC off right edge of TC1 not yet identified
+
+---PLAN---
+the timing work already lets us skip the single densest part of T&C.
+Here's the organizing principle, then a ranked trace list and an explicit ignore list.
+
+The principle that shrinks the job
+The model needs two kinds of T&C signal:
+
+-Pure-timing signals (MC, MS0–8, AS0/1/2, ARUCK, ARUCKE/, DAB WSTB, DAB RSTB, S0/S1).
+Their waveforms are already pinned in 224XL_timing_spec.md (figs 3.2/3.4), and their consumers
+are already mapped in the ARU/DMEM netlist. The model generates these from a counter.
+You do not need to trace how they're generated.
+-Microword-decoded signals (the offset, the coefficient, RA/WA, CSIGN, XFER/ZERO enables, the device-decode)
+ — these carry the program's meaning and are not derivable from any timing diagram.
+ This is what's worth tracing.
+So: trace the decode and the WCS-bit→destination wiring; skip the clock/PLL generator.
+
+Trace priority (highest leverage first)
+
+P0 — the device-decode cluster (small, and it defines what every step does)
+-tc_U47 (LS139) + tc_U48 (LS00) + tc_U49 (LS10, incl. U49C = WR DA/) + tc_U34A.
+-Decodes (MI16,MI17,MI12,MI13,MI4,MI7) → MEMAC, MEMR, MEMW/, RDRREG/, RD AD/, WR DA/ and the DAB-driver enables.
+-Why first: it's a handful of chips, and it tells you per step whether it's a DRAM read/write / coeff / I/O,
+and who drives the DAB — which closes net-group 1 and resolves the dead-tank "which steps write DMEM" question.
+It also lets us confirm or correct the believed decode
+(the MEMAC=MI17 / sub-decoder beliefs that are currently ❌-FAITH in the bottom-up work).
+
+P0 — the offset path (this is the delay)
+-The WCS offset-field latch → OFST0–15/ → out to the DMEM adder B (dmem_U49/50/63/64, §5.2).
+-Why: offset = delay length. Highest reverb-critical net there is.
+
+P0 — the coefficient serializer (this is the gain / the multiplier)
+-The WCS coefficient bits → the 74195/74194 shifters → M0/ M1/ (ARU Booth, §4F.5/4F.6) across the 3 AS states,
+plus CSIGN/.
+-Why: coeff = gain; M0/M1 is how it enters the modified-Booth multiplier. Pinning this resolves the
+coeff/serialization uncertainty in the field map.
+
+P1 — the regfile addresses
+-WCS bits → RA0/RA1/WA0/WA1 (ARU regfile read/write select, §4F.1/4F.6) = which delay-line slot each step
+touches.
+
+P1 — the decode-gated strobes
+-Which microword bit gates the fixed clock to produce XFER CK and ZERO/ (accumulator transfer / clear),
+and the MEMAC gating of CAS. The timing is known; you only need the enable term (which MI bit ANDs with
+which edge). Much of this falls out of P0's decode.
+
+P2 — clock fan-out sanity (light, not a real trace)
+-Just confirm the net names ARUCK / ARUCKE/ / DAB WSTB / DAB RSTB / S0 / S1 come off the expected generator
+outputs, cross-checked against fig-3.2/3.4. No gate-level work — a labeling pass.
+
+Can be ignored (for the reverb model)
+-The entire clock/PLL generator gate-level — mc4044 (U27 PLL), the ÷2 JK (U26), the ÷9 counter (U56),
+the MS shift register (U39), the AS-grouping (U38/U25/U23). Output = the timing spec; the model makes
+MS/AS from a counter. (Only a cycle-accurate boot/PLL-lock emulation would need it — not reverb.)
+-FPC clock/control generation on T&C — FPC is scoped out (we only need its number-format + DAB in/out
+step later).
+-SBC bus handshake / wait-states / arbitration beyond the P0 device decode — that's the program-load path,
+and we already load programs via the firmware boot (boot8080). Not needed for per-sample DSP.
+-WCS storage array (mcm68b10 + am8304) gate-level — the microword contents come from the firmware image;
+you need the output-bit→destination map (P0/P1), not the RAM wiring.
+-Test / diagnostic / POST-only logic.
+
+Suggested order for you to hand-trace
+1. Device decode (tc_U47/48/49/34A) — small, unlocks the most.
+2. Offset latch → OFST/.
+3. Coeff serializer → M0//M1/ + CSIGN/.
+4. RA/WA regfile addresses.
+5.XFER/ZERO enable terms.
+6. (light) clock-name fan-out confirm.
+
+Net effect: the dense clock-generation machinery — the part that looks most intimidating — is exactly the
+part you can skip. What's left to trace is a decode cluster + a handful of field→destination paths,
+and tracing them would also definitively pin the microword field map that the bottom-up reverb work is
+currently taking on faith.

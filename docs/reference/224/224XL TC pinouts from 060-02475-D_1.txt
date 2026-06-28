@@ -1,346 +1,657 @@
-DO NOT USE THIS FILE! IT IS COMPLETELY UNVERIFIED!
+LEXICON 224XL TIMING AND CONTROL MODULE
+T&C pinouts from schematic 060-02475-D sheet 1 of 2
 
-SCHEMATIC: 060-02475-D Sheet 1 — Merged TC1 + TC2
-SECTIONS: PLL / LC TANK OSCILLATOR / DIVIDER / CLOCK DRIVER / COUNTER CHAIN / CLOCK DISTRIBUTION LOGIC
-TILES: TC1 (PLL+oscillator+divider partial), TC2 (divider full+clock driver+counter chain+logic)
-DATE: 2026-06-27
-NOTE: ? = uncertain reading; pin numbers from IC type where not printed on schematic
+---
 
-================================================================================
-COMPONENTS
-================================================================================
+placeholder
 
---- PLL ---
+---
 
-U27   MC4044   Phase-frequency detector / charge pump
-      Visible pins: 1, 2, 3, 4, 5, 10, 11, 13
+T&C pinouts from schematic 060-02475-D sheet 2 of 2
 
-U29   VCO      Part number not legible in any crop — only pins 8, 9 visible
-      ?type (possibly MC1648 or similar LC-tuned VCO)
+---
 
---- LC TANK OSCILLATOR ---
+U32 (74LS08) — quad 2-input AND gate 14 pins
+pin 1   (1A)  = OFST8/, U21 pin 2
+pin 2   (1B)  = U32 pin 1, OFST8/
+pin 3   (1Y)  = SDAD (used in FPC sheet 1)
+pin 4   (2A)  = OFST10/, U32 pin 5
+pin 5   (2B)  = U32 pin 4, OFST10/
+pin 6   (2Y)  = SDAB (used in FPC sheet 1)
+pin 7   (GND) = Not depicted
+pin 8   (3Y)  = SDAA (used in FPC sheet 1)
+pin 9   (3A)  = OFST11/, U32 pin 10
+pin 10  (3B)  = U32 pin 9, OFST11/
+pin 11  (4Y)  = SDAC (used in FPC sheet 1)
+pin 12  (4A)  = OFST9/, U32 pin 13
+pin 13  (4B)  = U32 pin 12, OFST9/
+pin 14  (VCC) = Not depicted
 
-Q1    2N5910   NPN transistor (LC oscillator core)
-Q2    2N5910   NPN transistor (divider buffer / clock output)
+---
 
-L1    0.10 UH  inductor
-C12   5-30 PF  trimmer capacitor
-C13   33 PF    capacitor (OPT.)
-C14   0.01/16  bypass capacitor
-C15   0.01/16  bypass capacitor (BYPASS)
-C17   120 PF   capacitor
-C18   15 PF    capacitor
-C19   10 PF    capacitor
+U49 (74S10) — triple 3-input NAND
+pin 1  (1A)  = MS7
+pin 2  (1B)  = tcWR
+pin 3  (2A)  = OFST5/
+pin 4  (2B)  = tcWR
+pin 5  (2C)  = DAB RSTB
+pin 6  (2Y)  = TEST
+pin 7  (GND) = Not depicted
+pin 8  (3Y)  = WR DA/
+pin 9  (3A)  = OFST7/
+pin 10 (3B)  = +5V
+pin 11 (3C)  = tcWR
+pin 12 (1Y)  = WR XREG/
+pin 13 (1C)  = OFST6/
+pin 14 (VCC) = Not depticted
 
-R5    1K       resistor
-R6    1K       resistor
-R7    3K       resistor
-R8    100      resistor (Q2 collector load)
-R9    270      resistor
+---
 
-TP1   OSC TEST POINT
+U47 (74LS139) — dual 2-to-4 line decoder / demultiplexer
+pin 1  (1E/) = tied to ground
+pin 2  (1A0) = U17 pin 14
+pin 3  (1A1) = U17 pin 13, MEMAC
+pin 4  (1Y0) = not connected
+pin 5  (1Y1) = U33 pin 3
+pin 6  (1Y2) = MEMW/
+pin 7  (1Y3) = MEMR/
+pin 8  (GND) = Not depicted
+pin 9  (2Y3) = RD AD/
+pin 10 (2Y2) = RD XREG/
+pin 11 (2Y1) = U48 pin 2
+pin 12 (2Y0) = not connected
+pin 13 (2A1) = OFST13/
+pin 14 (2A0) = OFST12/
+pin 15 (2E/) = U48 pin 6
+pin 16 (VCC) = Not depicted
 
---- PLL FILTER / VCO BIASING ---
+---
 
-C31   300 PF   capacitor
-C32   1000 PF  capacitor
-C44   0.01/16  bypass capacitor (BYPASS)
-C45   0.22/100 POLY  polyester capacitor
-CR1   MV209    varactor diode
-R10   1K       resistor
-R11   1K       resistor
-R12   1K       resistor
-R13   680      resistor
+U34 (74LS08) — quad 2-input AND
+pin 1   (1A)  = tcWR
+pin 2   (1B)  = OFST4/
+pin 3   (1Y)  = U19 pin 3
+pin 4   (2A)  = tcWR
+pin 5   (2B)  = OFST3/
+pin 6   (2Y)  = RESET (not RESET/), U25 pin 2
+pin 7   (GND) = Not depicted
+pin 8   (3Y)  = U20 pin 12
+pin 9   (3A)  = U33 pin 8
+pin 10  (3B)  = AS0
+pin 11  (4Y)  = U20 pin 11
+pin 12  (4A)  = AS0
+pin 13  (4B)  = U33 pin 9, U19 pin 12
+pin 14  (VCC) = Not depicted
 
---- CONNECTORS ---
+---
 
-J5    connector  — top row pin 13, bottom row pin 11 visible; full count ?
-J6    connector  — top row pin visible (unlabeled in crop), bottom row pin visible
-J7    connector  — top row pin 26(? — see TC1 note), bottom row pin 25 visible
-J8    connector  — top row pin 26, bottom row pin 25 visible
-      NOTE: J5–J8 top pins connect to common +5V rail; bottom pins to GND bus
-      Pin numbers beyond 11/13/25/26 extend off crop edges — full count ?
+U48 (74S00) — quad 2-input NAND, all four sections used
+pin 1  (1A)  = MEMW/
+pin 2  (1B)  = U47 pin 11
+pin 3  (1Y)  = U48 pin 9
+pin 4  (2A)  = tcWR
+pin 5  (2B)  = DAB RSTB
+pin 6  (2Y)  = U47 pin 15
+pin 8  (3Y)  = RDRREG/
+pin 9  (3A)  = U48 pin 3
+pin 10 (3B)  = DAB RSTB
+pin 11 (4Y)  = ZERO/
+pin 12 (4A)  = U19 pin 16
+pin 13 (4B)  = AS0
 
-A28   buffer / line driver  (2-input triangle symbol; d1, d2 labeled)
-      ? part type
+[U48 VCC pin 14, GND pin 7 = not depicted]
 
---- DIVIDER ---
+---
 
-U26   S112     JK flip-flop (DIVIDER section)
-      Visible pins: 10 (SD/, active-low set, → +5V), 11 (J), 12 (K), 13 (CLK, active-low triangle),
-                    14 (GND), 9 (Q output)
-      NOTE: SD/ = preset, active-low (bubble on pin 10); CLK = falling-edge triggered (bubble on pin 13);
-            pin 14 → +5V (? — arrow shown; verify polarity — may be VSS tie or external +5V shown as power symbol)
+U46 (74LS155) — dual 2-to-4 decoder/demux, common select
+pin 1  (1C)   = +5V
+pin 2  (/1G)  = GSTB/
+pin 3  (B)    = ADR1/
+pin 4  (1/Y3) = U44 pin 9
+pin 5  (1/Y2) = U30 pin 9
+pin 6  (1/Y1) = U16 pin 9
+pin 7  (1/Y0) = U3 pin 9
+pin 8  (GND)  = Not depicted
+pin 9  (2/Y0) = U3 pin 11, U2 pin 16
+pin 10 (2/Y1) = U16 pin 11, U15 pin 16
+pin 11 (2/Y2) = U30 pin 11, U29 pin 16
+pin 12 (2/Y3) = U44 pin 11, U43 pin 16
+pin 13 (A)    = ADR0/
+pin 14 (/2G)  = WSTB/
+pin 15 (2C)   = MWTC/
+pin 16 (VCC)  = Not depicted
 
---- CLOCK DRIVER ---
+---
 
-C46   30 PF    capacitor
-R14   1.2K     resistor
-R15   220      resistor
-R16   20       resistor
-Q3    2N5910   NPN transistor (clock driver output stage)
+U42, U28 (74F157) — quad 2-line-to-1-line multiplexer, non-inverting
+U42:
+pin 1  (SEL) = ADR SEL/
+pin 2  (A1)  = ADR2/
+pin 3  (B1)  = PC0
+pin 4  (Y1)  = tcA0
+pin 5  (A2)  = ADR3/
+pin 6  (B2)  = PC1
+pin 7  (Y2)  = tcA1
+pin 8  (GND) = Not depicted
+pin 9  (Y3)  = tcA2
+pin 10 (B3)  = PC2
+pin 11 (A3)  = ADR4/
+pin 12 (Y4)  = tcA3
+pin 13 (B4)  = PC3
+pin 14 (A4)  = ADR5/
+pin 15 (/G)  = tied to ground
+pin 16 (VCC) = Not depicted
 
-U40D  74S00 gate D  (NAND, 2-input)
-      Visible pins: 12 (Vss/GND tie → +5V shown), 13 (input A), 11 (output, inverted)
-      NOTE: pin 12 shown tied to +5V — consistent with 74S00 Vcc on package but
-            Vcc is pin 14 (off-crop); verify whether pin 12 is actually an input tied high
+U28:
+pin 1  (SEL) = ADR SEL/
+pin 2  (A1)  = ADR6/
+pin 3  (B1)  = PC4
+pin 4  (Y1)  = tcA4
+pin 5  (A2)  = ADR7/
+pin 6  (B2)  = PC5
+pin 7  (Y2)  = tcA5
+pin 8  (GND) = Not depicted
+pin 9  (Y3)  = tcA6
+pin 10 (B3)  = PC6
+pin 11 (A3)  = ADR8/
+pin 12 (Y4)  = not connected
+pin 13 (B4)  = not connected
+pin 14 (A4)  = not connected
+pin 15 (/G)  = tied to ground
+pin 16 (VCC) = Not depicted
 
---- COUNTER / DIVIDE CHAIN ---
+---
 
-U41   74S163   4-bit binary counter (DIVIDER, prescaler)
-      Visible pins: 1 (CLR/ — active-low), 2 (CLK), 3 (A — data), 4 (B), 5 (C), 6 (D), 7 (P),
-                    9 (QA), 10 (T), 11 (QD output), ?15 (RCO carry-out)
-      NOTE: pin 9 (QD label visible in TC1 as "QD" at pin 11 row; TC2 shows "11 QD" at bottom)
-            — confirmed QD exits bottom right toward U40A; CLK comes from Q2:C via TP1 net
+U14, U1 (74LS163) — synchronous 4-bit binary counter, SYNC clear
+U14:
+pin 1  (/CLR) = U33 pin 12, U1 pin 1
+pin 2  (CLK)  = DAB RSTB/
+pin 3  (A)    = not connected
+pin 4  (B)    = not connected
+pin 5  (C)    = not connected
+pin 6  (D)    = not connected
+pin 7  (ENP)  = +5V
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = +5V
+pin 10 (ENT)  = HALT/
+pin 11 (QD)   = PC3
+pin 12 (QC)   = PC2
+pin 13 (QB)   = PC1
+pin 14 (QA)   = PC0
+pin 15 (RCO)  = U1 pin 10
+pin 16 (VCC)  = Not depicted
 
-U40A  74S00 gate A  (NAND, 2-input, with bubble = NAND not AND)
-      Visible pins: 1 (input, upper — from U41:15/QD or RCO ?), 2 (input, lower — from U41:QD net), 3 (output)
-      NOTE: two left pins feed from U41 outputs; output feeds U56:CLK
+U1:
+pin 1  (/CLR) = U33 pin 12, U14 pin 1
+pin 2  (CLK)  = DAB RSTB/
+pin 3  (A)    = not connected
+pin 4  (B)    = not connected
+pin 5  (C)    = not connected
+pin 6  (D)    = not connected
+pin 7  (ENP)  = +5V
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = +5V
+pin 10 (ENT)  = U14 pin 15
+pin 11 (QD)   = not connected
+pin 12 (QC)   = PC6
+pin 13 (QB)   = PC5
+pin 14 (QA)   = PC4
+pin 15 (RCO)  = not connected
+pin 16 (VCC)  = Not depicted
 
-U56   74S163   4-bit binary counter (second stage prescaler)
-      Visible pins: 1 (CLR/ — active-low, bubble), 2 (CLK ← U40A:3), 6 (D input — data),
-                    7 (P), 9 (L/ — load, active-low, bubble), 10 (T), 11 (QD / MS4 output),
-                    15 (RCO carry-out → U39 chain), 3 (A), 4 (B), 5 (C)
-      Data inputs: pin 6 (D) → +5V; pins 3,4,5 (A,B,C) connections ? (TC2 shows '3 ↑+5V' for pin 6 only)
-      MS4 net: U56:11 (QD) labeled MS4 — feeds top of MS4 brace
+---
 
-U39   74S74 (or equivalent D-FF; labeled "U39" on multiple cells in ripple chain)
-      Three D-FF cells visible, labeled U39 each:
-        Cell 1: pin 3 (D ← MS3 net / U56:15), pin 2 (Q → next cell D / pin 4)
-        Cell 2: pin 4 (D ← cell1:Q), pin 5 (Q → next cell D / pin 7); CF net at CLK (?)
-        Cell 3: pin 7 (D ← cell2:Q), pin 6 (Q → exits right)
-      CLK source for U39 cells: common CLK bus (? — source not fully resolved in crop)
-      NOTE: "MS3" net label on U39 cell 1 D-input; "CF" net label near cell 2 CLK
+U43, U29, U15, U2 (MCM68B10) — 128 x 8 static RAM
+U43:
+pin 1  (GND)  = tied to ground
+pin 2  (D0)   = MI0
+pin 3  (D1)   = MI1
+pin 4  (D2)   = MI2
+pin 5  (D3)   = MI3
+pin 6  (D4)   = MI4
+pin 7  (D5)   = MI5
+pin 8  (D6)   = MI6
+pin 9  (D7)   = MI7
+pin 10 (CS0)  = CS
+pin 11 (/CS1) = tied to ground
+pin 12 (/CS2) = tied to ground
+pin 13 (CS3)  = CS
+pin 14 (/CS4) = tied to ground
+pin 15 (/CS5) = tied to ground
+pin 16 (R/W)  = U46 pin 12, U44 pin 11
+pin 17 (A6)   = tcA6
+pin 18 (A5)   = tcA5
+pin 19 (A4)   = tcA4
+pin 20 (A3)   = tcA3
+pin 21 (A2)   = tcA2
+pin 22 (A1)   = tcA1
+pin 23 (A0)   = tcA0
+pin 24 (VCC)  = Not depicted
 
---- CLOCK DISTRIBUTION LOGIC ---
+U29:
+pin 1  (GND)  = tied to ground
+pin 2  (D0)   = MI8
+pin 3  (D1)   = MI9
+pin 4  (D2)   = MI10
+pin 5  (D3)   = MI11
+pin 6  (D4)   = MI12
+pin 7  (D5)   = MI13
+pin 8  (D6)   = MI14
+pin 9  (D7)   = MI15
+pin 10 (CS0)  = CS
+pin 11 (/CS1) = tied to ground
+pin 12 (/CS2) = tied to ground
+pin 13 (CS3)  = CS
+pin 14 (/CS4) = tied to ground
+pin 15 (/CS5) = tied to ground
+pin 16 (R/W)  = U46 pin 11, U30 pin 11
+pin 17 (A6)   = tcA6
+pin 18 (A5)   = tcA5
+pin 19 (A4)   = tcA4
+pin 20 (A3)   = tcA3
+pin 21 (A2)   = tcA2
+pin 22 (A1)   = tcA1
+pin 23 (A0)   = tcA0
+pin 24 (VCC)  = Not depicted
 
-U38   74LS27   3-input NOR gate
-      Visible pins: 11 (input ← MS8), 10 (input ← MS2), 3 (input ← MS5), 8 (output, inverted → U25:D/pin 12)
-      Additional inputs at gate: IZD3 (net, inverted via overbar), IZA8 (net), IZA4 (net) — fed to same gate
-      NOTE: IZA8 connects through bubble to pin 11 node; IZD3/IZA4 are further inputs — LS27 is 3-input NOR,
-            but 6 signal labels shown; likely MS8/MS2/MS5 are bussed from the IZ net labels — verify topology
+U15:
+pin 1  (GND)  = tied to ground
+pin 2  (D0)   = MI16
+pin 3  (D1)   = MI17
+pin 4  (D2)   = MI18
+pin 5  (D3)   = MI19
+pin 6  (D4)   = MI20
+pin 7  (D5)   = MI21
+pin 8  (D6)   = MI22
+pin 9  (D7)   = MI23
+pin 10 (CS0)  = CS
+pin 11 (/CS1) = tied to ground
+pin 12 (/CS2) = tied to ground
+pin 13 (CS3)  = CS
+pin 14 (/CS4) = tied to ground
+pin 15 (/CS5) = tied to ground
+pin 16 (R/W)  = U46 pin 10, U16 pin 11
+pin 17 (A6)   = tcA6
+pin 18 (A5)   = tcA5
+pin 19 (A4)   = tcA4
+pin 20 (A3)   = tcA3
+pin 21 (A2)   = tcA2
+pin 22 (A1)   = tcA1
+pin 23 (A0)   = tcA0
+pin 24 (VCC)  = Not depicted
 
-U25   74S74    D flip-flop (single cell shown)
-      Visible pins: 10 (SD/ → +5V), 11 (CLK, active-low ← U38:8 via pin 12), 12 (D ← U38:8),
-                    13 (CD/ ← GND via +5V symbol? — pin 13 → +5V shown), 8 (Q/ output), 9 (Q output)
-      NOTE: SD/ = preset pin 10 → +5V (not asserted); CD/ = clear pin 13 → +5V; CLK on pin 11
+U2:
+pin 1  (GND)  = tied to ground
+pin 2  (D0)   = MI24
+pin 3  (D1)   = MI25
+pin 4  (D2)   = MI26
+pin 5  (D3)   = MI27
+pin 6  (D4)   = MI28
+pin 7  (D5)   = MI29
+pin 8  (D6)   = MI30
+pin 9  (D7)   = MI31
+pin 10 (CS0)  = CS
+pin 11 (/CS1) = tied to ground
+pin 12 (/CS2) = tied to ground
+pin 13 (CS3)  = CS
+pin 14 (/CS4) = tied to ground
+pin 15 (/CS5) = tied to ground
+pin 16 (R/W)  = U46 pin 9, U3 pin 11
+pin 17 (A6)   = tcA6
+pin 18 (A5)   = tcA5
+pin 19 (A4)   = tcA4
+pin 20 (A3)   = tcA3
+pin 21 (A2)   = tcA2
+pin 22 (A1)   = tcA1
+pin 23 (A0)   = tcA0
+pin 24 (VCC)  = Not depicted
 
-U23A  74LS175  D flip-flop cell A (quad D-FF package)
-      Visible pins: 4 (D ← +5V), 9 (CLK ← common CLK bus), 2 (Q output → exits right), 3 (Q/ output)
-                    1 (CLR/ → GND, active-low — bubble visible)
-      NOTE: CLR/ tied low (active) — holds U23A in reset? Verify intended logic state
+---
 
-U40B  74S00 gate B  (NAND, 2-input)
-      Visible pins: 4 (input A), 5 (input B → +5V), 6 (output, inverted → U40C:9)
-      NOTE: pin 5 tied to +5V → effectively inverter on pin 4
+U44, U30, U16, U3 (AM8304B) — octal 3-state bidirectional bus transceiver, NONINVERTING
+U44:
+pin 1  (A0)  = MI0
+pin 2  (A1)  = MI1
+pin 3  (A2)  = MI2
+pin 4  (A3)  = MI3
+pin 5  (A4)  = MI4
+pin 6  (A5)  = MI5
+pin 7  (A6)  = MI6
+pin 8  (A7)  = MI7
+pin 9  (CD)  = U46 pin 4
+pin 10 (GND) = Not depicted
+pin 11 (T/R) = U46 pin 12, U43 pin 16
+pin 12 (B7)  = DATA7/
+pin 13 (B6)  = DATA6/
+pin 14 (B5)  = DATA5/
+pin 15 (B4)  = DATA4/
+pin 16 (B3)  = DATA3/
+pin 17 (B2)  = DATA2/
+pin 18 (B1)  = DATA1/
+pin 19 (B0)  = DATA0/
+pin 20 (VCC) = Not depicted
 
-U40C  74S00 gate C  (NAND, 2-input)
-      Visible pins: 9 (input A ← U40B:6), 10 (input B → +5V), 8 (output, inverted → exits right)
-      NOTE: pin 10 tied to +5V → effectively inverter on pin 9; cascaded inverter pair with U40B
+U30:
+pin 1  (A0)  = MI8
+pin 2  (A1)  = MI9
+pin 3  (A2)  = MI10
+pin 4  (A3)  = MI11
+pin 5  (A4)  = MI12
+pin 6  (A5)  = MI13
+pin 7  (A6)  = MI14
+pin 8  (A7)  = MI15
+pin 9  (CD)  = U46 pin 5
+pin 10 (GND) = Not depicted
+pin 11 (T/R) = U46 pin 11, U29 pin 16
+pin 12 (B7)  = DATA7/
+pin 13 (B6)  = DATA6/
+pin 14 (B5)  = DATA5/
+pin 15 (B4)  = DATA4/
+pin 16 (B3)  = DATA3/
+pin 17 (B2)  = DATA2/
+pin 18 (B1)  = DATA1/
+pin 19 (B0)  = DATA0/
+pin 20 (VCC) = Not depicted
 
-================================================================================
-NET CONNECTIONS
-================================================================================
+U16:
+pin 1  (A0)  = MI16
+pin 2  (A1)  = MI17
+pin 3  (A2)  = MI18
+pin 4  (A3)  = MI19
+pin 5  (A4)  = MI20
+pin 6  (A5)  = MI21
+pin 7  (A6)  = MI22
+pin 8  (A7)  = MI23
+pin 9  (CD)  = U46 pin 6
+pin 10 (GND) = Not depicted
+pin 11 (T/R) = U46 pin 10, U15 pin 16
+pin 12 (B7)  = DATA7/
+pin 13 (B6)  = DATA6/
+pin 14 (B5)  = DATA5/
+pin 15 (B4)  = DATA4/
+pin 16 (B3)  = DATA3/
+pin 17 (B2)  = DATA2/
+pin 18 (B1)  = DATA1/
+pin 19 (B0)  = DATA0/
+pin 20 (VCC) = Not depicted
 
---- PLL ---
+U3:
+pin 1  (A0)  = MI24
+pin 2  (A1)  = MI25
+pin 3  (A2)  = MI26
+pin 4  (A3)  = MI27
+pin 5  (A4)  = MI28
+pin 6  (A5)  = MI29
+pin 7  (A6)  = MI30
+pin 8  (A7)  = MI31
+pin 9  (CD)  = U46 pin 7
+pin 10 (GND) = Not depicted
+pin 11 (T/R) = U46 pin 9, U2 pin 16
+pin 12 (B7)  = DATA7/
+pin 13 (B6)  = DATA6/
+pin 14 (B5)  = DATA5/
+pin 15 (B4)  = DATA4/
+pin 16 (B3)  = DATA3/
+pin 17 (B2)  = DATA2/
+pin 18 (B1)  = DATA1/
+pin 19 (B0)  = DATA0/
+pin 20 (VCC) = Not depicted
 
-A28:out1      → U27:1
-A28:out2      → U27:2
-U27:5         → R11:1
-R11:2         → R12:1
-R12:2         → U29:9
-U27:10        → C32:1
-C32:2         → GND
-U29:8         → C31:1
-C31:2         → GND
-R10:1         → +5V
-R10:2         → R13:1
-R13:2         → U29:9
-C45:1         → U29:9
-C45:2         → U29:8
-C44:1         → +5V
-C44:2         → GND
-CR1:A         → U29:9          (? — varactor tuning; polarity from MV209 symbol)
-CR1:K         → GND            (?)
+---
 
---- LC TANK OSCILLATOR ---
+U45, U31 (74F374) — octal D flip-flop, 3-state outputs, common CLK+/OE
+U45:
+pin 1  (/OE) = tied to ground
+pin 2  (Q0)  = OFST1/
+pin 3  (D0)  = MI1
+pin 4  (D1)  = MI3
+pin 5  (Q1)  = OFST3/
+pin 6  (Q2)  = OFST5/
+pin 7  (D2)  = MI5
+pin 8  (D3)  = MI7
+pin 9  (Q3)  = OFST7/
+pin 10 (GND) = Not depicted
+pin 11 (CP)  = tcCLKA
+pin 12 (Q4)  = OFST6/
+pin 13 (D4)  = MI6
+pin 14 (D5)  = MI4
+pin 15 (Q5)  = OFST4/
+pin 16 (Q6)  = OFST2/
+pin 17 (D6)  = MI2
+pin 18 (D7)  = MI0
+pin 19 (Q7)  = OFST0/
+pin 20 (VCC) = Not depicted
 
-+5V           → R6:1
-R6:2          → R9:1
-R9:2          → Q1:C
-R6:2          → Q1:B           (bias divider tap; R7 also here)
-R7:1          → Q1:B
-R7:2          → GND
-Q1:E          → L1:1
-L1:2          → C12:1
-C12:2         → GND
-L1:2          → C13:1          (C13 parallel with C12)
-C13:2         → GND
-C14:1         → Q1:E           (bypass at emitter)
-C14:2         → GND
-C15:1         → +5V
-C15:2         → GND
-Q1:C          → C19:1
-C19:2         → C18:1          (? — series or node — verify with higher-res crop)
-C18:2         → GND
-C19:2         → C17:1
-C17:2         → R5:1
-R5:2          → Q2:B
+U31:
+pin 1  (/OE) = tied to ground
+pin 2  (Q0)  = OFST9/
+pin 3  (D0)  = MI9
+pin 4  (D1)  = MI11
+pin 5  (Q1)  = OFST11/
+pin 6  (Q2)  = OFST13/
+pin 7  (D2)  = MI13
+pin 8  (D3)  = MI15
+pin 9  (Q3)  = OFST15/
+pin 10 (GND) = Not depicted
+pin 11 (CP)  = tcCLKA
+pin 12 (Q4)  = OFST14/
+pin 13 (D4)  = MI14
+pin 14 (D5)  = MI12
+pin 15 (Q5)  = OFST12/
+pin 16 (Q6)  = OFST10/
+pin 17 (D6)  = MI10
+pin 18 (D7)  = MI8
+pin 19 (Q7)  = OFST8/
+pin 20 (VCC) = Not depicted
 
---- DIVIDER ---
+---
 
-R8:1          → +5V
-R8:2          → Q2:C
-Q2:E          → GND
-Q2:C          → TP1            (OSC TEST POINT)
-Q2:C          → U26:13         (oscillator signal → JK flip-flop CLK)
-U26:10        → +5V            (SD/ preset, not asserted)
-U26:11        → Q2:C           (J input — same as CLK net? verify if separate)  ?
-U26:12        → GND            (K input)                                         ?
-U26:14        → GND            (VSS / GND tie)
-U26:9         → U41:2          (Q output → U41 CLK)
-U26:13        → Q2:C           (CLK input, active-falling edge)
+U17, U18, U4, U5 (74S163) — synchronous 4-bit binary counter, SYNC clear
+U17:
+pin 1  (/CLR) = ADR SEL/
+pin 2  (CLK)  = tcCLKA
+pin 3  (A)    = MI16
+pin 4  (B)    = MI17
+pin 5  (C)    = MI18
+pin 6  (D)    = MI19
+pin 7  (ENP)  = tied to ground
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = tied to ground
+pin 10 (ENT)  = tied to ground
+pin 11 (QD)   = WA1/
+pin 12 (QC)   = WA0/
+pin 13 (QB)   = MEMAC
+pin 14 (QA)   = U47 pin 2
+pin 15 (RCO)  = not connected
+pin 16 (VCC)  = Not depicted
 
---- COUNTER / PRESCALER CHAIN ---
+U18:
+pin 1  (/CLR) = ADR SEL/
+pin 2  (CLK)  = tcCLKA
+pin 3  (A)    = MI20
+pin 4  (B)    = MI21
+pin 5  (C)    = MI22
+pin 6  (D)    = MI23
+pin 7  (ENP)  = tied to ground
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = tied to ground
+pin 10 (ENT)  = tied to ground
+pin 11 (QD)   = U19 pin 13
+pin 12 (QC)   = PROT
+pin 13 (QB)   = U19 pin 7
+pin 14 (QA)   = U19 pin 4
+pin 15 (RCO)  = not connected
+pin 16 (VCC)  = Not depicted
 
-U41:2         → U26:9          (CLK ← Q of JK divider)
-U41:1         → GND            (CLR/ — tied low = always enabled)               ?
-U41:7         → +5V            (P — count-enable, tied high)
-U41:10        → +5V            (T — ripple carry enable, tied high)
-U41:3..6      → +5V or data    (A,B,C,D — preset data; connections ? off-crop)
-U41:9         → U40A:1         (QA output → U40A upper input)
-U41:11        → U40A:2         (QD output → U40A lower input)
-U41:15        → U40A:1         (RCO carry → U40A upper input?)  ? — TC2 shows "15" at U40A:1
+U4:
+pin 1  (/CLR) = ADR SEL/
+pin 2  (CLK)  = tcCLKA
+pin 3  (A)    = MI24
+pin 4  (B)    = MI25
+pin 5  (C)    = MI26
+pin 6  (D)    = MI27
+pin 7  (ENP)  = tied to ground
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = tied to ground
+pin 10 (ENT)  = tied to ground
+pin 11 (QD)   = C1/
+pin 12 (QC)   = C0/
+pin 13 (QB)   = U19 pin 17
+pin 14 (QA)   = U19 pin 14
+pin 15 (RCO)  = not connected
+pin 16 (VCC)  = Not depicted
 
-NOTE: U41 pins 9 and 15 both appear to feed U40A:1 — likely only one of them does.
-      QD is more probable; RCO feed also possible for synchronous reset. Verify.
+U5:
+pin 1  (/CLR) = ADR SEL/
+pin 2  (CLK)  = tcCLKA
+pin 3  (A)    = MI28
+pin 4  (B)    = MI29
+pin 5  (C)    = MI30
+pin 6  (D)    = MI31
+pin 7  (ENP)  = tied to ground
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = tied to ground
+pin 10 (ENT)  = tied to ground
+pin 11 (QD)   = C5/
+pin 12 (QC)   = C4/
+pin 13 (QB)   = C3/
+pin 14 (QA)   = C2/
+pin 15 (RCO)  = not connected
+pin 16 (VCC)  = Not depicted
 
-U40A:3        → U56:2          (NAND out → U56 CLK)
+---
 
-U56:1         → U40A:3         (CLR/ — verify; may be separate reset net)       ?
-U56:7         → +5V            (P)
-U56:10        → +5V            (T)
-U56:9         → +5V or data    (L/ — load; if tied high, counting freely)        ?
-U56:6         → +5V            (D data input)
-U56:11        → MS4            (QD output → net label MS4)
-U56:15        → U39-cell1:3    (RCO carry → first U39 D input, net label MS3)
+U19 (74LS377) — octal D flip-flop with clock enable
+pin 1  (/E)  = AS0
+pin 2  (Q0)  = DP
+pin 3  (D0)  = U34 pin 3
+pin 4  (D1)  = U18 pin 14
+pin 5  (Q1)  = RA0/
+pin 6  (Q2)  = RA1/
+pin 7  (D2)  = U18 pin 13
+pin 8  (D3)  = RESET/
+pin 9  (Q3)  = RESET (NOT RESET/)
+pin 10 (GND) = Not depicted
+pin 11 (CP)  = ARUCKE
+pin 12 (Q4)  = U34 pin 13, U33 pin 9
+pin 13 (D4)  = U18 pin 11
+pin 14 (D5)  = U4 pin 14
+pin 15 (Q5)  = XFER
+pin 16 (Q6)  = U48 pin 12
+pin 17 (D6)  = U4 pin 13
+pin 18 (D7)  = not connected
+pin 19 (Q7)  = not connected
+pin 20 (VCC) = Not depicted
 
---- U39 RIPPLE REGISTER CHAIN ---
+---
 
-U39-cell1:3   (D) ← U56:15 / MS3 net
-U39-cell1:2   (Q) → U39-cell2:4 (D)
-U39-cell2:4   (D) ← U39-cell1:Q
-U39-cell2:5   (Q) → U39-cell3:7 (D)
-U39-cell3:7   (D) ← U39-cell2:Q
-U39-cell3:6   (Q) → exits right (further logic, off TC2 crop)
-CF            → U39-cell2 CLK  (net label "CF"; source not in crop)
-Common CLK    → all U39 cells  (? — CLK source not traced to origin in these tiles)
+U11, U10 (74195) — 4-bit parallel-access shift register
+U11:
+pin 1  (/CLR)   = +5V
+pin 2  (J)      = not connected
+pin 3  (/K)     = not connected
+pin 4  (P0)     = C0/
+pin 5  (P1)     = C2/
+pin 6  (P2)     = C4/
+pin 7  (P3)     = U11 pin 13
+pin 8  (GND)    = Not depicted
+pin 9  (SH//LD) = AS1/
+pin 10 (CLK)    = ARUCKE
+pin 11 (/Q3)    = M0/
+pin 12 (Q3)     = not connected
+pin 13 (Q2)     = U11 pin 7
+pin 14 (Q1)     = not connected
+pin 15 (Q0)     = not connected
+pin 16 (VCC)    = Not depicted
 
---- CLOCK DRIVER ---
+U10:
+pin 1  (/CLR)   = +5V
+pin 2  (J)      = not connected
+pin 3  (/K)     = not connected
+pin 4  (P0)     = C1/
+pin 5  (P1)     = C3/
+pin 6  (P2)     = C5/
+pin 7  (P3)     = U10 pin 13
+pin 8  (GND)    = Not depicted
+pin 9  (SH//LD) = AS1/
+pin 10 (CLK)    = ARUCKE
+pin 11 (/Q3)    = M1/
+pin 12 (Q3)     = not connected
+pin 13 (Q2)     = U10 pin 7
+pin 14 (Q1)     = not connected
+pin 15 (Q0)     = not connected
+pin 16 (VCC)    = Not depicted
 
-U26:9         → C46:1          (Q output drives clock driver input via cap)
-C46:2         → R14:1
-C46:2         → R15:1          (junction: C46 feeds both R14 and R15)
-R14:2         → GND
-R15:2         → R16:1
-R16:2         → Q3:B
-Q3:C          → +5V (via R16:2 node — verify; arrow points to +5V at R16 right end)
-Q3:E          → GND
-Q3:C          → U40D:13        (clock output into NAND gate input)
-U40D:12       → +5V            (second input — tied high → U40D acts as inverter)
-U40D:11       → exits right    (inverted clock output — clock distribution bus)
+---
 
---- CLOCK DISTRIBUTION LOGIC ---
+U25 (74S74) — dual D flip-flop, async preset+clear
+pin 1  (1/CLR) = U37 pin 8
+pin 2  (1D)    = RESET (NOT RESET/)
+pin 3  (1CLK)  = tcCLKA
+pin 4  (1/PRE) = +5V
+pin 5  (1Q)    = not connected
+pin 6  (1/Q)   = RESET/
+pin 7  (GND)   = Not depicted
+pin 8  (2/Q)   = not connected
+pin 9  (2Q)    = not connected
+pin 10 (2/PRE) = not connected
+pin 11 (2CLK)  = not connected
+pin 12 (2D)    = not connected
+pin 13 (2/CLR) = not connected
+pin 14 (VCC)   = Not depicted
 
-MS8           → U38:11
-MS2           → U38:10
-MS5           → U38:3
-IZD3 (net/)   → U38:11         (? — may be same net as MS8 with inverting flag)
-IZA8 (net/)   → U38:11 (via bubble)  (? — active-low qualifier on same node)
-IZA4 (net/)   → U38 input      (? — 3-input NOR; third input position)
-IZD4 (net/)   → U38 input      (? — seen in crop near bottom of U38 box; fourth net label)
-U38:8         → U25:12         (NOR output → D-FF D input)
-U38:8         → U25:11         (same net → D-FF CLK?)                            ?
-              NOTE: U25 CLK and D both appear to connect to U38:8 — possible single node
-                    feeding both, or separate — verify from wider crop
+---
 
-U25:10        → +5V            (SD/ not asserted)
-U25:13        → +5V            (CD/ — GND symbol shown, but arrow = +5V; verify polarity) ?
-U25:9         → U23A:4 and U40B:4  (Q output fans out)
-U25:8         → U40B input     (Q/ output)                                        ?
+U20 (74S112) — dual JK flip-flop, negative-edge, preset+clear
+pin 1  (1CLK)  = not connected 
+pin 2  (1K)    = not connected
+pin 3  (1J)    = not connected
+pin 4  (1/PRE) = not connected
+pin 5  (1Q)    = not connected
+pin 6  (1/Q)   = not connected
+pin 7  (2/Q)   = not connected
+pin 8  (GND)   = Not depicted
+pin 9  (2Q)    = CSIGN/
+pin 10 (2/PRE) = +5V
+pin 11 (2J)    = U34 pin 11
+pin 12 (2K)    = U34 pin 8
+pin 13 (2CLK)  = ARUCKE/
+pin 14 (2/CLR) = +5V
+pin 15 (1/CLR) = not connected
+pin 16 (VCC)   = Not depicted
 
-U23A:4        (D) ← U25:9
-U23A:9        (CLK) ← common CLK bus
-U23A:1        (CLR/) → GND     (active-low, held low — keep in reset? verify)
-U23A:2        (Q) → exits right
-U23A:3        (Q/) → exits right
+---
 
-U40B:4        (A) ← U25:9 (or upstream — verify)
-U40B:5        (B) → +5V        (tied high → inverter behavior)
-U40B:6        (Y/) → U40C:9
+U33 (74LS04) — hex inverter
+pin 1  (1A)  = not connected
+pin 2  (1Y)  = not connected
+pin 3  (2A)  = U47 pin 5
+pin 4  (2Y)  = tcWR
+pin 5  (3A)  = (on sheet 1)
+pin 6  (3Y)  = (on sheet 1)
+pin 7  (GND) = Not depicted
+pin 8  (4Y)  = U34 pin 9
+pin 9  (4A)  = U34 pin 13, U19 pin 12
+pin 10 (5Y)  = (on sheet 1)
+pin 11 (5A)  = (on sheet 1)
+pin 12 (6Y)  = U1 pin 1, U14 pin 1
+pin 13 (6A)  = RESET (NOT RESET/)
+pin 14 (VCC) = Not depicted
 
-U40C:9        (A) ← U40B:6
-U40C:10       (B) → +5V        (tied high → inverter behavior)
-U40C:8        (Y/) → exits right (clock output net)
+---
 
---- CONNECTORS ---
-
-J5:13         → +5V (upper pin row)
-J5:11         → GND or data bus (lower row)  ?
-J6            → U41 data/control lines  (routed via staircase wiring above U41)  ?
-J7:26         → U41 top pin row  ?
-J8:25         → U41/GND bus  ?
-NOTE: Connector wiring above U41 forms a staircase to pins 1,3,4,5,6,9 of U41 —
-      suggests J5–J8 provide preset data or control to U41 ABCD and CLR/ENP/ENT.
-      Exact per-pin assignments not traceable without higher-res crop of that staircase.
-
---- BUS / OFF-SHEET NETS (from TC1 bottom) ---
-
-2/Z02 XFER    → (net label exits right, destination off-sheet)
-2/Z02 DP      → (net label exits right)
-ADRF/         → pin 44 of component off right edge of TC1
-ADRE/         → pin 43
-ADRD/         → pin 46
-ADRE/         → U33:11
-U33:10        → exits right (ADRE/ buffered — IZB? net)                          ?
-
---- φ2 / MASTER CLOCK OUTPUT ---
-
-U27:?         → φ2 net        (PLL output; source pin on U27 not resolved)       ?
-φ2            → IZB4 (cross-reference flag: "/B4")
-
-================================================================================
-RESOLVED UNCERTAINTIES (from TC2)
-================================================================================
-
-TC1 open item                          Resolution
--------------------------------        ------------------------------------------------
-U41 pin numbers unknown                Confirmed: CLR=1, CLK=2, A=3, B=4, C=5, D=6,
-                                       P=7, QA=9, T=10, QD=11 (standard 74S163)
-U41:T(10), P(7) connections            TC2: both appear tied to +5V (count always enabled)
-U41:CLK source                         TC2: from U26:Q (pin 9 of S112 JK FF)
-Q2 collector destination               TC2: confirmed Q2:C → TP1 and U26:13 (CLK)
-J7/J8 pin 25/26 confirmed             TC2 connector view: pin 26 top row, pin 25 bottom row
-                                       Upper row → +5V; lower row → GND bus
-A28 still not type-confirmed           Unchanged — buffer triangle, 2 inputs d1/d2
-φ2 source pin on U27                   Still unresolved
-
-================================================================================
-OPEN ITEMS / UNCERTAINTIES
-================================================================================
-
-- U29 part number: not legible in any tile
-- U41: pins feeding U40A — QA(9) vs QD(11) vs RCO(15) — need single-pin resolution
-- U56:1 CLR/ source: separate reset net or tied to U40A:3?
-- U39 CLK source: "CF" net origin not in these tiles
-- U38 inputs: 6 net labels (IZD3, IZA8, IZA4, MS8, MS2, MS5) into a 3-input NOR —
-              topology ambiguous; some may be the same nets with /overbar notation
-- U25 CLK vs D pin: both appear to connect to U38:8 — verify
-- U25:13 CD/ polarity: symbol shows +5V arrow but context suggests GND; verify
-- U23A CLR/ tied low: intentional reset state or wiring artifact?
-- U40B/C input sources beyond +5V tie: confirm fan-in from U25:Q or other
-- J5–J8 per-pin assignments to U41 ABCD/CLR/ENP/ENT: staircase wiring not resolved
-- A28 component type not confirmed
-- φ2 source pin on U27 not resolved
-- U33 gate identity within 74LS04 package: not confirmed (TC1 only partial)
-- Bus nets ADRF/, ADRD/ destinations: IC off right edge of TC1 not yet identified
+U37 (74S04) — hex inverter
+pin 1  (1A)  = (on sheet 1)
+pin 2  (1Y)  = (on sheet 1)
+pin 3  (2A)  = (on sheet 1)
+pin 4  (2Y)  = (on sheet 1)
+pin 5  (3A)  = not connected
+pin 6  (3Y)  = not connected
+pin 7  (GND) = Not depicted
+pin 8  (4Y)  = U25 pin 1
+pin 9  (4A)  = MS6
+pin 10 (5Y)  = (on sheet 1)
+pin 11 (5A)  = (on sheet 1)
+pin 12 (6Y)  = (on sheet 1)
+pin 13 (6A)  = (on sheet 1)
+pin 14 (VCC) = Not depicted

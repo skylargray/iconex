@@ -8,14 +8,14 @@
 // IN 224XL:   T&C (7.6): U47.
 //
 // PINOUT (DIP-16):
-//    1  1/E      16  VCC
-//    2  1A0      15  2/E
+//    1  1E\      16  VCC
+//    2  1A0      15  2E\
 //    3  1A1      14  2A0
-//    4  1/Y0     13  2A1
-//    5  1/Y1     12  2/Y0
-//    6  1/Y2     11  2/Y1
-//    7  1/Y3     10  2/Y2
-//    8  GND       9  2/Y3
+//    4  1Y0      13  2A1
+//    5  1Y1      12  2Y0
+//    6  1Y2      11  2Y1
+//    7  1Y3      10  2Y2
+//    8  GND       9  2Y3
 //
 // FUNCTION (per decoder):
 //   /E = HIGH -> all outputs HIGH.
