@@ -526,13 +526,55 @@ serial multiplier, per Service-Manual fig 3.4:
   is **reversed** by §4.7 (adder Σ-MSB → PR-LSB), but this reversal **CANCELS** against the matching reversal in the
   PR→accumulator routing (§4.6: PR0→aru_U19.B3, PR3→aru_U19.B0). Net effect = straight (adder Σk → accumulator
   weight k). A model must apply BOTH reversals or NEITHER; applying only one bit-scrambles every partial product.
-- Result: RES = result register = accumulator bits PP3..PP18 = `sat16(ACC≫3)`, ±2¹⁸ accumulator saturation. The
-  gate model (`tools/aru_booth.py`) reproduces **20/20 firmware POST goldens bit-exact**. cmag=21,42 + unity come
-  out purely structurally (16/20); the 4 cmag=63 cases (both Booth rails fire every phase) needed the missing M1
-  partial-product two's-complement hot-one (the single chain carry-in only completes the M0 term) — modeled as +3
-  per dual-rail phase (calibrated to the cmag=63 goldens, the only all-ones cases). **Wired into `tools/aru_post.py`,
-  the firmware MULTIPLIER TEST E83 (0x0942) PASSES un-suppressed on the verified 8080** — together with latch E32 +
-  register E40, all three ARU POST gates pass on their own merits.
+- **Result register behavior (gate-literal back-end build, 2026-06-28):** RES = accumulator bits PP3..PP18, and the
+  back-end is now modeled gate-literal (subtract-XOR aru_U5–9 + adder aru_U19–23 with carry-in=CSIGN/ [confirmed by
+  the aru_U2 pin5↔pin10 tie] + sat-mux aru_U33–37 + accumulator aru_U45–49). Two faithful facts it pins:
+  (1) the result register **ROUNDS (round-half-up) at the ≫3**, not truncates — the gate-literal accumulator for
+  cmag21·0x5555 = 114686, and the firmware result 14336 = round(114686/8), where floor would give 14335.
+  (2) the **SIGN is applied as two's-complement (−M−1) at the OUTPUT**, not by accumulating −Σmag (which would give
+  −14336 for the negate case vs the firmware's −14337 = −M−1).
+- `multiply_faithful()` (this gate-literal datapath, no correction) reproduces **16/20** POST goldens bit-exact —
+  every cmag=21,42 + unity, incl. ± operands and saturation.
+- **★ cmag=63 (all-ones coefficient) — NAILED DOWN 2026-06-29 (plan 016, `tools/aru_cycaccurate.py`): a UNIQUE,
+  COMBINATIONAL `+3 per dual-Booth-rail phase` correction (+9 total), NOT a pipeline effect. Exact gate un-traced.**
+  The cycle-accurate POST single-step co-sim resolved this three ways:
+  1. **NOT pipeline / single-step register state.** A stateful AS-phase engine (74194 / partial-product reg /
+     accumulator / result reg, carried ACROSS strobes) driven by the *exact* firmware strobe sequence (5 blocks,
+     one OUT-0x03 per case, ZERO clears the accumulator each step, NO reset between cases), swept over **every**
+     physically-motivated schedule (PP-register delay 0/1, accumulator-clear position, drain depth, cross-step
+     leakage), never exceeds **16/20**. The deferred-MAC / XFER=0-readback hypothesis is **refuted with evidence**.
+     (Note: since the faithful per-step model already matches 16/20 same-step and the firmware compares each case's
+     read-back to that case's golden, a whole-product "read N−1" deferral is independently impossible.)
+  2. **UNIQUE flat +9 at the accumulator.** For the four cmag=63 goldens the accumulator (−ACC) must be larger by K,
+     with K ∈ [7,14] (0x3333), [4,11] (0xCCCC), [2,9] (0x3FFF), [9,16] (0xC000); the intersection is **exactly {9}**
+     = 3 phases × +3. NOT operand-dependent — the apparent +1/+1/+1/+2 at the output is just the `≫3` round. (The
+     prior "+1..+2 LSB, operand-dependent" framing was the output-side artifact, now superseded.)
+  3. **COMBINATIONAL, gated by BOTH rails.** `comb_array` is exactly additive (`dual == m0 + m1 − none`, no missing
+     carry inside the traced array), and injecting **+3 per dual-rail phase** into the front-end product register gives
+     **20/20** while +1/+2/+4 all fail. cmag=21 (M0-only) and cmag=42 (M1-only) need +0, so the term fires **only when
+     M0 AND M1 both assert** — i.e. it adds +3 (into PR0/PR1) per dual-rail phase.
+  - **Service-Manual §5.3.2 corroborates the front-end localization:** the all-ones coefficient is notated **"+63/64"**
+    (max fraction 1−2⁻⁶ — a designed special case, vs +21/32, +42/32), and *"E89-E8B [the +63/64 test] … test the
+    intermediate address … check U13, U24 to U25, and U38 and U39"* — exactly the front-end intermediate adders
+    `aru_U13/U39/U25/U38/U24`. (EA0-EB3 module map: 74LS00 = Booth NAND array; U13/U24/U25/U38/U39 = intermediate adder;
+    74S86 U5-U9 = sign/subtract; U19-U23 = second adders.)
+  - **ORIGIN EXHAUSTIVELY EXCLUDED FROM THE DIGITAL WIRING (owner-confirmed 2026-06-29):** the +3 is **not produced by
+    any traced gate.** The owner re-verified against schematic **060-01318**: (a) `aru_U13` carry-in pin 7 = a hard
+    +5V tie (confirmed, not gateable); (b) the two spare `aru_U42` (74S86) gates and two spare `aru_U2` (74S04) gates
+    are spare/unused (the schematic itself labels these positions spare); (c) the M0/M1 fanout off `aru_U54`; and
+    (d) the intermediate adders `aru_U13/U24/U25/U38/U39` **and** the entire NAND Booth array
+    (`aru_U14/U26/U27/U28/U40/U41/U50/U51/U52/U53`) — all quadruple-checked, all correct as in the pinout file. There
+    is **no M0·M1 gate** and all ten 74F283 carry-ins are accounted for (+5V tie / chain / CSIGN/). The gate model
+    therefore faithfully implements the verified wiring (16/20); the firmware goldens want exactly +3/dual-rail phase
+    more.
+  - So `multiply()`'s `+3·dual` is an **ACCEPTED, firmware-validated EMPIRICAL correction** — unique, characterized,
+    dual-rail-only — whose **gate-level origin lies OUTSIDE the traced digital netlist** (candidates, not pursued:
+    a device/family-level behavior of the 74LS00→74F283 chain in the both-rails-driven condition, or a board ECO per
+    SM §8 not in base 060-01318; the +3 is the intended ×3 / digit-3 all-ones result per the firmware reference). This
+    is **resolved as far as is tractable**, not an arbitrary calibrated fit. `multiply_faithful()` (no correction) =
+    16/20; `multiply()` = 20/20. **Wired into `tools/aru_post.py`, the firmware MULTIPLIER TEST E83 (0x0942) PASSES
+    un-suppressed on the verified 8080** — with latch E32 + register E40, all three ARU POST gates pass on their own
+    merits. Reproducer: `tools/aru_cycaccurate.py`.
 
 ---
 

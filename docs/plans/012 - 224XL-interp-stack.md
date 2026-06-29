@@ -106,7 +106,7 @@ between them:
 | L3 program build | ✅ VERIFIED (CONCERT) | bytes built on verified 8080 via faithful boot; 0x3F4D + lanes 0-2 byte-identical. Open: other 19 programs (need LARC program-select); real-SBC capture unavailable |
 | L4 field decode | 🔶 LARGELY VERIFIED | (a) M0b schematic net-trace (§G3R: l2=MI16–23, l3=MI24–31; WA=MI18/19, RA=MI20/21, XFER=MI24, ZERO=MI25, coeff=MI26–31; CSIGN/=tc_U20 JK follows MI23) **and** (b) firmware POST passing un-suppressed on the verified 8080 (`tools/aru_post.py`): **latch E32 + register E40 + multiplier E83 all PASS** (pins device-decode + WA/RA + CSIGN + coeff-byte polarity inv_l3 via ~l3, AND the gate-level Booth coeff serialization C0–5). Open: OFFSET/L5 fields are free-run, not POST-reachable |
 | L5 address arith | ❌ FAITH | offset→address wiring; bits 12/13 control-vs-address (POST pins offset=0 → not POST-reachable; needs free-run/hardware) |
-| L6 ARU datapath | 🔶 LARGELY VERIFIED | netlist-built ARU (regfile 4×LS670 + device decode U47 + /32 MAC + ±2¹⁸ sat) **passes the firmware register/walking-pattern test (E40) and the latch+static-readback+bus-test routine (E32) un-suppressed on the verified 8080**. **Multiplier: literal gate-level model (`tools/aru_booth.py`) = 16/20 bit-exact, STRUCTURAL** (NAND array + carry chain + fig-3.4 schedule); found+fixed 3 owner-confirmed schematic-trace errors (§4F.4 SR taps) + the §4.7/§4.6 reversal-cancellation (§4F.9). cmag=63 (both Booth rails) ≤2-LSB carry-save residual open. MAC cross-step timing + DAB free-run routing still open |
+| L6 ARU datapath | 🔶 LARGELY VERIFIED | netlist-built ARU (regfile 4×LS670 + device decode U47 + /32 MAC + ±2¹⁸ sat) **passes the firmware register/walking-pattern test (E40) and the latch+static-readback+bus-test routine (E32) un-suppressed on the verified 8080**. **Multiplier: literal gate-level model (`tools/aru_booth.py`) = 16/20 bit-exact, STRUCTURAL** (NAND array + carry chain + fig-3.4 schedule); found+fixed 3 owner-confirmed schematic-trace errors (§4F.4 SR taps) + the §4.7/§4.6 reversal-cancellation (§4F.9). cmag=63 (all-ones) has a real but **UNLOCATED** +1..+2 LSB correction (NOT back-end/carry/truncation — proven via infinite-precision; leading candidate = pipeline/single-step register state); `multiply()` passes E83 via a calibrated `+3·dual` fit, `multiply_faithful()` = 16/20 without it. MAC cross-step timing + DAB free-run routing still open |
 | L7 audio IR | ⬜ PENDING | real-unit IR, LAST step only |
 
 **L4/L5/L6 are decomposed into their own bottom-up atoms** (each with status + ground-truth validator +
@@ -137,6 +137,19 @@ or hardware only.
   POST then advances to and FAILS the **DMEM test (E91, 0x0B75)** — the failing step is unity ×1 (correct), so it is
   the DMEM addr/read-write path, not the ARU. That (the real DRAM addressing the ARU model stubs as a sparse dict) is
   the next frontier.
+- **2026-06-28 (PM2) — GATE-LITERAL BACK-END built (rigorous close of cmag=63).** Built the literal back-end
+  (subtract-XOR aru_U5–9 + adder aru_U19–23, carry-in=CSIGN/ confirmed via the aru_U2 pin5↔pin10 tie + owner-traced
+  bias circuits on CSIGN//ARUCKE/ — analog/clock, no arithmetic effect; sat-mux aru_U33–37 + accumulator aru_U45–49).
+  `multiply_faithful()` (no correction) reproduces **16/20** bit-exact and pins two real facts: the **result register
+  ROUNDS (round-half-up) at ≫3** (not truncate), and the **sign is two's-complement (−M−1) at the OUTPUT** (not via
+  accumulating −Σmag). **★ DECISIVE: cmag=63's residual is NOT a back-end/carry/truncation/rounding artifact** —
+  even infinite-precision `round(F·cmag/32)` is +1..+2 LSB below every cmag=63 golden (cmag=21,42 exact). So there's a
+  real +1..+2 LSB correction on the all-ones coefficient, **but it is UNLOCATED** — absent from the verified front-end
+  (exact per-rail+combined products) and gate-literal back-end (exact Σmag). Leading candidate = the deferred-MAC
+  pipeline / single-step readback register state (XFER=0 for the multiplier-test microwords) — a timing/register-state
+  effect, not a gate; needs a cycle-accurate POST single-step co-sim to confirm. `multiply()` keeps a `+3·dual-phase`
+  CALIBRATED FIT (the 4 cmag=63 goldens) → 20/20 → E83 still passes. (Earlier "missing hot-one" / "sign-extension
+  correction" framings RETRACTED: separate-rail==combined bit-identical, and no gate located.)
 - **2026-06-28** — **PHASE 1 (plan `015`): L4 + L6 flipped ❌ FAITH → 🔶 LARGELY VERIFIED.** Built a
   netlist-faithful ARU (`tools/aru_post.py`) FROM the M0b netlist (field map §G3R + device decode §2T.1 +
   regfile §4F.1 + MAC §4) and wired it into the **verified 8080** (`I8080Machine` via `boot8080`), POST
