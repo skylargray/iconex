@@ -9,6 +9,40 @@ docs: `224XL_microword_fieldmap.md`, `224XL_record_name_map.md`, `224XL_param_sw
 
 ---
 
+> ## ★ M0b NETLIST CORRECTIONS (2026-06-28) — schematic ground truth, read first ★
+>
+> The full board has since been **net-traced from the schematics** (`docs/reference/224/224XL_interconnect_netlist.md`,
+> ARU 060-01318 + DMEM 060-02512 + T&C 060-02475, every signal-path net, triple-verified). That netlist is now the
+> **authoritative source for all STRUCTURAL / wiring / part / field-map facts** and supersedes the items below in
+> *this* doc. (It does **not** touch the reverb-behavior content — `0x4000`-vs-`0x3F4D`, dead-tank, decay — which
+> remains the separate open problem in the Session-11 banner.)
+>
+> **Hardware microword field map (netlist §G3R — schematic-traced, supersedes the firmware-storage table in §3):**
+> `MI0–15`=OFFSET → OFST0–15/ · `MI16`=device-select · **`MI17`=MEMAC** · `MI18/19`=WA0//WA1/ · `MI20/21`=RA0//RA1/ ·
+> `MI22`=PROT · `MI23`→CSIGN logic · **`MI24`=XFER** · **`MI25`=ZERO-gate** · **`MI26–31`=coeff C0/–C5/**. The doc's §3
+> "lane N / bit M" positions are the *firmware-storage* view (behaviorally fit, possibly with byte inversions) — where
+> they disagree with this hardware map (e.g. XFER/ZERO are lane-3 = MI24/25, not lane-2), the hardware map governs;
+> reconcile via the byte inversions, do not assume the literal bit slots match.
+>
+> **Key corrections (structural):**
+> - **★ CSIGN is NOT a stored/decoded microword bit.** It is the **`tc_U20` (74S112) JK-FF output** — ARUCKE/-clocked,
+>   AS0-gated, a function of MI23 (MI23→tc_U18.QD→tc_U19.Q4→tc_U34→JK). A faithful model must replicate the JK toggle,
+>   not read CSIGN from "lane bit 7." (netlist §3.10) — *this overrides the §3 "field-bit map is ✅" line below for CSIGN.*
+> - **Coefficient serializer = `74195` (not "LS195"):** M0/ ← `tc_U11` (even C0/C2/C4), M1/ ← `tc_U10` (odd C1/C3/C5). (§3.9)
+> - **Multiplier = modified-Booth (radix-4)** — the even/odd M0//M1/ streams are the two Booth selects. Service Manual
+>   §3.7 calls the same mechanism "modified shift and add." (§4F.5)
+> - **WCS = four MCM68B10 = `tc_U43/U29/U15/U2`** (MI0-7/8-15/16-23/24-31). The Service Manual §5 diagnostic names them
+>   U3/U18/U33/U48 — a **manual-internal designator inconsistency**; the schematic/trace designators govern. (§3.1)
+> - **DMEM delay memory = ONE 64K×16 bank** (`dmem_U20–U35`, 4164, CAS0/). `dmem_U1–U16` are **NOT populated** this rev;
+>   no bank-select (top carry-out `dmem_U64.pin9` = n/c, `CAS1/` hard-disabled). The "128K / 2-bank / carry=bank-bit"
+>   framing is **superseded** (older revs used 16K-class parts in two banks). (§5.5, §G3D)
+> - **Delay-line part = `DL6308`** (the earlier "DL630B/DLG30B" was an OCR misread), `dmem_U59`. (§6D)
+> - **Clock origins traced:** MC = PLL (`tc_U27` mc4044 + `tc_U41` ÷15, ×15 from `02/`) → tapped at `tc_U40.pin11`;
+>   MS0-8 = `tc_U56` (÷9) + `tc_U39` (shift-reg); AS = `tc_U23`; the offset latch + field registers + RESET FF all clock
+>   on **`DAB RSTB/`** (the per-step strobe — what some notes called "tcCLKA"). (§6T)
+
+---
+
 > ## ⚠️ CONFIDENCE STATUS BANNER (Session 11, 2026-06-25) — read first
 >
 > Taxonomy: ✅ CONFIRMED · 🟡 PARTIAL (faithful but interpretation unverified) · 🔵 INFERRED · 🟠 GUESS ·
@@ -26,11 +60,13 @@ docs: `224XL_microword_fieldmap.md`, `224XL_record_name_map.md`, `224XL_param_sw
 > decode (U47/U48/U49 — MEMR/MEMW/RDRREG/RD-AD/RD-XREG/WR-DA, MI4 gate); the address adder + straight OFST
 > wiring + standard DRAM mux (`addr=CPC−offset`); the register file (LS670, WA=MI18/19, RA=MI20/21, addr-3
 > pass-through); `/32` coeff scale + ±2¹⁸ rail; program names (20/20 vs directory); the program-load mechanism
-> (B55B + interpreter, FE/non-FE). The **field-bit map** (which bits mean what) is ✅.
+> (B55B + interpreter, FE/non-FE). The **field-bit map** (which bits mean what) is ✅ — with two M0b refinements
+(see top banner): **CSIGN is the `tc_U20` JK-FF, not a directly-applied stored bit**, and the §3 "lane/bit"
+table is the *firmware-storage* view (reconcile vs the hardware MI map, netlist §G3R).
 >
 > **What is 🟡 PARTIAL:** that `aru224`'s `0x3F4D` delays are the ARU's *actual* addresses and that
 > `delay=−offset` is the right interpretation (the read is faithful/byte-identical, but that is near-circular —
-> it reads the firmware's *own* output; needs the firmware-routine teardown, Track A). DMEM 128K/bank-select.
+> it reads the firmware's *own* output; needs the firmware-routine teardown, Track A). ~~DMEM 128K/bank-select~~ → ✅ RESOLVED (M0b netlist): ONE 64K×16 bank (`dmem_U20–U35`), no bank-select; see top banner.
 > The modulation engine. The 16-bit fixed-point / FPC scaling numbers.
 >
 > **What is 🔵 INFERRED / 🟠 GUESS:** `inv_l3` coeff polarity (🟠); the FE writeptr-base/SIZE scaling (🟠);
@@ -66,10 +102,14 @@ Parameters and modulation are the SBC rewriting WCS coefficient/offset bytes ove
 sample** — verified three ways: the build loop `0xB65A` (`LD C,0x80`) and the WCS hardware-copy `0xAB55`
 (`LD B,0x80`) both process 128 steps, and the last program-content step = **127** in every program
 booted (CONCERT/PLATE/BRIGHT/DARK/SMALL ROOM/CHAMBER). The earlier "~100/~110" was an undercount of
-non-NOP steps; NOPs are interspersed but still execute (as pure-delay/no-op cycles). **RESET = a
-hardwired 8-bit-counter terminal-count wrap (no microword bit)** — verified: AND-ing step-127's 32-bit
-word across all programs and removing bits present in any other step yields `0x00000000` (no
-end-of-program marker). So the C++ core loops `S = 0..127` and resets at the loop boundary.
+non-NOP steps; NOPs are interspersed but still execute (as pure-delay/no-op cycles). **RESET has no
+*dedicated* microword bit** — verified: AND-ing step-127's 32-bit word across all programs and removing bits
+present in any other step yields `0x00000000` (no end-of-program marker bit). **M0b correction:** RESET is
+*not* a hardwired counter terminal-count wrap — per SM §3.5 ("reset … generated by the WCS itself") and netlist
+§3.11/§2T.5 it is a **WCS-decoded condition** (`tcWR·OFST3/` at tc_U34 → PC `/CLR`; registered to `RESET/` by
+tc_U25). SM §3.5 puts that reset at **count 99 (= 100 steps)**, in tension with the firmware's 128-entry build
+loop (§1 banner) — so treat the executed-step count as 🟡. For the C++ core, looping `S = 0..127` and resetting
+at the loop boundary remains the working model pending that reconciliation.
 
 **Sample rate.** 224X = 3.41 MHz ÷ 100 = 34.13 kHz (manual). The 224XL runs 128 steps; its published Fs
 is still ≈34.13 kHz, implying a proportionally faster T&C step clock ≈ **4.37 MHz** (≈229 ns/cycle).
@@ -104,9 +144,12 @@ Components:
 - **Register file** — 4 registers × 16-bit. Independent **write address WA (2-bit)** and **read address
   RA (2-bit)**. `DAB WSTB/` writes the DAB into R[WA] **every cycle** (data not always meaningful).
   **Address 3 = pass-through** (dummy/scratch write location).
-- **Multiplier** — 16×6-bit 2's-complement, **saturating**. Serial shift-and-add done **two bits at a
-  time** via a dual-rank shift register (one cycle per 6-bit multiply). Coefficient = 6 bits `C0–C5` +
-  sign `CSIGN/`.
+- **Multiplier** — 16×6-bit 2's-complement, **saturating**; a **modified-Booth (radix-4)** shift-and-add done
+  **two bits at a time** via a dual-rank shift register (one cycle per 6-bit multiply; the even/odd coefficient
+  streams M0//M1/ are the Booth selects — SM §3.7 calls it "modified shift and add"). Coefficient *magnitude* =
+  6 bits `C0–C5`. The add/subtract sign **`CSIGN/` is *not* part of the stored coefficient — it is the `tc_U20`
+  (74S112) JK flip-flop output** (ARUCKE/-clocked, AS0-gated from MI23; netlist §3.10): the model must replicate
+  the JK toggle, not just read a sign bit.
 - **Accumulator** — 20-bit. `ZERO/` clears it.
 - **Result register** — 16-bit. `XFER/` (clock XFER CK) loads it from the accumulator.
 - **DMEM** — **circular delay memory of 65536 words → `DMEM_MASK = 0xFFFF`** (schematic #060-02512:
@@ -170,7 +213,9 @@ the b3 write-back drives the DAB, so the closer writes the post-XFER (just-compu
 ## 3. The WCS microword (the instruction format)
 
 WCS = 4 × (128×8) SRAM. For step `S`, the 4 bytes are at `0x4000 + S*4 + lane` (SBC addr bits[1:0]=lane,
-[8:2]=step). **Lane→SRAM** (manual diag E20–E23): lane0=U49, lane1=U33, lane2=U18, lane3=U3.
+[8:2]=step). **Lane→SRAM** (manual diag E20–E23): lane0=U49, lane1=U33, lane2=U18, lane3=U3. *(M0b: those are
+the Service-Manual §5-diagnostic designators — a manual-internal inconsistency; the **schematic** WCS SRAMs are
+**MCM68B10 `tc_U43/U29/U15/U2`** = MI0-7 / MI8-15 / MI16-23 / MI24-31 respectively, netlist §3.1.)*
 
 **Storage is active-low** with a mixed-polarity quirk: the OFFSET and the LANE2 CONTROL byte are stored
 complemented; the LANE3 coefficient **magnitude** is stored direct. A `NOP`/pure-delay step ⇔
@@ -181,13 +226,25 @@ don't-care offset, so the full 32-bit word is not necessarily all-zero).
 |---|---|---|---|---|
 | 0–1 | 16 | **OFST** | `offset = (~(lane1<<8 \| lane0)) & 0xFFFF`; **DMEM addr = (position − offset) & 0xFFFF** (see §2) | HIGH |
 | 3 | 6:0 | **COEFF mag** | `lane3 & 0x7F` (**raw, direct/linear** — packer 0xB4FF is magnitude-direct); **effective C = mag >> 1 (6 bits), applied as C/64 = mag/128** (§4, §6) | HIGH |
-| 3 | 7 | **CSIGN** | raw bit7, active-low: `1 ⇒ negative` | HIGH |
+| 3 | 7 | **CSIGN** (stored sign) | raw bit7, active-low: `1 ⇒ negative`. **M0b: the *datapath* `CSIGN/` is the `tc_U20` JK-FF output, not a direct read of this bit — see the reconciliation note below.** | 🟡 |
 | 2 | 5:4 | **RA** | `((~lane2)>>4)&3` — read-register address (RA1,RA0) | HIGH (datapath-validated) |
 | 2 | 3 | **RW/SRC (b3)** | `((~lane2)>>3)&1` — `RDRREG/`=A50: result-register tristate OE onto DAB. `b3=1` ⇒ RES drives DAB and is written back to `DMEM[addr]` (comb/allpass feedback write-back); `b3=0` ⇒ `DMEM[addr]` (or FPC) drives DAB (a read). Independent stored bit — firmware-confirmed (copied verbatim from the program record). **DMEM write-back is gated by b3, not XFER; XFER (clock) independently loads the result register.** | HIGH (schematic + firmware) |
 | 2 | 2 | **XFER** | `((~lane2)>>2)&1` — load result register / write the tank | HIGH |
 | 2 | 1:0 | **WA** | `(~lane2)&3` — write-register address (3 = pass-through) | HIGH |
 | 2 | 7 | **ZERO** | `((~lane2)>>7)&1` — clear accumulator (opens a MAC block) | HIGH |
 | 2 | 6 | **PROTECT** | `((~lane2)>>6)&1` — WCS-access protect / MAC-enable (≈always 1 on active steps) | MED |
+
+> **★ M0b — firmware-storage table vs hardware MI map (reconcile; do not assume they match).** The table above
+> is the **firmware-storage** decode (the byte/bit layout the SBC writes — behaviorally validated, it reproduces
+> the correct coefficients/control). The **hardware** microword map traced from the schematic (netlist §G3R) is:
+> lane-2 byte (MI16-23) = {MI16 device-select, MI17 MEMAC, MI18/19 WA0//WA1/, MI20/21 RA0//RA1/, MI22 PROT,
+> MI23 → CSIGN logic}; lane-3 byte (MI24-31) = {**MI24 XFER, MI25 ZERO-gate, MI26-31 = 6-bit coeff C0/-C5/**}.
+> So in *hardware*: XFER/ZERO live in **lane-3** (not lane-2), the coeff is **6 bits (MI26-31)**, and lane-3 bit 7
+> = MI31 = **C5/** (not CSIGN); **CSIGN is the `tc_U20` JK-FF** (driven from MI23). The firmware-storage table and
+> the hardware MI map therefore **disagree on literal bit positions** — the difference is absorbed by the storage
+> byte order + active-low inversions. **This is an open reconciliation** (a known "encoding ≠ literal wiring"
+> hazard): keep the validated table for *decoding the firmware image*, but treat the hardware MI map as the wiring
+> ground truth, and verify the CSIGN-JK behavior (does it *follow* or *toggle* the stored sign?) against the J/K logic.
 
 **RA/XFER resolution** (the hard part, now settled + schematic-confirmed): running the decoded CONCERT
 microcode through the ARU datapath, `RA=(b5,b4)` is the **only** assignment that forms a coherent
@@ -201,7 +258,7 @@ microinstruction → ARU connector signal map off the sheet: `OFST0–OFST15` = 
 **`ZERO/`=A49, `XFER CK`=A27** (XFER is delivered as a gated clock, not a static level),
 **`CSIGN/`=A48, `PROT/`** each a distinct line; **`RDRREG/`=A50** (the b3 / RW-SRC line — the result
 register's tristate output-enable onto the DAB, driven by ARU U43/U44 = 74F374 pin-1 OC/);
-coefficient `C0/–C5/` serialized (U10/U11 LS195 shift registers, clocked by ARUCKE/AS1, serialized
+coefficient `C0/–C5/` serialized (U10/U11 74195 shift registers, clocked by ARUCKE/AS1, serialized
 into M0//M1/ as 2 bits/state × 3 states); FPC strobes `RD AD/`, `WR DA/`, channel selects `SDAA–SDAD`
 (U32). **Every control signal is active-low** (the `/` suffix) — confirming the complemented-storage
 decode — and **every field is a separate signal** — confirming RA≠WA independence. `RESET/` is generated
@@ -233,9 +290,10 @@ schematic + hardware IR confirmed). Use the diff harness (§9) and the manual's 
 verify the C++ implementation.
 
 - **Coefficient encoding (RESOLVED).** The multiplier is **6-bit** (C0/–C5/, confirmed at the T&C
-  coefficient serializer: LS195 shift registers U10/U11, clocked by ARUCKE/AS1, serialized as 2 bits/
+  coefficient serializer: 74195 shift registers U10/U11, clocked by ARUCKE/AS1, serialized as 2 bits/
   state × 3 states into M0//M1/). **Effective coefficient = C = (lane3 7-bit magnitude) >> 1 (6 bits),
-  applied as `C/64` (= mag/128).** Sign = CSIGN (bit7 of lane3, active-low: `1 ⇒ negative`). Magnitude
+  applied as `C/64` (= mag/128).** Sign = CSIGN (the stored sign bit; **M0b: the datapath `CSIGN/` is the
+  `tc_U20` (74S112) JK-FF output, not a directly-applied bit — netlist §3.10 / §3 note**). Magnitude
   is stored **direct/linear** — firmware-confirmed: packer 0xB4FF complements only the sign bit;
   magnitude comes direct from 0xB510 `AND 0x7F`). `mag & 0x3F` is REFUTED. A single 6-bit coefficient
   is always < 1 (≤ 63/64). **The "2 extra LSBs"** (NVS4 packer 0xB4F0, `AND 3 / OR 3` at 0xAE72)
@@ -469,8 +527,10 @@ DMEM #060-02273, Block-Diagram-Memory + zoom crops.
   (`0x0EFD`/`0x0EF4` → builder `0x0F2C`).
 - **Executed step count + RESET — RESOLVED (§1).** **128 steps/sample, fixed** for all programs
   (verified: build loop `0xB65A`/WCS copy `0xAB55` both 128; last content step = 127 in every program).
-  **RESET = hardwired counter terminal-wrap, no microword bit** (verified: no bit unique to step 127).
-  Loop `S=0..127` and reset at the boundary.
+  **RESET = a WCS-decoded condition, no *dedicated* microword bit** (verified: no bit unique to step 127) —
+  **M0b: *not* a hardwired counter terminal-wrap**: SM §3.5 + netlist §3.11 = `tcWR·OFST3/` (tc_U34) → PC clear,
+  "reset … generated by the WCS." SM puts it at count 99 (= 100 steps), in tension with the 128-entry build — see §1.
+  Loop `S=0..127` and reset at the boundary (working model pending the 100-vs-128 reconciliation).
 
 **Bit-exact arithmetic — RESOLVED (firmware + schematic + hardware IR):**
 - **Coefficient encoding:** 6-bit magnitude C = mag>>1, applied as C/64 (= mag/128); sign = CSIGN
@@ -528,7 +588,8 @@ DMEM #060-02273, Block-Diagram-Memory + zoom crops.
 
 ## 11. Quick reference — key addresses
 
-- WCS image: `0x4000–0x41FF` (4-byte steps; lane0=U49…lane3=U3, active-low).
+- WCS image: `0x4000–0x41FF` (4-byte steps; SRAMs = MCM68B10 `tc_U43/U29/U15/U2` per the schematic — the
+  "lane0=U49…lane3=U3" in older notes are the manual §5-diagnostic designators; active-low).
 - Program record array: `0xB800` (page-wrap walk; ID = record[0]); lookup `0x13B6→0x133E`.
 - Name table `0xA002`; directory `0xA446` (`{flags=ID,group,sub,page-hi,len}`).
 - Build engine: interpreter `0xAA9F`, step-builder `0xB55B` (FE path) / `0xB65A` (non-FE pre-built

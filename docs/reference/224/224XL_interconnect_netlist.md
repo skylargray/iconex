@@ -27,7 +27,7 @@
 | 5 | **DMEM address path / DRAM / XREG** | ✅ **transcribed** (§5 — owner hand-trace 060-02512) |
 | 3 | **WCS-output → control-input wiring** | ✅ **transcribed** (§3 — T&C sheet 2; full microword field map §G3R) |
 | 2 | **Device decode / DAB-driver select** | ✅ **transcribed** — DMEM I/O decode (§2D) + T&C device decode `tc_U47/U49/U48` (§2T) |
-| 6 | Clock / strobe distribution | 🟡 **DMEM strobe-gen (§6D) + T&C clock *distribution* mapped**; T&C sheet-1 clock *generation* (MC/MS/AS/PLL) still ⚪ §G3T — timing already in `224XL_timing_spec.md` |
+| 6 | **Clock / state / strobe generation** | ✅ **transcribed** — DMEM strobe-gen (§6D) + T&C sheet-1 clock/MS/AS/strobe gen (§6T, 060-02475-D sh.1); only the PLL (tc_U26, owner-omitted) makes MC → tapped at tc_U40.pin11 |
 | 1 | DAB bus (full driver/receiver/enable summary) | 🟡 enables now traced (RDRREG/, RD AD/, RD XREG/, MEMR//MEMW/); ARU result-reg §4.8, regfile §4F.1, DMEM DRAM/XREG §5.5/§5.6. FPC driver pends (scoped out) |
 
 ---
@@ -148,7 +148,7 @@ nets are 1-driver/1-load internal; named `_aru_sumN` (my naming). Carry-in of th
 | _aru_c4_20 | aru_U20.pin9 (C4) | aru_U21.pin7 (C0) |
 | _aru_c4_21 | aru_U21.pin9 (C4) | aru_U22.pin7 (C0) |
 | _aru_c4_22 | aru_U22.pin9 (C4) | aru_U23.pin7 (C0) |
-| (aru_U23.pin9 C4) | — | Not depicted in trace (top carry-out unused / ⚪) |
+| (aru_U23.pin9 C4) | — | **not connected** (top carry-out unused — owner-confirmed 2026-06-28) |
 
 **Σ → sat-mux I0** (driver = adder Σ, load = mux A-input): ✅
 | Net | Driver (adder Σ) | Load (mux I0) |
@@ -764,7 +764,7 @@ DMEM-resident sections (sheet 2) + the three sheet-1 sections:
 **Source:** owner hand-trace `docs/reference/224/224XL TC pinouts from 060-02475-D_1.txt` (board 060-02475-D,
 **sheet 2 of 2**; sheet 1 = the clock/PLL generator + FPC + some inverter sections, still `placeholder` ⚪).
 Re-keyed to verified `parts/*.v`; pin-label-audited (every chip matches its `.v`). Board prefix `tc_`. Every net
-= **✅ owner trace** unless marked. **Sheet-1 / SBC origins** (`tcCLKA`, `ARUCK`, `ARUCKE`, `ARUCKE/`, `AS0`,
+= **✅ owner trace** unless marked. **Sheet-1 / SBC origins** (now mostly resolved in §6T) (`ARUCK`, `ARUCKE`, `ARUCKE/`, `AS0`,
 `AS1/`, `MS6`, `MS7`, `ADR SEL/`, `ADR0–8/`, `GSTB/`, `WSTB/`, `MWTC/`, `CS`, `DAB RSTB`, `DAB RSTB/`, `HALT/`,
 SBC `DATA0–7/`) → **§G3T**. ⚠ `ARUCK`, `ARUCKE`, `ARUCKE/` are **three distinct nets** (owner-confirmed) — do
 not merge.
@@ -779,7 +779,7 @@ not merge.
  WCS store tc_U43/U29/U15/U2 (4× MCM68B10) ── MI0..31 ──► [bidirectional microword bus]
    addr tcA0..6 ◄─ mux tc_U42/U28 (SEL=ADR SEL/) ◄─ { ADR2..8/ (SBC) | PC0..6 (tc_U14/U1) }
    R/W ◄─ tc_U46 (LS155, from ADR0//ADR1/) ;  SBC access via tc_U44/U30/U16/U3 ◄─ DATA0..7/ ─►
- MI0..15  ─► offset latch tc_U45/U31 (F374, clk tcCLKA) ─► OFST0..15/   → DMEM adders §5.2  [DELAY]
+ MI0..15  ─► offset latch tc_U45/U31 (F374, clk DAB RSTB/) ─► OFST0..15/   → DMEM adders §5.2  [DELAY]
  MI16..31 ─► field regs tc_U17/U18/U4/U5 (S163 load-mode) + tc_U19 (LS377, clk ARUCKE) ─►
              MEMAC, RA0//RA1/, WA0//WA1/, PROT, XFER, DP, C0..5/
  C0..5/   ─► serializer tc_U11/U10 (74195, clk ARUCKE, load AS1/) ─► M0//M1/   → ARU §4F.6  [GAIN/Booth]
@@ -864,7 +864,7 @@ count-enabled by **HALT/**. A–D = n/c, /LD = +5V → count-only.
 > Cascade: tc_U14.pin15 (RCO) → tc_U1.pin10 (ENT). PC0–6 → the addr-mux B-side (§3.4).
 
 ## 3.6 Offset latch — `tc_U45/U31` (74F374): MI0–15 → OFST0–15/ ✅ **[the delay]**
-/OE = GND (always enabled), CP = **tcCLKA**. The 74F374 D→Q pin scramble self-cancels so that **MI*n* → OFST*n*/
+/OE = GND (always enabled), CP = **DAB RSTB/**. The 74F374 D→Q pin scramble self-cancels so that **MI*n* → OFST*n*/
 bit-for-bit** (n = 0–15). Detail (tc_U45 = low byte):
 | D pin | net | Q pin | net |
 |---|---|---|---|
@@ -878,10 +878,14 @@ bit-for-bit** (n = 0–15). Detail (tc_U45 = low byte):
 | D7(18) | MI0 | Q7(19) | OFST0/ |
 > `tc_U31` is identical for MI8–15 → OFST8–15/. `OFST0–15/` → DMEM offset adders (§5.2) + DMEM read-back
 > (§5.7) + tc_U32/U47/U49/U34 (device decode, §2T). **This resolves the DMEM `OFST0–15/` origin (§G3D).**
+> **Clock note (owner-resolved 2026-06-28):** the latch clock provisionally labeled `tcCLKA` is actually
+> **`DAB RSTB/`** — the schematic mis-draws its line onto the MI bus; the PCB traces the clock-input line back to
+> `tc_U14.pin2` = `DAB RSTB/`. So the **offset latch (§3.6) + field registers (§3.7) + RESET FF (§3.11) all latch
+> on `DAB RSTB/`**, the same per-step strobe that advances the PC (§3.5).
 
 ## 3.7 Control-field registers — `tc_U17/U18/U4/U5` (74S163, used as load-registers): MI16–31 ✅
 **Used as 4-bit registers, not counters:** /LD = GND, ENP = ENT = GND → load A–D into Q on each clock. CLK =
-**tcCLKA**, /CLR = **ADR SEL/**. A(3)/B(4)/C(5)/D(6) ← MI; QA(14)/QB(13)/QC(12)/QD(11) → control.
+**DAB RSTB/** (= tcCLKA, §3.6 note), /CLR = **ADR SEL/**. A(3)/B(4)/C(5)/D(6) ← MI; QA(14)/QB(13)/QC(12)/QD(11) → control.
 | Reg | A/B/C/D ← | QA → | QB → | QC → | QD → |
 |---|---|---|---|---|---|
 | tc_U17 | MI16/MI17/MI18/MI19 | tc_U47.pin2 | **MEMAC** | **WA0/** | **WA1/** |
@@ -899,7 +903,7 @@ bit-for-bit** (n = 0–15). Detail (tc_U45 = low byte):
 | D0(3) | tc_U34.pin3 | Q0(2) | **DP** |
 | D1(4) | tc_U18.pin14 (MI20) | Q1(5) | **RA0/** |
 | D2(7) | tc_U18.pin13 (MI21) | Q2(6) | **RA1/** |
-| D3(8) | **RESET/** | Q3(9) | **RESET** (see §3.11 dual-drive flag) |
+| D3(8) | **RESET/** | Q3(9) | **RESETD/** (delayed reset → tc_U53.pin13 sheet 1; owner-corrected 2026-06-28, was mis-transcribed RESET) |
 | D4(13) | tc_U18.pin11 (MI23) | Q4(12) | tc_U34.pin13 & tc_U33.pin9 |
 | D5(14) | tc_U4.pin14 (MI24) | Q5(15) | **XFER** |
 | D6(17) | tc_U4.pin13 (MI25) | Q6(16) | tc_U48.pin12 (→ ZERO/ gate) |
@@ -927,12 +931,12 @@ bit-for-bit** (n = 0–15). Detail (tc_U45 = low byte):
 > must replicate the JK toggle, not read CSIGN as a microword bit. (Verified by the field-map cross-check, 2026-06-28.)
 
 ## 3.11 RESET generator — `tc_U25` (74S74, FF-1) ✅
-1D(2) = **RESET**, 1CLK(3) = **tcCLKA**, 1/PRE(4) = +5V, 1/CLR(1) = tc_U37.pin8 (= inv MS6), 1/Q(6) = **RESET/**.
+1D(2) = **RESET**, 1CLK(3) = **DAB RSTB/** (= tcCLKA, §3.6 note), 1/PRE(4) = +5V, 1/CLR(1) = tc_U37.pin8 (= inv MS6), 1/Q(6) = **RESET/**.
 (FF-2 unused.) `RESET/` → tc_U19.pin8 (§3.8).
-> ⚠ **RESET dual-drive — flag (§G-Q):** the `RESET` net is listed with **two outputs** — `tc_U34.pin6` (74LS08
-> 2Y, = tcWR·OFST3/) **and** `tc_U19.pin9` (74LS377 Q3) — plus loads `tc_U25.pin2`, `tc_U33.pin13`. Two
-> totem-pole drivers on one net is a conflict; confirm whether these are one net (and how the contention is
-> resolved) or two same-named nets. Transcribed faithfully; flagged for owner.
+> ✅ **RESOLVED 2026-06-28 (§G-Q closed):** the apparent dual-drive was a sheet-2 mis-transcription — owner
+> corrected `tc_U19.pin9` to **`RESETD/`** (a *delayed reset*, not RESET). So `RESET` has a single driver
+> (`tc_U34.pin6`, = tcWR·OFST3/), and `RESETD/` (tc_U19.Q3) drives `tc_U53.pin13` (sheet 1, §6T.5). The reset
+> chain is **RESET → RESET/ (tc_U25 FF1) → RESETD/ (tc_U19 Q3)** — three distinct single-driver nets, no contention.
 
 ---
 
@@ -996,6 +1000,94 @@ OFST9/→**SDAC** (pin11), OFST10/→**SDAB** (pin6), OFST11/→**SDAA** (pin8).
 
 ---
 
+# Net-group 6 — T&C: clock / state / strobe generation  ✅ (060-02475-D **sheet 1**)
+
+**Source:** owner hand-trace `docs/reference/224/224XL TC pinouts from 060-02475-D.txt` (sheet 1 of 2). Re-keyed
+to verified `parts/*.v` (every chip pin-label-audited). Board prefix `tc_`. **The owner intentionally omitted the
+PLL/clock oscillator** — per SM §3.5 that block is `tc_U27` (mc4044 phase detector) + `tc_U41` (÷15 counter) + the
+VCO, phase-locked to the SBC `02/` clock (×15 → 30.72 MHz). **`MC` is tapped at `tc_U40.pin11`** (the clock-driver
+output) and is the model's master-clock input. (`tc_U26`, at tc_U40.pin13, is also in that omitted block.)
+**Model relevance:** these gates *generate* the clock skeleton whose **timing is already pinned in
+`224XL_timing_spec.md` (figs 3.2/3.4)** — the model makes MS/AS/clocks from a counter, so this group is the
+reference + the cross-board origin resolution (it closes most of §G3T).
+
+> **✅ Independent confirmation — Service Manual §3.5, verbatim, 2026-06-28:**
+> - *MS-gen (§6T.2):* "the state generation circuitry consists of a **divide-by-9 counter, U56, and an 8-bit
+>   shift register U39** … divided into nine time slots, **MS0–MS8**." — matches §6T.2 by designator.
+> - *PC (§3.5/§3.4):* "the WCS is cycled by an **eight bit program counter (U1, U14). A 100-step control program**
+>   … the counter is normally **reset at count 99** by a RESET signal generated by the WCS itself."
+> - *PLL/MC (§6T.1):* "synchronized to the SBC … by a **phase lock loop** … a **divide-by-15 counter, U41**, is
+>   embedded in the phase lock loop … the **master clock, MC, runs at 30.72 MHz**."
+> - *ARUCK + U13 (§6T.6):* "**ARUCK fires one-shot U13**"; §5.3.1: ARUCK missing ⇒ "failure within the clock
+>   circuitry on the **T&C module**." And the signature table gives "**CLOCK = DAB RSTB/, U20 pin 6**" — corroborating §6T.4.
+> (Schematic-only, no conflict: the ARUCKE/ARUCKE/ buffering and the DAB-strobe *origin* attribution aren't in the prose.)
+
+**Chips:** `tc_U40` 74S00 clock driver · `tc_U25`(FF2)/`tc_U37` clock buffers · `tc_U39` 74F374 + `tc_U56`
+74S163 MS-gen · `tc_U23` 74LS175 AS-gen · `tc_U36` 74S10 (XFER CK) · `tc_U20`(FF1) 74S112 (DAB RSTB) ·
+`tc_U21/U22` 74S112 (GSTB//WSTB//CS) · `tc_U50` 74LS133 + `tc_U51` 74S00 + `tc_U33`(sh1) WCS-range decode ·
+`tc_U53/U54` 74LS74 · `tc_U55` 74LS03 (XACK/) · `tc_U35` 74S08 · `tc_U38` 74LS27 (S1) · `tc_U52` 74LS175 ·
+`tc_U9` 74LS174 + `tc_U12` 74LS86 (SAT/S-pipeline) · `tc_U24` 74LS74 (S0 sequencer) · `tc_U6/U7/U8` (DPORT debug readback) · `tc_U13` 74LS123 (error-LED).
+
+## 6T.1 Master clock + ARU-clock tree ✅
+| Net | Driver | → loads | note |
+|---|---|---|---|
+| **MC** | tc_U40.pin11 (4Y = inv tc_U26.pin9) | tc_U37.pin1, tc_U25.pin11, tc_U39.pin11, tc_U56.pin2 | master clock (tc_U26 PLL omitted) |
+| **tcCLKB** | tc_U37.pin2 (inv MC) | tc_U20/U21/U22 CLK pins | strobe-FF clock |
+| **ARUCKE** | tc_U25.pin8 (FF2 2/Q; D=tc_U38.8, CLK=MC) | tc_U40.pin4, tc_U11.pin10, tc_U10.pin10, tc_U19.pin11 | |
+| **ARUCKE/** | tc_U40.pin6 (= inv ARUCKE) | tc_U40.pin9, tc_U20.pin13 (CSIGN clk) | |
+| **ARUCK** | tc_U40.pin8 (= inv ARUCKE/) | ARU (product reg/shifter §4.7/§4F.3), tc_U9.pin9, tc_U13.pin9, tc_U23.pin9 | re-buffered ARUCKE |
+> ⚠ `ARUCK`, `ARUCKE`, `ARUCKE/` are **three distinct nets** (owner-confirmed): ARUCKE → (inv) ARUCKE/ → (inv)
+> ARUCK; ARUCK carries the same level as ARUCKE but is a separately-buffered net. (`tc_U41` = the PLL ÷15
+> counter, referenced at tc_U40.pin1/2/3; in the omitted clock block → §G3T.)
+
+## 6T.2 MS-state generator → `MS0–MS8` ✅
+`tc_U39` (74F374 shift register, CP=MC) generates MS0,1,2,5,6,7,8; `tc_U56` (74S163 counter, CLK=MC) generates
+**MS3** (RCO pin15) and **MS4** (QD pin11). Together = the one-hot MS0–8 skeleton (fig-3.2). (tc_U39: Q5/Q6/Q7=
+MS0/MS1/MS2, Q1/Q2/Q3/Q4=MS5/MS6/MS7/MS8; the D-side carries the shift chain.)
+
+## 6T.3 AS-state generator → `AS0 / AS0/ / AS1/` ✅
+`tc_U23` (74LS175, CLK=**ARUCK**, /CLR=**MS4**): Q0(2)=**AS1/**, Q2(10)=**AS0**, /Q2(11)=**AS0/**. (Q1/D-side feed
+the AS-sequencing via tc_U38 + the off-sheet tc_U24, §G3T.)
+
+## 6T.4 ARU MAC strobes ✅ (resolves §G3 clock origins)
+| Strobe | Driver | = | → |
+|---|---|---|---|
+| **XFER CK** | tc_U36.pin6 (74S10 g2) | NAND(AS0, XFER, tc_U25.pin9) | ARU result-reg CP (§4.8) |
+| **DAB WSTB/** | tc_U37.pin6 (inv) | NOT(MS7) | ARU regfile GW\ (§4F.1) |
+| **DAB RSTB** | tc_U20.pin5 (FF1 1Q; J=MS1,K=MS8,CLK=tcCLKB) | — | DMEM (§6D.3) + tc_U48/U49 device decode |
+| **DAB RSTB/** | tc_U20.pin6 (FF1 1/Q) | complement | PC counter clock tc_U14/U1 (§3.5) |
+> `ZERO/` is formed at tc_U48 (§2T.3); `ARUCKE/`→`ARUCK` clock the ARU (§6T.1). **Resolves the §G3 origins for
+> `ARUCK/ARUCKE/ARUCKE//DAB WSTB//XFER CK` and the §G3D origins for `DAB RSTB/DAB RSTB/`.**
+
+## 6T.5 WCS-access strobes, reset chain, handshake ✅
+| Net | Driver | note |
+|---|---|---|
+| **CS** (WCS chip-select) | tc_U21.pin9 (FF2 2Q) | → all WCS SRAM CS0/CS3 (§3.1) |
+| **GSTB/** | tc_U21.pin5 (FF1 1Q) | → tc_U46 /1G (§3.3 read decode) |
+| **WSTB/** | tc_U22.pin5 (FF1 1Q) | → tc_U46 /2G (§3.3 write decode) |
+| **RESET/** | tc_U25.pin6 (FF1 1/Q; sheet 2 §3.11) | → tc_U19.D3 |
+| **RESETD/** | tc_U19.pin9 (Q3) | → tc_U53.pin13 (2/CLR) |
+| **XACK/** | tc_U55.pin8 (74LS03 OC) | SBC bus-acknowledge |
+| **WCS-range decode** | tc_U50 (74LS133, 13-input NAND of ADR9/–ADRF/ etc.) + tc_U33 sh1 + tc_U51 | decodes the SBC address range → ADRE/, MRDC//MWTC/ gating, → `ADR SEL/`/CS path |
+> `tc_U54` (74LS74, CLK=`02/`) + `tc_U55` form the SBC handshake. `tcCLKB` clocks the strobe JK-FFs (tc_U20/21/22).
+> SBC-bus inputs (`MRDC/`, `MWTC/`, `ADR9/–ADRF/`, `ADRE/`, `02/`) remain off-board → §G3T.
+
+## 6T.6 SAT / S-pipeline + DPORT debug readback ✅ (diagnostic — not signal-path)
+- `tc_U9` (74LS174, CLK=ARUCK) + `tc_U12` (74LS86 XOR: 1Y=S0⊕S1, 2Y=M1/⊕M0/, 3Y=inv) form a 1-step pipeline of
+  `SAT`/`S0`/`S1`/`M0//M1/`, feeding `tc_U36.pin1` and the readback latches.
+- `tc_U6` (74LS244, en=`DPORT`) drives **{MEMW/, CSIGN/, RD AD/, PROT, WA0//WA1/, RA0//RA1/} → DATA0–7/**;
+  `tc_U7` (74LS374, CP=MS8, OE=`DPORT5`) latches **{SDAA–D, RDRREG/, WR XREG/, WR DA/, RD XREG/} → DATA/**;
+  `tc_U8` (74LS374, CP=MS2, OE=`DPORT`) latches the U9/U12 pipeline → DATA/. These let the SBC read back control
+  state for diagnostics; not part of the per-sample signal path.
+- `tc_U13` (74LS123 dual one-shot): 2A=ARUCK → **ERROR-LED** (watchdog); RC-set timing (analog).
+## 6T.7 S0 / S1 sequencer — `tc_U24` (74LS74) ✅ (resolves `S0`; owner-added 2026-06-28)
+`tc_U24` (dual D-FF, both halves clocked by `tc_U23.pin7` = the AS-sequence Q1 net): FF1 1D=tc_U22.pin9, 1Q→FF2 2D
+(chained; FF1 1D = tc_U22.pin9 & tc_U21.pin2); FF2 **2/Q(8) = `S0`**, 2Q(9) → tc_U38.pin13. So **`S0` = tc_U24 FF2 2/Q** (a sequenced AS signal), and
+**`S1` = tc_U38.pin12** (74LS27 NOR, with tc_U24.2Q as one input). Both feed `tc_U12` (the S0⊕S1 XOR, §6T.6) and on
+to the ARU 74194 shifter mode (S0/S1, §4F.3). **Resolves the §G3T `S0` + off-sheet `tc_U24` stub.**
+
+---
+
 # GAPS / QUESTIONS FOR OWNER
 
 > Per Ground Rule 3 these are flagged, not guessed. The ARU-internal gaps are now closed by the owner's expanded
@@ -1014,16 +1106,18 @@ These are consumed on the ARU but **generated on T&C**. Status after folding 060
 - ✅ **Resolved (sheet 2):** `RDRREG/` (§2T.3), `ZERO/` (§2T.3), `RA0//RA1/` (§3.8), `WA0//WA1/` (§3.7),
   `M0//M1/` (§3.9, M0/←tc_U11 / M1/←tc_U10), `CSIGN/` (§3.10), and `XFER` (§3.8; the microword bit — the
   `XFER CK` *strobe gating* is on sheet 1, §G3T).
-- ⚪ **Still open (T&C sheet 1 = clock gen, `placeholder`):** `ARUCK`, `ARUCKE`, `ARUCKE/` (three distinct nets),
-  `DAB WSTB/`, `S0`, `S1`, and the `XFER CK` edge. → **§G3T**.
+- ✅ **Resolved (sheet 1, §6T):** `ARUCK`/`ARUCKE`/`ARUCKE/` (tc_U40/U25 clock tree), `DAB WSTB/` (tc_U37=invMS7),
+  the `XFER CK` edge (tc_U36), and `S1` (tc_U38.pin12).
+- ✅ **Resolved (sheet 1, §6T.7):** `S0` (= tc_U24 FF2 2/Q, owner-added 2026-06-28).
 - `SAT` is generated **on the ARU** (aru_U42, §4.5) ✅.
 
 ### §G3D — DMEM cross-board origins + unpopulated structure — 🟡 MOSTLY RESOLVED by T&C sheet 2
 **Consumed on DMEM, generated off-board. Status after folding 060-02475-D sheet 2:**
 - ✅ **Resolved on T&C (sheet 2):** `MEMAC` = MI17 (§3.7); `MEMW/` (§2T.1); `RD XREG/` (§2T.1); `WR XREG/`
   (§2T.2); the microword offset `OFST0–15/` = MI0–15 (§3.6); `RESET` (§3.11/§2T.5, = tcWR·OFST3/ via tc_U34).
-- ⚪ **Still open (T&C sheet 1 / SBC):** `DAB RSTB`, `DAB RSTB/`, `MC`, `MS1` (sheet-1 clock gen); `ADR0–7/`,
-  `IORC/`, `IOWC/` (SBC I/O bus). → **§G3T**.
+- ✅ **Resolved (sheet 1, §6T):** `DAB RSTB`/`DAB RSTB/` (tc_U20 FF1), `MC` (tc_U40.pin11, PLL tapped), `MS1`
+  (tc_U39, the MS-gen).
+- ⚪ **Still open (SBC I/O bus):** `ADR0–7/`, `IORC/`, `IOWC/`. → **§G3T**.
 - *Generated **on** the DMEM* (not gaps): the `WRH/WRL/RDH/RDL XREG/` + `DPORT0–5/` strobes (§2D decoders),
   `CPC CLR` (dmem_U58F), `XACK/`/`HALT/`/`HR//HR1/` (handshake), and `RAS//CAS0//ROW SEL/WR/` (§6D).
 
@@ -1036,15 +1130,23 @@ These are consumed on the ARU but **generated on T&C**. Status after folding 060
    the live path is dmem_U43/U44/U45/**U46A**/U59 (§6D). Every dead endpoint is tagged `[dead]` in §6D and in
    the source txt. (`dmem_U58B`, `dmem_U61C`, `dmem_U61D` are likewise dead — they feed only U47/U60.)
 
-### §G3T — Remaining origins: T&C **sheet 1** (clock/PLL gen + FPC) + SBC — ⚪ OPEN
-The only ⚪ left in the netlist. T&C sheet 1 (`placeholder` in the trace txt) holds:
-- **Clock generation:** `MC`, `MS0–8`, `AS0`, `AS1/`, `AS2`, `ARUCK`, `ARUCKE`, `ARUCKE/`, `tcCLKA`,
-  `DAB RSTB`, `DAB RSTB/`, `DAB WSTB/`, `S0`, `S1`, the `XFER CK` edge, `MS6`/`MS7` taps. (mc4044 PLL + counters
-  + MS shift-register + AS grouping.) **Timing already pinned** by `224XL_timing_spec.md` (figs 3.2/3.4) — the
-  model generates these from a counter, so the gate-level gen can be skipped per the agreed scope.
-- **WCS bus-access / SBC interface:** `ADR0–8/`, `ADR SEL/`, `GSTB/`, `WSTB/`, `MWTC/`, `CS`, `IORC/`, `IOWC/`,
-  `HALT/`, SBC `DATA0–7/`. (Program-load path; programs are loaded via the firmware boot, so not needed for the
+### §G3T — Remaining ⚪ origins (after T&C sheet 1 folded, §6T) — small + mostly skippable
+T&C sheet 1 (§6T) resolved the clock/state/strobe generation (MC/MS0–8/AS/ARUCK·E·E//DAB RSTB·WSTB/XFER CK/
+GSTB//WSTB//CS/XACK/). What remains ⚪:
+- **Owner-omitted PLL/oscillator:** per SM §3.5 the PLL = `tc_U27` (mc4044 phase detector) + `tc_U41` (÷15
+  counter) + VCO (×15 from the SBC `02/` clock), making the master clock → `tc_U40.pin11` = **`MC`** (30.72 MHz).
+  `tc_U26` (at tc_U40.pin13) is also in that block. **`MC` is the model's clock input** — no need to trace the
+  PLL for the reverb model.
+- ✅ **Resolved 2026-06-28 (owner update):** `tc_U24` (now traced — the S0 sequencer, §6T.7); `S0` (= tc_U24 FF2
+  2/Q, §6T.7); `tcCLKA` (= **`DAB RSTB/`**, §3.6 note — the offset latch + field regs + RESET FF all clock on it).
+- **Off-sheet (SBC host-access):** `ADR SEL/` (addr-mux SEL / field-reg clear — consumer-only on T&C; the
+  SBC-access-mode select).
+- **SBC bus inputs (external to T&C):** `ADR0/–ADRF/`, `ADR SEL/`, `MRDC/`, `MWTC/`, `IORC/`, `IOWC/`, `02/`,
+  `HALT/`, `DATA0–7/`. (Program-load + host path; programs are loaded via the firmware boot — not needed for the
   per-sample DSP model.)
+> Net effect: the entire **per-sample DSP signal path is fully net-traced**; the only un-traced items are the PLL
+> (intentionally omitted; MC is the input), the SBC host interface, and one off-sheet stub (`ADR SEL/`, the
+> SBC-access-mode select — consumer-only on T&C, not in the per-sample signal path).
 
 ### §G3R — ✅ Microword field map (MI0–31) — now SCHEMATIC-TRACED (was decode-belief)
 T&C sheet 2 pins the entire 32-bit microword → control mapping by designator (supersedes the faith-level
@@ -1069,11 +1171,10 @@ T&C sheet 2 pins the entire 32-bit microword → control mapping by designator (
 > had it as a stored bit (lane-2 bit 7 ≈ MI23); it is actually the tc_U20 JK output (§3.10). SM §3.5/§3.6/§3.7
 > confirm the WCS/PC/offset/coeff-serializer/regfile/decoder structure verbatim by designator (no contradictions).
 
-### §G-Q — Open question (flag, not guessed): RESET dual-drive
-The `RESET` net (T&C) shows **two outputs** — `tc_U34.pin6` (74LS08 2Y = tcWR·OFST3/) and `tc_U19.pin9`
-(74LS377 Q3) — plus loads `tc_U25.pin2`, `tc_U33.pin13`. Two totem-pole drivers on one net is a contention.
-Confirm: one net (how is contention avoided?) or two same-named nets, or is one the source that the other
-re-registers on a distinct net? (§3.11.) Transcribed faithfully pending owner.
+### §G-Q — ✅ RESOLVED 2026-06-28: RESET dual-drive was a mis-transcription
+The apparent two-driver `RESET` contention is gone: owner corrected `tc_U19.pin9` (Q3) to **`RESETD/`** (a
+*delayed reset*, → tc_U53.pin13). So `RESET` has a single driver (`tc_U34.pin6`), and the reset chain is
+**RESET → RESET/ (tc_U25 FF1) → RESETD/ (tc_U19 Q3)** — three distinct single-driver nets, no contention. (§3.8/§3.11/§6T.5.)
 
 ### §G4 — Not-depicted power/unused pins — owner directive: assume correctly connected
 Owner: Vcc/GND and a few outputs (e.g. aru_U23.pin9 top carry-out, aru_U45-49 RCO) are left off the drawing for

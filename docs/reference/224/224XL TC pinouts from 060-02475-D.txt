@@ -3,7 +3,509 @@ T&C pinouts from schematic 060-02475-D sheet 1 of 2
 
 ---
 
-placeholder
+U33 (74LS04) — hex inverter
+pin 1  (1A)  = (on sheet 2)
+pin 2  (1Y)  = (on sheet 2)
+pin 3  (2A)  = (on sheet 2)
+pin 4  (2Y)  = (on sheet 2)
+pin 5  (3A)  = PROT
+pin 6  (3Y)  = U51 pin 5
+pin 7  (GND) = (on sheet 2)
+pin 8  (4Y)  = (on sheet 2)
+pin 9  (4A)  = (on sheet 2)
+pin 10 (5Y)  = U50 pin 1
+pin 11 (5A)  = ADRE/
+pin 12 (6Y)  = (on sheet 2)
+pin 13 (6A)  = (on sheet 2)
+pin 14 (VCC) = (on sheet 2)
+
+---
+
+U51 (74S00) — quad 2-input NAND
+pin 1  (1A)  = MRDC/, U37 pin 3
+pin 2  (1B)  = MWTC/
+pin 3  (1Y)  = U52 pin 1
+pin 4  (2A)  = U52 pin 12, U53 pin 8
+pin 5  (2B)  = U33 pin 6
+pin 6  (2Y)  = U36 pin 11
+pin 7  (GND) = Not depicted
+pin 8  (3Y)  = U54 pin 3, U35 pin 1, U37 pin 13
+pin 9  (3A)  = U53 pin 6, U35 pin 13, 
+pin 10 (3B)  = U50 pin 9, U37 pin 11
+pin 11 (4Y)  = not connected
+pin 12 (4A)  = not connected
+pin 13 (4B)  = not connected
+pin 14 (VCC) = Not depicted
+
+---
+
+U53 (74LS74) — dual D flip-flop, async preset+clear
+pin 1  (1/CLR) = U37 pin 4
+pin 2  (1D)    = +5V
+pin 3  (1CLK)  = U37 pin 10
+pin 4  (1/PRE) = +5V
+pin 5  (1Q)    = not connected
+pin 6  (1/Q)   = U51 pin 9, U35 pin 13
+pin 7  (GND)   = Not depicted
+pin 8  (2/Q)   = U51 pin 4, U53 pin 12
+pin 9  (2Q)    = not connected
+pin 10 (2/PRE) = +5V
+pin 11 (2CLK)  = PROT
+pin 12 (2D)    = U51 pin 4, U53 pin 8
+pin 13 (2/CLR) = RESETD/
+pin 14 (VCC)   = Not depicted
+
+---
+
+U35 (74S08) — quad 2-input AND
+pin 1  (1A)  = U54 pin 3, U51 pin 8
+pin 2  (1B)  = MS0
+pin 3  (1Y)  = U22 pin 11, U22 pin 2
+pin 4  (2A)  = MS0
+pin 5  (2B)  = U37 pin 12
+pin 6  (2Y)  = U22 pin 12, U21 pin 3
+pin 7  (GND) = Not depicted
+pin 8  (3Y)  = U52 pin 9
+pin 9  (3A)  = U36 pin 8
+pin 10 (3B)  = MS6
+pin 11 (4Y)  = U21 pin 12
+pin 12 (4A)  = MS8
+pin 13 (4B)  = U51 pin 9, U53 pin 6
+pin 14 (VCC) = Not depicted
+
+---
+
+U36 (74S10) — triple 3-input NAND
+pin 1  (1A)  = U36 pin 2, U12 pin 8
+pin 2  (1B)  = U36 pin 1, U12 pin 8
+pin 3  (2A)  = AS0
+pin 4  (2B)  = XFER
+pin 5  (2C)  = U25 pin 9
+pin 6  (2Y)  = XFER CK
+pin 7  (GND) = Not depicted
+pin 8  (3Y)  = U35 pin 9
+pin 9  (3A)  = U52 pin 3
+pin 10 (3B)  = HALT/
+pin 11 (3C)  = U51 pin 6
+pin 12 (1Y)  = U8 pin 8
+pin 13 (1C)  = U13 pin 4
+pin 14 (VCC) = Not depicted
+
+---
+
+U52 (74LS175) — quad D flip-flop, common CLK+/CLR
+pin 1  (/CLR) = U51 pin 3
+pin 2  (Q0)   = U52 pin 5, U50 pin 12
+pin 3  (/Q0)  = U36 pin 9
+pin 4  (D0)   = not connected
+pin 5  (D1)   = U52 pin 2, U50 pin 12
+pin 6  (/Q1)  = U50 pin 6
+pin 7  (Q1)   = not connected 
+pin 8  (GND)  = Not depicted
+pin 9  (CLK)  = U35 pin 8
+pin 10 (Q2)   = not connected 
+pin 11 (/Q2)  = not connected
+pin 12 (D2)   = not connected
+pin 13 (D3)   = not connected
+pin 14 (/Q3)  = not connected
+pin 15 (Q3)   = not connected
+pin 16 (VCC)  = Not depicted
+
+---
+
+U50 (74LS133) — 13-input NAND
+pin 1  (A)   = U33 pin 10
+pin 2  (B)   = ADR9/
+pin 3  (C)   = ADRF/
+pin 4  (D)   = ADRC/
+pin 5  (E)   = ADRA/
+pin 6  (F)   = U52 pin 6
+pin 7  (G)   = ADRD/
+pin 8  (GND) = Not depicted
+pin 9  (Y)   = U37 pin 11, U51 pin 10
+pin 10 (H)   = ADRB/
+pin 11 (I)   = +5V
+pin 12 (J)   = U52 pin 2, U52 pin 5
+pin 13 (K)   = +5V
+pin 14 (L)   = +5V
+pin 15 (M)   = +5V
+pin 16 (VCC) = Not depicted
+
+---
+
+U13 (74LS123) — dual retriggerable monostable multivibrator
+pin 1  (1A)          = tied to ground
+pin 2  (1B)          = U9 pin 12, U12 pin 10
+pin 3  (1/CLR)       = +5V
+pin 4  (1/Q)         = U36 pin 13
+pin 5  (2Q)          = ERROR LED CATHODE (pin 5——⊣⯇———390R——+5V)
+pin 6  (2Cext)       = tied to ground, C9 (100pF) pin 1
+pin 7  (2Rext/Cext)  = C9 (100pF) pin 2, +5V via 10K resistor
+pin 8  (GND)         = Not depicted
+pin 9  (2A)          = ARUCK 
+pin 10 (2B)          = +5V
+pin 11 (2/CLR)       = +5V
+pin 12 (2/Q)         = not connected
+pin 13 (1Q)          = not connected
+pin 14 (1Cext)       = tied to ground, C11 (4.7uF) pin 1
+pin 15 (1Rext/Cext)  = C11 (4.7uF) pin 2, +5V via 120K resistor
+pin 16 (VCC)         = Not depicted
+
+---
+
+U6 (74LS244) — octal 3-state buffer, non-inverting
+pin 1  (/1G) = DPORT
+pin 2  (1A1) = MEMW/
+pin 3  (2Y4) = DATA3/
+pin 4  (1A2) = CSIGN/
+pin 5  (2Y3) = DATA2/
+pin 6  (1A3) = RD AD/
+pin 7  (2Y2) = DATA1/
+pin 8  (1A4) = PROT
+pin 9  (2Y1) = DATA0/
+pin 10 (GND) = Not depicted
+pin 11 (2A1) = WA0/
+pin 12 (1Y4) = DATA7/
+pin 13 (2A2) = WA1/
+pin 14 (1Y3) = DATA5/
+pin 15 (2A3) = RA0/
+pin 16 (1Y2) = DATA4/
+pin 17 (2A4) = RA1/
+pin 18 (1Y1) = DATA6/
+pin 19 (/2G) = DPORT
+pin 20 (VCC) = Not depicted
+
+---
+
+U7 (74LS374) — octal D flip-flop, 3-state outputs, common CLK+/OE
+pin 1  (/OE) = DPORT5
+pin 2  (Q0)  = DATA3/
+pin 3  (D0)  = SDAD
+pin 4  (D1)  = SDAC
+pin 5  (Q1)  = DATA2/
+pin 6  (Q2)  = DATA1/
+pin 7  (D2)  = SDAB
+pin 8  (D3)  = SDAA
+pin 9  (Q3)  = DATA0/
+pin 10 (GND) = Not depicted
+pin 11 (CP)  = MS8
+pin 12 (Q4)  = DATA7/
+pin 13 (D4)  = RDRREG/
+pin 14 (D5)  = WR XREG/
+pin 15 (Q5)  = DATA5/
+pin 16 (Q6)  = DATA4/
+pin 17 (D6)  = WR DA/
+pin 18 (D7)  = RD XREG/
+pin 19 (Q7)  = DATA6/
+pin 20 (VCC) = Not depicted
+
+---
+
+U9 (74LS174) — hex D flip-flop, common CLK+/CLR
+pin 1  (/CLR) = +5V
+pin 2  (Q0)   = U9 pin 6, U8 pin 4
+pin 3  (D0)   = U12 pin 3, U8 pin 7
+pin 4  (D1)   = U9 pin 10, U8 pin 14
+pin 5  (Q1)   = U8 pin 17
+pin 6  (D2)   = U9 pin 2, U8 pin 4
+pin 7  (Q2)   = U8 pin 3
+pin 8  (GND)  = Not depicted
+pin 9  (CLK)  = ARUCK
+pin 10 (Q3)   = U9 pin 4
+pin 11 (D3)   = U12 pin 6, U8 pin 18
+pin 12 (Q4)   = U13 pin 2, U12 pin 10
+pin 13 (D4)   = SAT
+pin 14 (D5)   = not connected
+pin 15 (Q5)   = not connected
+pin 16 (VCC)  = Not depicted
+
+---
+
+U12 (74LS86) — quad 2-input XOR
+pin 1  (1A)  = S0
+pin 2  (1B)  = S1
+pin 3  (1Y)  = U9 pin 3, U8 pin 7
+pin 4  (2A)  = M1/
+pin 5  (2B)  = M0/
+pin 6  (2Y)  = U9 pin 11, U8 pin 18
+pin 7  (GND) = Not depicted
+pin 8  (3Y)  = U36 pin 1, U36 pin 2
+pin 9  (3A)  = +5V
+pin 10 (3B)  = U9 pin 12, U13 pin 2
+pin 11 (4Y)  = not connected
+pin 12 (4A)  = not connected
+pin 13 (4B)  = not connected
+pin 14 (VCC) = Not depicted
+
+---
+
+U8 (74LS374) — octal D flip-flop, 3-state outputs, common CLK+/OE
+pin 1  (/OE) = DPORT
+pin 2  (Q0)  = DATA3/
+pin 3  (D0)  = U9 pin 7
+pin 4  (D1)  = U9 pin 2, U9 pin 6
+pin 5  (Q1)  = DATA2/
+pin 6  (Q2)  = DATA1/
+pin 7  (D2)  = U9 pin 3, U12 pin 3
+pin 8  (D3)  = U36 pin 12
+pin 9  (Q3)  = DATA0/
+pin 10 (GND) = Not depicted
+pin 11 (CP)  = MS2
+pin 12 (Q4)  = DATA7/
+pin 13 (D4)  = ZERO/
+pin 14 (D5)  = U9 pin 4, U9 pin 10
+pin 15 (Q5)  = DATA5/
+pin 16 (Q6)  = DATA4/
+pin 17 (D6)  = U9 pin 5
+pin 18 (D7)  = U9 pin 11, U12 pin 6
+pin 19 (Q7)  = DATA6/
+pin 20 (VCC) = Not depicted
+
+---
+
+U54 (74LS74) — dual D flip-flop, async preset+clear
+pin 1  (1/CLR) = U54 pin 8
+pin 2  (1D)    = +5V
+pin 3  (1CLK)  = U51 pin 8, U35 pin 1, U37 pin 13
+pin 4  (1/PRE) = +5V
+pin 5  (1Q)    = U54 pin 12
+pin 6  (1/Q)   = not connected
+pin 7  (GND)   = Not depicted
+pin 8  (2/Q)   = U54 pin 1
+pin 9  (2Q)    = U55 pin 9, U55 pin 10
+pin 10 (2/PRE) = +5V
+pin 11 (2CLK)  = 02/
+pin 12 (2D)    = U54 pin 5
+pin 13 (2/CLR) = +5V
+pin 14 (VCC)   = Not depicted
+
+---
+
+U22 (74S112) — dual JK flip-flop, negative-edge, preset+clear
+pin 1  (1CLK)  = tcCLKB
+pin 2  (1K)    = U35 pin 3, U22 pin 11
+pin 3  (1J)    = ADR SEL/
+pin 4  (1/PRE) = +5V
+pin 5  (1Q)    = WSTB/
+pin 6  (1/Q)   = not connected
+pin 7  (2/Q)   = not connected
+pin 8  (GND)   = Not depicted
+pin 9  (2Q)    = U21 pin 2, U24 pin 2
+pin 10 (2/PRE) = +5V
+pin 11 (2J)    = U22 pin 2, U35 pin 3
+pin 12 (2K)    = U35 pin 6, U21 pin 3
+pin 13 (2CLK)  = tcCLKB
+pin 14 (2/CLR) = +5V
+pin 15 (1/CLR) = +5V
+pin 16 (VCC)   = Not depicted
+
+U21 (74S112) — dual JK flip-flop, negative-edge, preset+clear
+pin 1  (1CLK)  = tcCLKB
+pin 2  (1K)    = U22 pin 9, U24 pin 2
+pin 3  (1J)    = U35 pin 6, U22 pin 12
+pin 4  (1/PRE) = +5V
+pin 5  (1Q)    = GSTB/
+pin 6  (1/Q)   = not connected
+pin 7  (2/Q)   = not connected
+pin 8  (GND)   = Not depicted
+pin 9  (2Q)    = CS
+pin 10 (2/PRE) = +5V
+pin 11 (2J)    = MS2
+pin 12 (2K)    = U35 pin 11
+pin 13 (2CLK)  = tcCLKB
+pin 14 (2/CLR) = +5V
+pin 15 (1/CLR) = +5V
+pin 16 (VCC)   = Not depicted
+
+U20 (74S112) — dual JK flip-flop, negative-edge, preset+clear
+pin 1  (1CLK)  = tcCLKB
+pin 2  (1K)    = MS8
+pin 3  (1J)    = MS1
+pin 4  (1/PRE) = +5V
+pin 5  (1Q)    = DAB RSTB
+pin 6  (1/Q)   = DAB RSTB/
+pin 7  (2/Q)   = not connected
+pin 8  (GND)   = Not depicted
+pin 9  (2Q)    = not connected 
+pin 10 (2/PRE) = not connected
+pin 11 (2J)    = not connected
+pin 12 (2K)    = not connected
+pin 13 (2CLK)  = not connected
+pin 14 (2/CLR) = not connected
+pin 15 (1/CLR) = +5V
+pin 16 (VCC)   = Not depicted
+
+---
+
+U37 (74S04) — hex inverter
+pin 1  (1A)  = MC
+pin 2  (1Y)  = tcCLKB
+pin 3  (2A)  = MRDC/
+pin 4  (2Y)  = U53 pin 1
+pin 5  (3A)  = MS7
+pin 6  (3Y)  = DAB WSTB/
+pin 7  (GND) = (on sheet 2)
+pin 8  (4Y)  = (on sheet 2)
+pin 9  (4A)  = (on sheet 2)
+pin 10 (5Y)  = U53 pin 3
+pin 11 (5A)  = U50 pin 9, U51 pin 10
+pin 12 (6Y)  = U35 pin 5 
+pin 13 (6A)  = U51 pin 8, U54 pin 3, U35 pin 1
+pin 14 (VCC) = (on sheet 2)
+
+---
+
+U55 (74LS03) — quad 2-input NAND, open-collector
+pin 1  (1A)  = not connected
+pin 2  (1B)  = not connected
+pin 3  (1Y)  = not connected
+pin 4  (2A)  = not connected
+pin 5  (2B)  = not connected
+pin 6  (2Y)  = not connected
+pin 7  (GND) = Not depicted
+pin 8  (3Y)  = XACK/
+pin 9  (3A)  = U55 pin 10, U54 pin 9
+pin 10 (3B)  = U55 pin 9, U54 pin 9
+pin 11 (4Y)  = not connected
+pin 12 (4A)  = not connected
+pin 13 (4B)  = not connected
+pin 14 (VCC) = Not depicted
+
+---
+
+U38 (74LS27) — triple 3-input NOR
+pin 1  (1A)  = DP
+pin 2  (1B)  = U23 pin 6
+pin 3  (2A)  = not connected
+pin 4  (2B)  = not connected
+pin 5  (2C)  = not connected
+pin 6  (2Y)  = not connected
+pin 7  (GND) = Not depicted
+pin 8  (3Y)  = U25 pin 12
+pin 9  (3A)  = MS8
+pin 10 (3B)  = MS5
+pin 11 (3C)  = MS2
+pin 12 (1Y)  = S1
+pin 13 (1C)  = U24 pin 9
+pin 14 (VCC) = Not depicted
+
+---
+
+U40 (74S00) — quad 2-input NAND
+pin 1  (1A)  = U40 pin 2, U41 pin 15
+pin 2  (1B)  = U40 pin 1, U41 pin 15
+pin 3  (1Y)  = U41 pin 9
+pin 4  (2A)  = ARUCKE
+pin 5  (2B)  = +5V
+pin 6  (2Y)  = ARUCKE/
+pin 7  (GND) = Not depicted
+pin 8  (3Y)  = ARUCK
+pin 9  (3A)  = ARUCKE/
+pin 10 (3B)  = +5V
+pin 11 (4Y)  = MC (U40 pin 11 is the output of the clock driver circuit)
+pin 12 (4A)  = +5V
+pin 13 (4B)  = U26 pin 9
+pin 14 (VCC) = Not depicted
+
+---
+
+U25 (74S74) — dual D flip-flop, async preset+clear
+pin 1  (1/CLR) = (on sheet 2)
+pin 2  (1D)    = (on sheet 2)
+pin 3  (1CLK)  = (on sheet 2)
+pin 4  (1/PRE) = (on sheet 2)
+pin 5  (1Q)    = (on sheet 2)
+pin 6  (1/Q)   = (on sheet 2)
+pin 7  (GND)   = (on sheet 2)
+pin 8  (2/Q)   = ARUCKE
+pin 9  (2Q)    = U36 pin 5
+pin 10 (2/PRE) = +5V
+pin 11 (2CLK)  = MC 
+pin 12 (2D)    = U38 pin 8
+pin 13 (2/CLR) = +5V
+pin 14 (VCC)   = (on sheet 2)
+
+---
+
+U24 (74LS74)  — dual D flip-flop, async preset+clear
+pin 1  (1/CLR) = +5V
+pin 2  (1D)    = U22 pin 9, U21 pin 2
+pin 3  (1CLK)  = U23 pin 7, U23 pin 12, U24 pin 11
+pin 4  (1/PRE) = +5V
+pin 5  (1Q)    = U24 pin 12 
+pin 6  (1/Q)   = not connected
+pin 7  (GND)   = Not depicted
+pin 8  (2/Q)   = S0
+pin 9  (2Q)    = U38 pin 13
+pin 10 (2/PRE) = +5V
+pin 11 (2CLK)  = U23 pin 7, U23 pin 12, U24 pin 3
+pin 12 (2D)    = U24 pin 5 
+pin 13 (2/CLR) = +5V
+pin 14 (VCC)   = Not depicted
+
+---
+
+U23 (74LS175) — quad D flip-flop, common CLK+/CLR
+pin 1  (/CLR) = MS4
+pin 2  (Q0)   = AS1/
+pin 3  (/Q0)  = U23 pin 5
+pin 4  (D0)   = +5V
+pin 5  (D1)   = U23 pin 3
+pin 6  (/Q1)  = U38 pin 2
+pin 7  (Q1)   = U23 pin 12, U24 pin 11, U24 pin 3
+pin 8  (GND)  = Not depicted
+pin 9  (CLK)  = ARUCK
+pin 10 (Q2)   = AS0 (NOT AS0/)
+pin 11 (/Q2)  = AS0/
+pin 12 (D2)   = U23 pin 7, U24 pin 11, U24 pin 3
+pin 13 (D3)   = not connected
+pin 14 (/Q3)  = not connected
+pin 15 (Q3)   = not connected
+pin 16 (VCC)  = Not depicted
+
+---
+
+U39 (74F374) — octal D flip-flop, 3-state outputs, common CLK+/OE
+pin 1  (/OE) = tied to ground
+pin 2  (Q0)  = U39 pin 4
+pin 3  (D0)  = MS3
+pin 4  (D1)  = U39 pin 2
+pin 5  (Q1)  = MS5
+pin 6  (Q2)  = MS6
+pin 7  (D2)  = MS5
+pin 8  (D3)  = MS6 
+pin 9  (Q3)  = MS7
+pin 10 (GND) = Not depicted
+pin 11 (CP)  = MC
+pin 12 (Q4)  = MS8
+pin 13 (D4)  = MS7
+pin 14 (D5)  = MS8
+pin 15 (Q5)  = MS0
+pin 16 (Q6)  = MS1
+pin 17 (D6)  = MS0
+pin 18 (D7)  = MS1
+pin 19 (Q7)  = MS2
+pin 20 (VCC) = Not depicted
+
+---
+
+U56 (74S163) — synchronous 4-bit binary counter, SYNC clear
+pin 1  (/CLR) = +5V
+pin 2  (CLK)  = MC
+pin 3  (A)    = tied to ground
+pin 4  (B)    = tied to ground
+pin 5  (C)    = tied to ground
+pin 6  (D)    = +5V
+pin 7  (ENP)  = +5V
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = MS4
+pin 10 (ENT)  = +5V
+pin 11 (QD)   = MS4
+pin 12 (QC)   = not connected
+pin 13 (QB)   = not connected
+pin 14 (QA)   = not connected
+pin 15 (RCO)  = MS3
+pin 16 (VCC)  = Not depicted
 
 ---
 
@@ -411,7 +913,7 @@ pin 7  (D2)  = MI5
 pin 8  (D3)  = MI7
 pin 9  (Q3)  = OFST7/
 pin 10 (GND) = Not depicted
-pin 11 (CP)  = tcCLKA
+pin 11 (CP)  = DAB RSTB/
 pin 12 (Q4)  = OFST6/
 pin 13 (D4)  = MI6
 pin 14 (D5)  = MI4
@@ -433,7 +935,7 @@ pin 7  (D2)  = MI13
 pin 8  (D3)  = MI15
 pin 9  (Q3)  = OFST15/
 pin 10 (GND) = Not depicted
-pin 11 (CP)  = tcCLKA
+pin 11 (CP)  = DAB RSTB/
 pin 12 (Q4)  = OFST14/
 pin 13 (D4)  = MI14
 pin 14 (D5)  = MI12
@@ -449,7 +951,7 @@ pin 20 (VCC) = Not depicted
 U17, U18, U4, U5 (74S163) — synchronous 4-bit binary counter, SYNC clear
 U17:
 pin 1  (/CLR) = ADR SEL/
-pin 2  (CLK)  = tcCLKA
+pin 2  (CLK)  = DAB RSTB/
 pin 3  (A)    = MI16
 pin 4  (B)    = MI17
 pin 5  (C)    = MI18
@@ -467,7 +969,7 @@ pin 16 (VCC)  = Not depicted
 
 U18:
 pin 1  (/CLR) = ADR SEL/
-pin 2  (CLK)  = tcCLKA
+pin 2  (CLK)  = DAB RSTB/
 pin 3  (A)    = MI20
 pin 4  (B)    = MI21
 pin 5  (C)    = MI22
@@ -485,7 +987,7 @@ pin 16 (VCC)  = Not depicted
 
 U4:
 pin 1  (/CLR) = ADR SEL/
-pin 2  (CLK)  = tcCLKA
+pin 2  (CLK)  = DAB RSTB/
 pin 3  (A)    = MI24
 pin 4  (B)    = MI25
 pin 5  (C)    = MI26
@@ -503,7 +1005,7 @@ pin 16 (VCC)  = Not depicted
 
 U5:
 pin 1  (/CLR) = ADR SEL/
-pin 2  (CLK)  = tcCLKA
+pin 2  (CLK)  = DAB RSTB/
 pin 3  (A)    = MI28
 pin 4  (B)    = MI29
 pin 5  (C)    = MI30
@@ -587,17 +1089,17 @@ pin 16 (VCC)    = Not depicted
 U25 (74S74) — dual D flip-flop, async preset+clear
 pin 1  (1/CLR) = U37 pin 8
 pin 2  (1D)    = RESET (NOT RESET/)
-pin 3  (1CLK)  = tcCLKA
+pin 3  (1CLK)  = DAB RSTB/
 pin 4  (1/PRE) = +5V
 pin 5  (1Q)    = not connected
 pin 6  (1/Q)   = RESET/
 pin 7  (GND)   = Not depicted
-pin 8  (2/Q)   = not connected
-pin 9  (2Q)    = not connected
-pin 10 (2/PRE) = not connected
-pin 11 (2CLK)  = not connected
-pin 12 (2D)    = not connected
-pin 13 (2/CLR) = not connected
+pin 8  (2/Q)   = (on sheet 1)
+pin 9  (2Q)    = (on sheet 1)
+pin 10 (2/PRE) = (on sheet 1)
+pin 11 (2CLK)  = (on sheet 1)
+pin 12 (2D)    = (on sheet 1)
+pin 13 (2/CLR) = (on sheet 1)
 pin 14 (VCC)   = Not depicted
 
 ---
@@ -645,8 +1147,8 @@ pin 1  (1A)  = (on sheet 1)
 pin 2  (1Y)  = (on sheet 1)
 pin 3  (2A)  = (on sheet 1)
 pin 4  (2Y)  = (on sheet 1)
-pin 5  (3A)  = not connected
-pin 6  (3Y)  = not connected
+pin 5  (3A)  = (on sheet 1)
+pin 6  (3Y)  = (on sheet 1)
 pin 7  (GND) = Not depicted
 pin 8  (4Y)  = U25 pin 1
 pin 9  (4A)  = MS6
