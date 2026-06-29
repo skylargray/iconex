@@ -636,7 +636,7 @@ pin 8  (3Y)  = U25 pin 12
 pin 9  (3A)  = SR12
 pin 10 (3B)  = U54 pin 12       
 pin 11 (4Y)  = U25 pin 3
-pin 12 (4A)  = SR8 
+pin 12 (4A)  = SR10 
 pin 13 (4B)  = U54 pin 12
 pin 14 (VCC) = Not depicted
 
@@ -673,7 +673,7 @@ pin 13 (4B)  = U54 pin 10
 pin 14 (VCC) = Not depicted
 
 U40:
-pin 1  (1A)  = SR3
+pin 1  (1A)  = SR5
 pin 2  (1B)  = U54 pin 10   
 pin 3  (1Y)  = U39 pin 2
 pin 4  (2A)  = SR7
@@ -724,7 +724,7 @@ U51:
 pin 1  (1A)  = SR13
 pin 2  (1B)  = U54 pin 12   
 pin 3  (1Y)  = U38 pin 5
-pin 4  (2A)  = SR12
+pin 4  (2A)  = SR14
 pin 5  (2B)  = U54 pin 12  
 pin 6  (2Y)  = U38 pin 3
 pin 7  (GND) = Not depicted     

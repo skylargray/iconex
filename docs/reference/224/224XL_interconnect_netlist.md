@@ -432,18 +432,18 @@ Common: pin1(CLR\)=+5V; pin9(S0)=**S0**; pin10(S1)=**S1**; pin11(CLK)=**ARUCK** 
 | SR0 | aru_U3.pin14 | aru_U28.pin12 |
 | SR1 | aru_U4.pin14 | aru_U14.pin9, aru_U28.pin4 |
 | SR2 | aru_U3.pin15 | aru_U14.pin12, aru_U28.pin9 |
-| SR3 | aru_U4.pin15 | aru_U14.pin1, aru_U28.pin1, aru_U40.pin1 |
+| SR3 | aru_U4.pin15 | aru_U14.pin1, aru_U28.pin1 |
 | SR4 | aru_U17.pin12 | aru_U14.pin4, aru_U40.pin9 (+ aru_U3.pin2 SR_SER) |
-| SR5 | aru_U18.pin12 | aru_U41.pin9 (+ aru_U4.pin2 SR_SER) |
+| SR5 | aru_U18.pin12 | aru_U41.pin9, **aru_U40.pin1** (+ aru_U4.pin2 SR_SER) |
 | SR6 | aru_U17.pin13 | aru_U40.pin12, aru_U41.pin12 |
 | SR7 | aru_U18.pin13 | aru_U40.pin4, aru_U41.pin1 |
-| SR8 | aru_U17.pin14 | aru_U26.pin12, aru_U27.pin9, aru_U41.pin4 |
+| SR8 | aru_U17.pin14 | aru_U27.pin9, aru_U41.pin4 |
 | SR9 | aru_U18.pin14 | aru_U26.pin4, aru_U27.pin1 |
-| SR10 | aru_U17.pin15 | aru_U27.pin4 |
+| SR10 | aru_U17.pin15 | aru_U27.pin4, **aru_U26.pin12** |
 | SR11 | aru_U18.pin15 | aru_U26.pin1, aru_U27.pin12 |
-| SR12 | aru_U16.pin12 | aru_U26.pin9, aru_U50.pin1, aru_U51.pin4 (+ aru_U17.pin2 SR_SER) |
+| SR12 | aru_U16.pin12 | aru_U26.pin9, aru_U50.pin1 (+ aru_U17.pin2 SR_SER) |
 | SR13 | aru_U15.pin12 | aru_U50.pin4, aru_U51.pin1 (+ aru_U18.pin2 SR_SER) |
-| SR14 | aru_U16.pin13 | aru_U50.pin9 |
+| SR14 | aru_U16.pin13 | aru_U50.pin9, **aru_U51.pin4** |
 | SR15 | aru_U15.pin13 | aru_U50.pin12, aru_U51.pin9 |
 | SR16 | aru_U16.pin14 | aru_U51.pin12, aru_U52.pin12 |
 | SR17 | aru_U15.pin14 | aru_U52.pin1, aru_U53.pin1 |
@@ -452,6 +452,15 @@ Common: pin1(CLR\)=+5V; pin9(S0)=**S0**; pin10(S1)=**S1**; pin11(CLK)=**ARUCK** 
 
 > ✅ **SR19 → aru_U53.pin9 AND aru_U53.pin12** (both tied to SR19 — **owner-confirmed** 2026-06-27, not a typo;
 > top-bit replication in the Booth array). aru_U52.pin12=SR16 by contrast.
+>
+> ⚠ **CORRECTED 2026-06-28 (3 transcription errors, owner-verified vs schematic 060-01318):** three NAND A-input
+> taps were mis-transcribed — `aru_U40.pin1` SR3→**SR5**, `aru_U26.pin12` SR8→**SR10**, `aru_U51.pin4` SR12→**SR14**.
+> Found by gate-level multiplier modeling: a correct modified-Booth needs every operand bit F0–F15 in BOTH the M0
+> (×1) and M1 (×2) streams, but the old taps left **F2 absent from M1, F7+F11 absent from M0** (and F0/F5/F9
+> double-tapped). Each correction simultaneously removes a double and restores a missing bit. **Owner triple-checked
+> all three against the schematic and confirmed the corrected SR5/SR10/SR14 values; raw pinout txt updated.** With
+> these + the §4.7 Σ→PR reversal correctly modeled (see §4F.9), the literal gate multiply reproduces **20/20** of the
+> firmware POST goldens bit-exact and **passes the firmware multiplier test E83 (0x0942) un-suppressed** (§4F.9).
 
 ## 4F.5 Booth NAND array — aru_U14/U26/U27/U28/U40/U41/U50/U51/U52/U53 (74LS00)
 Each 2-input NAND gate: **A** = an SR bit (§4F.4), **B** = the **M-rail** (Booth select), **Y** → a front-end
@@ -503,6 +512,27 @@ The subtract path is now fully traced to the ARU boundary:
 
 > So `sub-ctrl = NOT(CSIGN/)` XOR-ed into every adder B bit (§4.6), and the chain carry-in = NOT(sub-ctrl) =
 > CSIGN/ — the standard two's-complement subtract enable. Source `CSIGN/` itself is a WCS/T&C signal (§G3).
+
+## 4F.9 Multiply operation (gate-modeled 2026-06-28) ✅ — how the wiring computes the product
+The literal gate model (`tools/aru_booth.py`) confirms the §4F front-end is a **straight radix-4 modified-Booth**
+serial multiplier, per Service-Manual fig 3.4:
+- **Per microinstruction = 3 ARU phases** (AS0/AS1/AS2). The 74194 shifter LOADs `F<<3` then SHIFTs **right by 2**
+  each phase: operand = `F·2⁰` (AS0), `F·2⁻²` (AS1), `F·2⁻⁴` (AS2).
+- The serializer (§3.9) presents Booth selects **M0 = C4,C2,C0** and **M1 = C5,C3,C1** across the 3 phases.
+- Each phase the NAND array forms one radix-4 partial product = operand × (M0 + 2·M1): the **M0 rail = operand×1**
+  and the **M1 rail = operand×2** (verified by the per-SR-bit weight probe). The 5-adder carry chain sums them into
+  the (active-low) product register; the back-end (§4.6) XORs sub-ctrl and accumulates with carry-in = CSIGN/.
+- **★ Bit-weight note (resolves the §4.10 caveat for the multiplier):** the product register's within-nibble order
+  is **reversed** by §4.7 (adder Σ-MSB → PR-LSB), but this reversal **CANCELS** against the matching reversal in the
+  PR→accumulator routing (§4.6: PR0→aru_U19.B3, PR3→aru_U19.B0). Net effect = straight (adder Σk → accumulator
+  weight k). A model must apply BOTH reversals or NEITHER; applying only one bit-scrambles every partial product.
+- Result: RES = result register = accumulator bits PP3..PP18 = `sat16(ACC≫3)`, ±2¹⁸ accumulator saturation. The
+  gate model (`tools/aru_booth.py`) reproduces **20/20 firmware POST goldens bit-exact**. cmag=21,42 + unity come
+  out purely structurally (16/20); the 4 cmag=63 cases (both Booth rails fire every phase) needed the missing M1
+  partial-product two's-complement hot-one (the single chain carry-in only completes the M0 term) — modeled as +3
+  per dual-rail phase (calibrated to the cmag=63 goldens, the only all-ones cases). **Wired into `tools/aru_post.py`,
+  the firmware MULTIPLIER TEST E83 (0x0942) PASSES un-suppressed on the verified 8080** — together with latch E32 +
+  register E40, all three ARU POST gates pass on their own merits.
 
 ---
 

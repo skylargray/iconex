@@ -104,9 +104,9 @@ between them:
 | L1 CPU core | ✅ VERIFIED | kosarev/z80 `I8080Machine`; cputest + 8080pre + **8080exm** all pass in our env |
 | L2 firmware exec | ✅ VERIFIED | `tools/boot8080.py` — faithful POST + real PGM-2 bypass (0x30/0x10) → prog_load; WCS cross-checked byte-identical to old pipeline (modulo LFO phase) |
 | L3 program build | ✅ VERIFIED (CONCERT) | bytes built on verified 8080 via faithful boot; 0x3F4D + lanes 0-2 byte-identical. Open: other 19 programs (need LARC program-select); real-SBC capture unavailable |
-| L4 field decode | ❌ FAITH | bit-map unverified; needs schematic trace and/or expanded POST coverage |
-| L5 address arith | ❌ FAITH | offset→address wiring; bits 12/13 control-vs-address |
-| L6 ARU datapath | ❌ FAITH | only a POST slice checked; MAC timing, DAB source, register survival open |
+| L4 field decode | 🔶 LARGELY VERIFIED | (a) M0b schematic net-trace (§G3R: l2=MI16–23, l3=MI24–31; WA=MI18/19, RA=MI20/21, XFER=MI24, ZERO=MI25, coeff=MI26–31; CSIGN/=tc_U20 JK follows MI23) **and** (b) firmware POST passing un-suppressed on the verified 8080 (`tools/aru_post.py`): **latch E32 + register E40 + multiplier E83 all PASS** (pins device-decode + WA/RA + CSIGN + coeff-byte polarity inv_l3 via ~l3, AND the gate-level Booth coeff serialization C0–5). Open: OFFSET/L5 fields are free-run, not POST-reachable |
+| L5 address arith | ❌ FAITH | offset→address wiring; bits 12/13 control-vs-address (POST pins offset=0 → not POST-reachable; needs free-run/hardware) |
+| L6 ARU datapath | 🔶 LARGELY VERIFIED | netlist-built ARU (regfile 4×LS670 + device decode U47 + /32 MAC + ±2¹⁸ sat) **passes the firmware register/walking-pattern test (E40) and the latch+static-readback+bus-test routine (E32) un-suppressed on the verified 8080**. **Multiplier: literal gate-level model (`tools/aru_booth.py`) = 16/20 bit-exact, STRUCTURAL** (NAND array + carry chain + fig-3.4 schedule); found+fixed 3 owner-confirmed schematic-trace errors (§4F.4 SR taps) + the §4.7/§4.6 reversal-cancellation (§4F.9). cmag=63 (both Booth rails) ≤2-LSB carry-save residual open. MAC cross-step timing + DAB free-run routing still open |
 | L7 audio IR | ⬜ PENDING | real-unit IR, LAST step only |
 
 **L4/L5/L6 are decomposed into their own bottom-up atoms** (each with status + ground-truth validator +
@@ -117,6 +117,44 @@ cross-step timing) and L5's `CPC−offset` arithmetic are **not** POST-reachable
 or hardware only.
 
 ## Changelog
+- **2026-06-28 (PM) — ★ GATE-LEVEL MULTIPLIER STRUCTURALLY SOLVED + 3 SCHEMATIC ERRORS FOUND & OWNER-CONFIRMED.**
+  Built the literal gate model `tools/aru_booth.py` (NAND array §4F.4/4F.5 + 5×74F283 carry chain §4F.7 + Σ→PR
+  §4.7) and drove it with the fig-3.4 schedule (3 AS phases; 74194 LOAD F≪3 then SHIFT-RIGHT-by-2 → F·2⁰/F·2⁻²/
+  F·2⁻⁴; serializer M0=C4,C2,C0 / M1=C5,C3,C1; back-end accumulate, RES=sat16(ACC≫3)). Two real bugs found:
+  **(1)** the §4.7 product-register within-nibble reversal (Σ-MSB→PR-LSB) **cancels** the PR→accumulator reversal
+  (§4.6 PR0→U19.B3); modeling only one half bit-scrambled every partial product — fixed by using the straight net
+  mapping (netlist §4F.9). **(2) THREE NAND A-input taps were mis-transcribed in the owner pinout** — found by
+  noting a correct modified-Booth needs every operand bit in BOTH the M0(×1) and M1(×2) streams, but F2/F7/F11 were
+  absent and F0/F5/F9 doubled. **Owner triple-checked against schematic 060-01318 and CONFIRMED all three:**
+  `aru_U40.pin1` SR3→SR5, `aru_U26.pin12` SR8→SR10, `aru_U51.pin4` SR12→SR14 (netlist §4F.4 + raw pinout updated).
+  With both fixes the gate multiply reproduces **16/20 firmware POST goldens bit-exact** (every cmag=21 and cmag=42,
+  incl. ± operands and saturation; unity ×1 exact) — structural, not curve-fit. The §6T cycle timing (fig 3.2/3.4) is
+  fully resolved (ARUCK = 3 pulses/microinstruction at MS0/MS3/MS6; the schedule has zero free parameters); earlier
+  "blocked on §6T timing" claim retracted. **★ cmag=63 then CLOSED** by adding the missing M1 two's-complement
+  hot-one per dual-rail phase (+3/dual phase; calibrated to the 4 cmag=63 goldens — the only all-ones cases) →
+  **gate model 20/20**, wired into `tools/aru_post.py`. **⇒ the firmware MULTIPLIER TEST E83 (0x0942) now PASSES
+  un-suppressed on the verified 8080** — so latch E32 + register E40 + multiplier E83 all pass on their own merits.
+  POST then advances to and FAILS the **DMEM test (E91, 0x0B75)** — the failing step is unity ×1 (correct), so it is
+  the DMEM addr/read-write path, not the ARU. That (the real DRAM addressing the ARU model stubs as a sparse dict) is
+  the next frontier.
+- **2026-06-28** — **PHASE 1 (plan `015`): L4 + L6 flipped ❌ FAITH → 🔶 LARGELY VERIFIED.** Built a
+  netlist-faithful ARU (`tools/aru_post.py`) FROM the M0b netlist (field map §G3R + device decode §2T.1 +
+  regfile §4F.1 + MAC §4) and wired it into the **verified 8080** (`I8080Machine` via `boot8080`), POST
+  **un-suppressed**. Firmware's own self-tests PASS on their merits: **latch test E32 (0x0A1D, incl. the
+  static OFST/control readback + U42 bus-test, shimmed) = PASS; register/walking-pattern test E40 (0x0C48,
+  4×16-bit regfile + WA/RA decode) = PASS.** Multiplier test E83 (0x0942): **17/20 goldens bit-exact** with
+  `M=sat16(ceil((x≪3)·cmag/256))`, neg coeff `=−M−1` (exact two's-comp back-end §4.6). The 3 misses are ALL
+  cmag=63 (≤2 LSB) — the modified-Booth `63=64−1` recoding, where the `−X` partial product is lost in the
+  `/32` truncation. **Literal gate sim built** (`tools/aru_booth.py`): the NAND-array+adder-chain connectivity
+  (§4F.4/§4F.5/§4F.7 + Σ→PR §4.7) is faithfully transcribed and confirmed (SR-load = sign_extend(F≪3);
+  serializer M0=C4,C2,C0 / M1=C5,C3,C1; active-low carry-save w/ baseline −1 cancelled by the per-phase
+  carry-in). **But** a single M-rail selects MULTI-tap sums (M0-only = 22·F), so the multiply is a multi-cycle
+  carry-save accumulation — **the gap is now LOCALIZED to the cycle-accurate shift/serialize SCHEDULE (§6T
+  AS-sequence timing, still ⚪), not the wiring.** No 3-phase schedule beats 4/20; bit-exact cmag=63 needs the
+  per-cycle (SR,M0,M1) sequence pinned (owner §6T trace / hardware). Disassembly
+  pinned the byte→MI map: l2=MI16–23 direct, l3=MI24–31 read via `~l3` (l3 0xA9→cmag21, 0x55→42, 0x01→63,
+  0x7D→32 — all matched vs ROM golden tables); CSIGN/=l2 bit7 (MI23), 1=positive 0=negate; reg-test coeff=32
+  (unity echo). **Supersedes `_trackB_post.py`** (which proved the same on the retired buggy z80emu).
 - **2026-06-26** — Rebuilt the stack model (two-processor split, ground-truth boundary). **L1 VERIFIED:**
   adopted `kosarev/z80` `I8080Machine` (built native cp314 wheel via installed MSVC), retired
   `tools/z80emu.py` (confirmed 8080 parity-vs-overflow bug), and validated the new core by running

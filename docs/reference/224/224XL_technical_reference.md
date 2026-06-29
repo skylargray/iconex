@@ -534,7 +534,7 @@ DMEM #060-02273, Block-Diagram-Memory + zoom crops.
 
 **Bit-exact arithmetic — RESOLVED (firmware + schematic + hardware IR):**
 - **Coefficient encoding:** 6-bit magnitude C = mag>>1, applied as C/64 (= mag/128); sign = CSIGN
-  (active-low); magnitude direct/linear. Gains ≥ 1 arise from 4-step MAC accumulation, not a single
+  (active-low; **M0b: `CSIGN/` is the `tc_U20` JK-FF, not a directly-applied bit — §3**); magnitude direct/linear. Gains ≥ 1 arise from 4-step MAC accumulation, not a single
   multiply. The "2 extra LSBs" (0xB4F0) belong to the modulation interpolation coefficient only.
 - **Result-register shift:** `RES = sat16(ACC >> 3)` from a 20-bit accumulator. Arithmetic floor (>>3).
 - **b3 / RDRREG/ (A50):** result register tristate OE onto DAB. `b3=1` ⇒ RES drives DAB + written to
