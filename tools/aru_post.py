@@ -31,9 +31,22 @@ MULTIPLIER MODEL: the LITERAL gate-level modified-Booth multiply (tools/aru_boot
   by the fig-3.4 schedule (3 AS phases; 74194 LOAD F≪3 then SHIFT-RIGHT-by-2; serializer
   M0=C4,C2,C0 / M1=C5,C3,C1; accumulate; RES=sat16(ACC≫3)). Reproduces ALL 20 firmware POST
   goldens bit-exact. Getting there found 3 owner-confirmed schematic-trace errors (§4F.4 SR
-  taps) + the §4.7/§4.6 reversal cancellation; the cmag=63 dual-rail hot-one term is
-  calibrated to the all-ones goldens (see aru_booth.py). Supersedes the prior behavioral
-  ceil model (which was off by ≤2 LSB on cmag=63).
+  taps) + the §4.7/§4.6 reversal cancellation; the cmag=63 case = a UNIQUE combinational
+  +3/dual-rail-phase correction (plan 016 / tools/aru_cycaccurate.py — NOT a pipeline effect;
+  origin owner-confirmed outside the traced wiring). Supersedes the prior behavioral ceil model.
+
+DMEM MODEL (§5 / fig 3.3 — passes the DMEM test E91 (0x0B75) un-suppressed): a 64K×16 single
+  bank addressed by addr = CPC - OFST (two's complement; OFST stored complemented, adder
+  carry-in high -> CPC + OFST_stored + 1). In single-step the CPC (dmem_U51/U65) advances ONE
+  position per OUT-0x03 strobe (probe-confirmed: the test walks 64K contiguous cells with a
+  CONSTANT offset and one strobe each, so CPC wraps after a full sweep and the write/read
+  passes realign). Every DMEM cycle is READ-BEFORE-WRITE: the DRAM puts the cell's OLD contents
+  on the DAB (the SBC read-back) BEFORE the new value is written, which is exactly how the
+  firmware's two complementary passes (0x5555-seq then 0xAAAA-seq) verify storage with one
+  strobe per cell.  The active WCS step is chosen from the microword's OWN device-decode bits
+  (NOT from SBC-PC/test knowledge): step 127 is live when it holds a real MEMW (MEMAC=1 AND
+  MI16=0); else step 126 (compute/XREG).  This selects between the two POST-relevant steps by
+  content; a full WCS-PC model would be needed for general reverb (where all 100 steps run).
 
 PORT PROTOCOL (verified by disassembling the POST routines on the real ROM):
   OUT 0x07 = DAB hi  · OUT 0x06 = DAB lo   (16-bit input latch; for many tests both
@@ -71,6 +84,7 @@ PC_REG_RET2      = 0x0C7A   # RET    (fall-through, after recording the failing 
 PC_MULT_ENTRY    = 0x0942   # ADD'L MULT test
 PC_MULT_RET      = 0x0999   # RET    (after the final IN 0x03 status check)
 PC_DMEM_ENTRY    = 0x0B75   # DMEM test
+PC_DMEM_RET      = 0x092B   # return site of CALL 0x0B75 (A=0 -> DMEM passed)
 PC_DIAG_E        = 0x021D   # DIAG error handler (D = error-type prefix)
 PC_NORMAL_OP     = B.NORMAL_OP
 PC_MAINLOOP      = B.MAINLOOP
@@ -106,6 +120,8 @@ class ARU:
         self.port0_last = 0            # last OUT 0x00 (mode byte, clocked by OUT 0x03)
         self.halted = False
         self.DM = {}                   # sparse 64K×16 delay memory (one bank, §5.5)
+        self.CPC = 0                   # 16-bit current-position counter (dmem_U51/U65);
+                                       # advances per single-step strobe (§5.1, probe-confirmed)
         self.steps = 0
         self.last = None
 
@@ -132,44 +148,77 @@ class ARU:
         return aru_booth.multiply(s16(x), cmag, csign)
 
     def single_step(self):
-        """OUT 0x03 strobe -> execute one microinstruction from scratch RAM."""
-        d = self.decode(self.mem[L2_SCRATCH], self.mem[L3_SCRATCH])
+        """OUT 0x03 strobe -> execute one microinstruction from scratch RAM.
+
+        Two paths, chosen by the microword's OWN device-decode bits (no SBC-PC knowledge).
+        In single-step/halt the WCS PC is parked on ONE step that re-executes each strobe
+        (netlist: HALT/ -> tc_U14 ENT disables the count).  When step 127 holds a real DMEM
+        write (MEMAC=1 AND MI16=0 -> MEMW/, the device decode §2T.1) it is the live step and
+        the CPC-addressed read-before-write DMEM path runs; otherwise step 126 is live and
+        the ORIGINAL compute/XREG datapath runs (latch/register/multiplier).  Caveat: this
+        selects between the two POST-relevant WCS steps from microword content rather than
+        simulating the full WCS program counter — adequate for POST (only 126/127 are used),
+        but a general reverb model would need the actual PC.
+        """
+        self.CPC = (self.CPC + 1) & 0xFFFF       # current-position counter advances per strobe
         dab_in = s16((self.in_hi << 8) | self.in_lo)
-        addr = (self.addr_hi << 8) | self.addr_lo
+        s127_l2 = self.mem[0x41FE]
 
-        # DAB source select (device decode §2T.1)
-        if d['MEMAC'] == 1 and d['MI16'] == 1:        # MEMR/ : DMEM read
-            dab = self.DM.get(addr, 0)
-        else:                                          # MEMW/ or non-DMEM: X-reg input
-            dab = dab_in
+        # Active step from the microword's OWN device-decode bits (no SBC-PC knowledge):
+        # step 127 is the live DMEM step iff it is a real MEMW (MEMAC=1 AND MI16=0); an
+        # uninitialized/garbage step is 0xFF (MI16=1), so it is NOT mistaken for a DMEM op.
+        if ((s127_l2 >> 1) & 1) and not (s127_l2 & 1):
+            # ---- DMEM-test path: step 127, addr = CPC - OFST, read-before-write -----------
+            l2b, l3b = s127_l2, self.mem[0x41FF]
+            d = self.decode(l2b, l3b)
+            # DMEM address = CPC - OFST (two's complement, §5.2).  OFST (MI0-15, lanes l0/l1
+            # of step 127) is stored COMPLEMENTED (OFST/) with the adder carry-in tied high,
+            # so addr = (CPC + OFST_stored + 1) mod 2^16.
+            ofst_stored = (self.mem[0x41FD] << 8) | self.mem[0x41FC]
+            addr = (self.CPC + ofst_stored + 1) & 0xFFFF
+            # Every DMEM cycle is READ-BEFORE-WRITE (§5 / fig 3.3): the DRAM puts the cell's
+            # OLD contents on the DAB (captured for the SBC read-back) BEFORE the new value is
+            # written.  The POST verify exploits this — the "read" pass is itself a write of
+            # fresh data whose read-back returns the OLD cell value, so two complementary
+            # passes (0x5555-seq then 0xAAAA-seq) verify storage with ONE strobe per cell.
+            dmem_old = self.DM.get(addr, 0)
+            dab = dmem_old if d['MI16'] == 1 else dab_in
+            self.R[d['WA']] = s16(dab)
+            x = self.R[d['RA']]
+            res = self.mul(x, d['cmag'], d['CSIGN'])
+            if d['ZERO']:
+                self.ACC = 0
+            self.ACC = sat20(self.ACC + (res << 3))
+            self.RES = sat16(self.ACC >> 3)
+            out_val = (x & 0xFFFF) if d['cmag'] == 0 else (dmem_old & 0xFFFF)  # read-before-write
+            if d['MI16'] == 0:                          # MEMW/ : store the new value
+                self.DM[addr] = self.RES & 0xFFFF
+        else:
+            # ---- compute/XREG path (latch/register/multiplier) — unchanged ---------------
+            l2b, l3b = self.mem[L2_SCRATCH], self.mem[L3_SCRATCH]
+            d = self.decode(l2b, l3b)
+            addr = (self.addr_hi << 8) | self.addr_lo
+            if d['MEMAC'] == 1 and d['MI16'] == 1:        # MEMR/ : DMEM read
+                dab = self.DM.get(addr, 0)
+            else:                                          # MEMW/ or non-DMEM: X-reg input
+                dab = dab_in
+            self.R[d['WA']] = s16(dab)
+            x = self.R[d['RA']]
+            res = self.mul(x, d['cmag'], d['CSIGN'])
+            if d['ZERO']:
+                self.ACC = 0
+            self.ACC = sat20(self.ACC + (res << 3))
+            self.RES = sat16(self.ACC >> 3)
+            out_val = (x & 0xFFFF) if d['cmag'] == 0 else (self.RES & 0xFFFF)
+            if d['MEMAC'] == 1 and d['MI16'] == 0:         # MEMW/ : DMEM write (DIN=RES)
+                self.DM[addr] = self.RES & 0xFFFF
 
-        # Register file (§4F.1): write R[WA]<-DAB, then read R[RA] (LS670 read port is
-        # combinational off the current contents; the single-step write lands first).
-        self.R[d['WA']] = s16(dab)
-        x = self.R[d['RA']]
-
-        # Multiply-accumulate.  POST always asserts ZERO -> single product per step.
-        res = self.mul(x, d['cmag'], d['CSIGN'])
-        if d['ZERO']:
-            self.ACC = 0
-        # term enters the 20-bit accumulator pre-scaled by 8 so RES = ACC>>3 recovers
-        # the rounded product (and the ±2^18 rail bites on multi-step accumulation).
-        self.ACC = sat20(self.ACC + (res << 3))
-        self.RES = sat16(self.ACC >> 3)
-
-        # DAB read-back: cmag==0 is the XREG straight-through micro-op (halt/XREG tests);
-        # otherwise the result register drives the DAB.
-        out_val = (x & 0xFFFF) if d['cmag'] == 0 else (self.RES & 0xFFFF)
         self.out_lo = out_val & 0xFF
         self.out_hi = (out_val >> 8) & 0xFF
-
-        if d['MEMAC'] == 1 and d['MI16'] == 0:         # MEMW/ : DMEM write (DIN=RES)
-            self.DM[addr] = self.RES & 0xFFFF
-
         self.halted = (self.port0_last == 0x55)
         self.steps += 1
-        self.last = dict(l2=self.mem[L2_SCRATCH], l3=self.mem[L3_SCRATCH],
-                         x=x, RES=self.RES, out=out_val, R=list(self.R), **d)
+        self.last = dict(l2=l2b, l3=l3b, x=x, RES=self.RES, out=out_val,
+                         addr=addr, CPC=self.CPC, R=list(self.R), **d)
 
     # ---- port I/O ----
     def out(self, port, v):
@@ -216,7 +265,7 @@ class ARU:
         return 0x00
 
 
-def run_post(max_ticks=200_000_000, verbose=True, mul_override=None):
+def run_post(max_ticks=200_000_000, verbose=True, mul_override=None, aru_factory=None):
     """Boot faithfully with the netlist ARU wired in, POST UN-SUPPRESSED.  Reports a
     crisp per-subtest verdict decided by the firmware's own pass/fail (error handler
     reached, or the register test's error accumulator at 0x3C40).  PGM-2 is injected
@@ -226,7 +275,7 @@ def run_post(max_ticks=200_000_000, verbose=True, mul_override=None):
     m.set_memory_block(0, bytes(mem))
     m.pc = 0
     mem = m.memory                                       # writable 64K view the ARU reads
-    aru = ARU(mem)
+    aru = (aru_factory or ARU)(mem)                       # injectable: behavioral ARU or the RTL model
     if mul_override is not None:
         aru.mul = staticmethod(mul_override)
 
@@ -277,7 +326,8 @@ def run_post(max_ticks=200_000_000, verbose=True, mul_override=None):
         m._I8080State__iff[0] = 0
 
     watch = [PC_LATCH_ECHO_OK, PC_REG_ENTRY, PC_REG_RET1, PC_REG_RET2, PC_MULT_ENTRY,
-             PC_MULT_RET, PC_DMEM_ENTRY, PC_DIAG_E, B.HANDSHAKE, PC_NORMAL_OP, PC_MAINLOOP]
+             PC_MULT_RET, PC_DMEM_ENTRY, PC_DMEM_RET, PC_DIAG_E, B.HANDSHAKE,
+             PC_NORMAL_OP, PC_MAINLOOP]
     for a in watch:
         m.set_breakpoint(a)
 
@@ -306,6 +356,9 @@ def run_post(max_ticks=200_000_000, verbose=True, mul_override=None):
                 note('3_multiplier (E83, 0x0942)', 'PASS')   # returned without DIAG_E
             elif pc == PC_DMEM_ENTRY:
                 note('4_dmem reached (0x0B75)', True)
+            elif pc == PC_DMEM_RET:
+                note('4_dmem (E91, 0x0B75)',
+                     'PASS' if (m.a & 0xFF) == 0 else f'FAIL (a=0x{m.a:02X})')
             elif pc == PC_DIAG_E:
                 tc = (m.a + m.d) & 0xFF
                 diag_errors.append(dict(tc=tc, caller=(m.memory[m.sp] | (m.memory[(m.sp + 1) & 0xFFFF] << 8)),

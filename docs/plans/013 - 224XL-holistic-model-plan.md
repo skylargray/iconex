@@ -103,7 +103,7 @@ This is the heartbeat the whole model runs on. **Do not abstract it away.**
 
 ## 3. Build phases
 
-### Phase 0a — Verified part-spec table (do this FIRST, per Ground Rule 1)
+### Phase 0a ✅ DONE — Verified part-spec table (`224XL_partspec_verification.md`)
 Before any net is interpreted, build `docs/reference/224/224XL_partspec_verification.md`: every distinct chip
 type used on the three boards (e.g. 74F283, 74LS163, 74F157, 74F374, 74S86/175, 74LS670, 74LS199, 74LS393,
 74LS374, 74LS139/138, 74LS00/10/20, 74S00/02/04/08/10/74, 74LS244, 4164/4116 DRAM, the DLG30B delay module),
@@ -113,7 +113,7 @@ netlist (0b) and the model (Phase 2) are keyed on THIS table — never on recall
 Lexicon-custom module that has no public datasheet are marked ⚪ and characterized from the schematic + fig-3.3
 timing only.)
 
-### Phase 0b — Transcribe the INTERCONNECT NETLIST (the holistic artifact, reviewed before any code)
+### Phase 0b ✅ DONE — Transcribe the INTERCONNECT NETLIST (`224XL_interconnect_netlist.md`, owner-reviewed)
 The piece I never built. **Faithfully transcribe** (Ground Rule 2 — document, don't editorialize) a single
 **wiring table / netlist** connecting the three boards, from the owner's pin traces + the hi-res crops in
 `docs/reference/224/crops/`, with every chip pin resolved against the Phase-0a part table:
@@ -140,13 +140,15 @@ correction before coding.** Anything not legible on a crop or owner trace is **f
 (Ground Rule 3). This is where the "look at it holistically" happens. (Owner has confirmed the ARU/T&C/DMEM
 sheets show all inter-module connections; T&C and DMEM are 2 pages each.)
 
-### Phase 1 — The clock/state engine (T&C)
-A small generator that, per microinstruction cycle, walks MS0→MS8 / AS0→AS2, raises ARU CK 3×, and emits the
-strobes (DAB WSTB@MS7, XFER CK / ZERO@next-AS0, etc.) on the exact edges from §2. Plus the **microsequencer**:
-the WCS program counter that fetches the 32-bit microword for the current step (resetting every 100 steps =
-sample boundary). Drive it from the L3-built WCS image. *Validate: the state waveforms reproduce fig-3.2/3.4.*
+### Phase 1 ✅ DONE (M1) — The clock/state engine (T&C) = `tools/aru_rtl.py`
+The micro-framework core (`Net` value+hold / `Reg`/`Counter`/`Latch` edge-clocked) + `ClockEngine`: per
+microinstruction cycle it walks MS0→MS8 / AS0→AS2, raises ARU CK 3× (MS0/3/6), and emits the strobes
+(DAB WSTB/=¬MS7, XFER CK/ZERO/ @AS0, DAB RSTB J=MS1/K=MS8) on the exact edges from §2. **Validated:**
+`selftest()` reproduces fig-3.2 (ARUCK/AS0/AS1/AS2/MS) and the fig-3.4 MAC schedule bit-for-bit vs
+`tools/timing/timing_spec.json`. The **microsequencer** (full WCS program counter sweeping 0–99, RESET@99) is
+deferred to free-run (M3); in single-step the PC is held (ENT=HALT/ low), so the parked step re-executes.
 
-### Phase 2 — Encode each part as a structural element (as drawn)
+### Phase 2 ✅ DONE (M2) — Encode each part as a structural element (as drawn) = `tools/aru_rtl_dp.py`
 Each clocked chip as a small object with its real inputs/outputs and **its clock edge**, not a behavioral
 shortcut:
 - **Register file** 4×LS670 (U29-32): D from DAB; write addr WA, write-enable=DAB WSTB(MS7); read addr RA,
@@ -161,35 +163,38 @@ shortcut:
   bit-sliced 4164 store); **XREG** (LS374 U38-41) bridging DAB↔DATA with its clock timing.
 - **Device decode** (U47/U48/U49C/U34A): produces the per-cycle DAB driver enable + DMEM r/w + sub-selects.
 
-### Phase 3 — Wire it together & run
-Connect all elements via the Phase-0 nets. The **DAB** is one shared 16-bit net with a per-cycle tri-state
-driver (selected by the device decode) and **hold-last-value when undriven** (modeled as bus capacitance
-retention — schematic-confirmed no pull resistors). The **WCS bits drive control inputs directly** (no field
-map). Run the clock for N samples; capture the **output node** (WR DA/ = U49C). The reverb emerges.
+### Phase 3 — Wire it together & run (single-step DONE; free-run = M3)
+The elements are wired via the Phase-0 nets, with the WCS bits driving control inputs directly (no field map),
+and the model is driven through the firmware's single-step port protocol — passing the whole POST (Phase 4.1).
+The **DAB** is one shared 16-bit net with hold-last-value when undriven (no pull resistors). **Still to do for
+M3:** run the clock free for N samples with the real WCS PC sweeping 0–99 + per-cycle device-decode-selected
+DAB driver, and capture the **output node** (WR DA/) so the reverb emerges over the recirculating loop.
 
 ### Phase 4 — Validate by emergence (not by hand-checking)
-1. **POST as an emergent property (strongest available check).** Drive the model through the firmware's own
-   single-step protocol (the `boot8080` ARU ports) and confirm the **latch / register / multiplier / DMEM**
-   tests **pass on the wired netlist with nothing hand-coded.** Because POST is the firmware's own validation,
-   a passing netlist is strong evidence the wiring + datapath primitives are right. (The multiplier test
-   forces the gate-level Booth — which this model has by construction.) *Caveat from the POST-coverage work:
-   POST can't reach L5's `CPC−offset` adder or the free-run routing — those are validated structurally (the
-   wires are present) + by the next item.*
-2. **Free-run coherence.** Run a program (CONCERT) for thousands of samples; the recirculating loop should
-   close at a stable sub-unity decay **because the wires close it**, not because we tuned a gain. RT60 should
-   track the decay/size parameter across programs. If it doesn't, the failure is a *specific* mis-wired net or
-   mis-timed edge — localizable by probing the model's internal nets against fig-3.3/3.4.
+1. **POST as an emergent property ✅ DONE (strongest available check).** The model, driven through the
+   firmware's own single-step protocol (the `boot8080` ARU ports), **passes the whole POST un-suppressed —
+   latch E32 + register E40 + multiplier E83 + DMEM E91 — with nothing hand-coded** (run: `python
+   tools/aru_rtl_dp.py`, and `tools/aru_post.py` for the behavioral model). Because POST is the firmware's own
+   validation, this is strong evidence the wiring + datapath primitives are right. (The multiplier test forces
+   the gate-level Booth, which this model has by construction.) *Correction to the earlier POST-coverage note:
+   the DMEM test E91 DOES exercise the `CPC−OFST` adder at one nonzero offset (0x2000) with the CPC walking; the
+   rest of L5 (offset variation, dual-use 12/13) + the free-run routing are validated structurally + by item 2.*
+2. **Free-run coherence — NEXT (M3).** Run a program (CONCERT) for thousands of samples; the recirculating loop
+   should close at a stable sub-unity decay **because the wires close it**, not because we tuned a gain. RT60
+   should track the decay/size parameter across programs. If it doesn't, the failure is a *specific* mis-wired
+   net or mis-timed edge — localizable by probing the model's internal nets against fig-3.3/3.4.
 3. **L7 — real-unit IR (last).** If/when a hardware capture exists, compare. Pass/fail only; meaningful now
    because everything beneath is structural.
 
 ---
 
-## 4. Tooling
-A ~few-hundred-line Python **phase-accurate RTL micro-framework**: `Net` (value + driver tracking + hold),
-`Reg`/`Counter`/`Latch` (clocked on a named edge), `comb(fn)` blocks, and a **scheduler** that steps the
-MS/AS state machine and evaluates comb→clock in the right order each phase. No external dependency; the L3 WCS
-image and the `boot8080` port harness feed it. (If it proves too slow for long IRs, vectorize the inner sample
-loop after correctness is proven — correctness first.)
+## 4. Tooling — BUILT
+The phase-accurate RTL micro-framework exists: **`tools/aru_rtl.py`** = `Net` (value + hold-last),
+`Reg`/`Counter`/`Latch` (clocked on a named edge), and the `ClockEngine` that steps the MS/AS state machine
+(M1); **`tools/aru_rtl_dp.py`** = the datapath elements wired on those edges (M2), reusing the verified gate
+Booth (`tools/aru_booth.py`). No external dependency; the L3 WCS image + the `boot8080` port harness feed it
+(`aru_post.run_post(aru_factory=ARU_RTL)`). For M3 free-run over long IRs, vectorize the inner sample loop
+after correctness is proven — correctness first.
 
 ## 5. Resource map
 - **Part datasheets (Ground Rule 1):** `docs/reference/224/datasheets/` — the archived, verified pinout source
@@ -204,16 +209,26 @@ loop after correctness is proven — correctness first.)
   `"224XL ARU pinouts from 060-01318.txt"`.
 
 ## 6. Milestones / definition of done
-0. **M0a** — verified part-spec table (`224XL_partspec_verification.md`): every chip type's pinout
-   datasheet-verified + archived in `datasheets/`, no memory. (Gate for M0.)
-1. **M0** — interconnect netlist faithfully transcribed, keyed on M0a, with provenance/confidence + gap list,
-   and **owner-reviewed** (`224XL_interconnect_netlist.md`).
-2. **M1** — clock/state engine reproduces fig-3.2 & fig-3.4 waveforms.
-3. **M2** — datapath elements wired; the model **passes the firmware POST** single-step tests (un-suppressed)
-   as an emergent property → primitives + wiring corroborated by the firmware itself.
-4. **M3** — free-run CONCERT produces a coherent, decaying reverb whose RT60 tracks the size/decay parameter,
-   with **no hand-tuned gain** (the loop closes because the netlist closes it).
-5. **M4** — consistent across ≥3 programs; then (if available) L7 IR match.
+0. **M0a ✅ DONE** — verified part-spec table (`224XL_partspec_verification.md`): every chip type's pinout
+   datasheet-verified + archived in `datasheets/`, no memory.
+1. **M0 ✅ DONE** — interconnect netlist faithfully transcribed, keyed on M0a, with provenance/confidence + gap
+   list, and **owner-reviewed** (`224XL_interconnect_netlist.md`; ARU+DMEM+T&C all sheets, triple-verified).
+2. **M1 ✅ DONE (2026-06-29)** — clock/state engine reproduces fig-3.2 & fig-3.4 waveforms. Built as
+   `tools/aru_rtl.py` (micro-framework core `Net`/`Reg`/`Counter`/`Latch` + `ClockEngine`); `selftest()` validates
+   the generated MS/AS/ARUCK/strobe waveforms against `tools/timing/timing_spec.json` (fig-3.2) and the fig-3.4 MAC
+   schedule (bit-match).
+3. **M2 ✅ DONE (2026-06-29)** — datapath elements wired as structural elements clocked on real edges
+   (`tools/aru_rtl_dp.py` `ARU_RTL`: regfile / 3-AS multiply pipeline via `aru_booth.comb_array` / accumulator /
+   result reg / CPC / DMEM addr=CPC−OFST + read-before-write / device decode). **The model PASSES the firmware POST
+   single-step tests un-suppressed — E32 latch + E40 register + E83 multiplier + E91 DMEM — driven via
+   `aru_post.run_post(aru_factory=ARU_RTL)`.** Single-step semantics scout-confirmed (WCS PC held; OUT 0x05=CPC CLR;
+   XFER=0 read-back via the X-register). Primitives + wiring corroborated by the firmware itself.
+4. **M3 — NEXT (open). Plan: `docs/plans/017 - 224XL-M3-free-run-reverb.md`.** Free-run CONCERT produces a
+   coherent, decaying reverb whose RT60 tracks the size/decay parameter, with **no hand-tuned gain** (the loop
+   closes because the netlist closes it). Requires extending the RTL model with the real WCS program counter
+   (0-99 sweep, RESET@99), per-step DAB-source routing (device decode picks the bus driver), the deferred MAC
+   across instructions, and idle=hold. Staged: engine → zero-delay → max-delay → CONCERT → RT60/modulation.
+5. **M4 (open)** — consistent across ≥3 programs; then (if available) L7 IR match.
 
 ## 7. Risks / honest unknowns
 - **★ Memory-derived part data (the failure that already bit us).** Stating a pinout/spec from training memory
@@ -223,8 +238,10 @@ loop after correctness is proven — correctness first.)
 - **★ Inventing conclusions from a faithful read.** Even correctly-transcribed pins can spawn a false "anomaly"
   if we editorialize ("this looks reversed/broken"). *Mitigation:* Ground Rule 3 — only an independent
   pass/fail check (POST, IR, runnable test) may call something a bug; otherwise document and move on.
-- **Netlist completeness:** the model is only as good as the Phase-0 interconnect. M0 owner-review is the gate;
-  any net we can't read from the crops is flagged, not guessed.
+- **Netlist completeness:** ✅ M0 is done + owner-reviewed (ARU+DMEM+T&C, all sheets, triple-verified), and the
+  whole POST passing on the netlist-faithful model is strong end-to-end evidence the interconnect is right.
+  Remaining ⚪: the owner-omitted PLL (MC = the model's clock input) + the SBC-side I/O-port decode (the port
+  map was scout-inferred + confirmed by POST); neither affects the datapath.
 - **Sub-MS ordering within a phase** (rare race-style dependencies, e.g. read-before-write on the LS670 within
   MS7) may need care; resolve from the figures, not assumption.
 - **Speed:** phase-accurate over 100 steps × 34 k samples/s is heavy in Python; correctness first, optimize

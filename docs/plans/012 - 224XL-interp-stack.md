@@ -69,33 +69,36 @@ between them:
                                  only CONCERT (default) is exercised so far.
                                           │
 ══════════════ ▼▼▼  GROUND-TRUTH BOUNDARY  ▼▼▼ ══════════════
-   Everything below is INFERENCE about a SECOND processor (the ARU+T&C) that we have NO ground-truth
-   emulator for. The 8080 only *builds* the WCS; the ARU/T&C hardware *executes* it — and we can't run
-   that hardware, so we guess what each bit/step means.
+   The 8080 only *builds* the WCS; the ARU+T&C hardware *executes* it. We can't run that hardware, but
+   the layers below are no longer pure inference: they are now **net-traced** (the M0b interconnect
+   netlist = the owner's full schematic trace) AND **POST-verified** — a netlist-faithful model passes the
+   firmware's whole power-up self-test un-suppressed (E32/E40/E83/E91). What remains un-validated is the
+   FREE-RUN execution (the autonomous reverb loop POST never exercises) — see L6 6b / plan 013 M3.
 ══════════════════════ PROCESSOR #2: the ARU + T&C (the DSP that does the reverb) ═══════════
                                           │
-   L4  MICROWORD FIELD DECODE  ❌ FAITH   split each 4-byte step → offset / MI16,MI17 (read/write/sub) /
-       (the bit-map)            WA / RA / CSIGN / XFER / ZERO / coeff
-                               INPUT: L3 bytes + a claimed bit-map
-                               TRUST: bit *meanings* come only from human schematic-reading + narrow
-                                 POST coverage. ★ MOST ERRORS LIVE HERE (the ~inversion, the sign,
-                                 WA/RA meaning, which bits are control vs address).
+   L4  MICROWORD FIELD DECODE  🔶 LARGELY VERIFIED   split each step → offset / MI16,MEMAC / WA / RA /
+       (the bit-map, §G3R)      CSIGN / XFER / ZERO / coeff  (l2=MI16-23 direct, l3=MI24-31 via ~l3)
+                               INPUT: L3 bytes + the M0b netlist field map (§G3R)
+                               VERIFIED BY: net-trace (§G3R) + POST passing un-suppressed (latch/register/
+                                 multiplier/DMEM). Fields POST can't distinguish (XFER-load, offset
+                                 variation, dual-use 12/13) rest on the net-trace only.
                                           │
-   L5  ADDRESS ARITHMETIC  ❌ FAITH   offset → addr = CPC − offset (active-low + carry-in); bank=carry;
-       (§6 of sys-arch doc)     128K flat single linear space (no separate bank-select; bank = the carry)
-                               INPUT: L4 offset field + adder/mux wiring (U49/U50/U63/U64)
-                               RISK: offset→address wiring & dual-use bits 12/13 (control vs address).
+   L5  ADDRESS ARITHMETIC  🔶 LARGELY VERIFIED   addr = CPC − OFST (OFST stored complemented + carry-in
+       (§6 of sys-arch doc)     high); ONE 64K×16 bank, NO bank-select (top carry-out n/c)
+                               INPUT: L4 offset field + adder/mux wiring (dmem_U49/U50/U63/U64)
+                               VERIFIED BY: DMEM test E91 passes on CPC−OFST at one nonzero offset (0x2000),
+                                 CPC walking. Open: offset variation + dual-use bits 12/13.
                                           │
-   L6  ARU DATAPATH SEMANTICS  ❌ FAITH   what the hardware DOES per step: reg-file (4×LS670 U29-U32)
-       (tools/aru_datapath.py)  read/write, ×coeff /32, ±2¹⁸ accumulate, result reg, DMEM read/write,
-                                DAB routing, idle=hold, MAC pipeline timing, register survival rules
-                               INPUT: L4 fields + L5 addressing + ARU schematic + manual timing
-                               PARTIAL CHECK: POST latch+register tests pass on a faithful model (Track B)
-                                 — validates a slice (regfile, device decode, /32 unity), not the whole.
+   L6  ARU DATAPATH SEMANTICS  🔶 LARGELY VERIFIED   what the hardware DOES per step: reg-file (4×LS670
+       (tools/aru_post.py +     aru_U29-32) read/write, ×coeff /32 (gate Booth), ±2¹⁸ accumulate, result
+        tools/aru_rtl*.py)      reg, DMEM read-before-write, DAB routing, idle=hold, MAC pipeline timing
+                               INPUT: L4 fields + L5 addressing + the M0b netlist + manual timing
+                               VERIFIED BY: the WHOLE POST passes un-suppressed (E32+E40+E83+E91) — primitives
+                                 ✅. FREE-RUN execution (the reverb loop) = plan 013 M3, still open.
                                           │
-   L7  AUDIO RESULT  ⬜ PENDING (do LAST)   run L6 over many samples → impulse response / reverb
+   L7  AUDIO RESULT  ⬜ PENDING (do LAST)   run the free-run model over many samples → impulse response
                                VERIFY BY: compare to a measured IR from a real 224XL. Pass/fail only —
-                               NO diagnostic power, so only meaningful once L1–L6 are each ✅.
+                               NO diagnostic power, so only meaningful once the free-run model (M3) is coherent.
 ```
 
 ## Per-layer ledger
@@ -104,19 +107,40 @@ between them:
 | L1 CPU core | ✅ VERIFIED | kosarev/z80 `I8080Machine`; cputest + 8080pre + **8080exm** all pass in our env |
 | L2 firmware exec | ✅ VERIFIED | `tools/boot8080.py` — faithful POST + real PGM-2 bypass (0x30/0x10) → prog_load; WCS cross-checked byte-identical to old pipeline (modulo LFO phase) |
 | L3 program build | ✅ VERIFIED (CONCERT) | bytes built on verified 8080 via faithful boot; 0x3F4D + lanes 0-2 byte-identical. Open: other 19 programs (need LARC program-select); real-SBC capture unavailable |
-| L4 field decode | 🔶 LARGELY VERIFIED | (a) M0b schematic net-trace (§G3R: l2=MI16–23, l3=MI24–31; WA=MI18/19, RA=MI20/21, XFER=MI24, ZERO=MI25, coeff=MI26–31; CSIGN/=tc_U20 JK follows MI23) **and** (b) firmware POST passing un-suppressed on the verified 8080 (`tools/aru_post.py`): **latch E32 + register E40 + multiplier E83 all PASS** (pins device-decode + WA/RA + CSIGN + coeff-byte polarity inv_l3 via ~l3, AND the gate-level Booth coeff serialization C0–5). Open: OFFSET/L5 fields are free-run, not POST-reachable |
-| L5 address arith | ❌ FAITH | offset→address wiring; bits 12/13 control-vs-address (POST pins offset=0 → not POST-reachable; needs free-run/hardware) |
-| L6 ARU datapath | 🔶 LARGELY VERIFIED | netlist-built ARU (regfile 4×LS670 + device decode U47 + /32 MAC + ±2¹⁸ sat) **passes the firmware register/walking-pattern test (E40) and the latch+static-readback+bus-test routine (E32) un-suppressed on the verified 8080**. **Multiplier: literal gate-level model (`tools/aru_booth.py`) = 16/20 bit-exact, STRUCTURAL** (NAND array + carry chain + fig-3.4 schedule); found+fixed 3 owner-confirmed schematic-trace errors (§4F.4 SR taps) + the §4.7/§4.6 reversal-cancellation (§4F.9). cmag=63 (all-ones) has a real but **UNLOCATED** +1..+2 LSB correction (NOT back-end/carry/truncation — proven via infinite-precision; leading candidate = pipeline/single-step register state); `multiply()` passes E83 via a calibrated `+3·dual` fit, `multiply_faithful()` = 16/20 without it. MAC cross-step timing + DAB free-run routing still open |
+| L4 field decode | 🔶 LARGELY VERIFIED | (a) M0b schematic net-trace (§G3R: l2=MI16–23, l3=MI24–31; WA=MI18/19, RA=MI20/21, XFER=MI24, ZERO=MI25, coeff=MI26–31; CSIGN/=tc_U20 JK follows MI23) **and** (b) firmware POST passing un-suppressed on the verified 8080 (`tools/aru_post.py`): **latch E32 + register E40 + multiplier E83 all PASS** (pins device-decode + WA/RA + CSIGN + coeff-byte polarity inv_l3 via ~l3, AND the gate-level Booth coeff serialization C0–5). Open: OFFSET *variation* + the XFER-load path (XFER=0 in POST) — the DMEM test does drive one nonzero offset |
+| L5 address arith | 🔶 LARGELY VERIFIED (mechanism) | **DMEM test E91 (0x0B75) PASSES un-suppressed** on a faithful `addr = CPC − OFST` model (`tools/aru_post.py`): it exercises the CPC counter (advances one position per OUT-0x03 strobe, wraps over the full 64K sweep) **and** the subtract adder at a **non-zero** offset (OFST/=0xDFFF → offset 0x2000) — the 64K write/read realignment requires both correct. **Corrects the earlier "POST pins offset=0 → zero coverage" note**: the *dedicated* DMEM test uses a constant 0x2000 offset (only the incidental latch/register DMEM steps used offset 0). Still open: offset **variation** (only one offset value tested) + the dual-use bits 12/13 + RUN-mode per-sample CPC |
+| L6 ARU datapath | 🔶 LARGELY VERIFIED | netlist-built ARU (regfile 4×LS670 + device decode U47 + /32 MAC + ±2¹⁸ sat + DMEM) **passes the WHOLE POST un-suppressed (E32 latch + E40 register + E83 multiplier + E91 DMEM)** on the verified 8080. **Multiplier:** literal gate model (`tools/aru_booth.py`) = 16/20 STRUCTURAL (NAND array + carry chain + fig-3.4 schedule; 3 owner-confirmed SR-tap fixes + §4.7/§4.6 reversal cancellation), and the cmag=63 (all-ones) case = a **UNIQUE combinational +3/dual-rail-phase correction** (plan 016 / `tools/aru_cycaccurate.py`: NOT a pipeline effect; origin owner-confirmed *outside* the traced wiring) → `multiply()` = 20/20, `multiply_faithful()` = 16/20. **DMEM read/write now verified:** `addr=CPC−OFST` + **read-before-write** (one strobe per cell; two complementary passes) passes E91. Still open (reverb frontier): MAC cross-step free-run timing + DAB free-run routing |
 | L7 audio IR | ⬜ PENDING | real-unit IR, LAST step only |
 
 **L4/L5/L6 are decomposed into their own bottom-up atoms** (each with status + ground-truth validator +
 dependencies) in [`224XL-L4-L5-L6-decomposition.md`](224XL-L4-L5-L6-decomposition.md). Key structural fact
-from that breakdown: POST single-step tests can pin the **datapath primitives** (L6.1–L6.6) and the L4 fields
-they distinguishingly vary, but the **free-run execution** (L6.7–L6.13: T&C sequencer, per-step DAB routing,
-cross-step timing) and L5's `CPC−offset` arithmetic are **not** POST-reachable — schematic control-path trace
-or hardware only.
+from that breakdown: POST single-step tests pin the **datapath primitives** (L6.1–L6.6, all now passing) and
+the L4 fields they distinguishingly vary, **and** L5's `CPC−OFST` arithmetic at one nonzero offset (the DMEM
+test). What stays **not** POST-reachable — the **free-run execution** (L6.7–L6.13: T&C 100-step sequencer,
+per-step DAB routing, cross-step timing) + offset variation — is net-traced on the M0b schematic and built in
+the M1/M2 RTL model; making it run coherently is plan 013 M3.
 
 ## Changelog
+- **2026-06-29 — ★ WHOLE POST PASSES + cmag=63 RESOLVED + PHASE-ACCURATE RTL FRAMEWORK (plan 013 M1/M2).**
+  **(a) cmag=63 NAILED DOWN (plan `016`, `tools/aru_cycaccurate.py`):** a cycle-accurate POST single-step co-sim
+  swept over every pipeline schedule → never >16/20 ⇒ the deferred-MAC/pipeline hypothesis is REFUTED; the
+  correction is a **unique flat +9 at the accumulator = +3 per dual-Booth-rail phase**, combinational, gated by
+  M0·M1. SM ch.5 corroborates (all-ones coeff = "+63/64"; E89-E8B exercises the front-end intermediate adders).
+  Owner then **exhaustively excluded** the +3 from the traced wiring (intermediate adders + whole NAND array +
+  M0/M1 fanout + spare gates all correct, no M0·M1 gate) ⇒ `+3·dual` is an **accepted empirical correction**
+  whose origin is OUTSIDE the traced netlist (device-level or an ECO). plan 016 CLOSED.
+  **(b) DMEM test E91 (0x0B75) NOW PASSES:** replaced the sparse-dict stub with a faithful 64K×16 model —
+  `addr = CPC − OFST` (OFST stored complemented), CPC advances per single-step strobe (cleared by OUT 0x05),
+  every DMEM cycle **read-before-write** (the two complementary passes verify storage one strobe per cell).
+  Active step picked from the microword device-decode (MEMW→step127 else step126), no SBC-PC knowledge. ⇒ **the
+  ENTIRE POST passes un-suppressed: E32 + E40 + E83 + E91** (196654 single-steps, reaches mainloop).
+  **(c) PHASE-ACCURATE RTL FRAMEWORK BUILT (plan 013 M1+M2):** `tools/aru_rtl.py` (micro-framework `Net`/`Reg`/
+  `Counter`/`Latch` + `ClockEngine`; **M1 validated vs `timing_spec.json` fig-3.2/3.4**) + `tools/aru_rtl_dp.py`
+  (`ARU_RTL` datapath: regfile / 3-AS multiply pipeline via `aru_booth.comb_array` / accumulator / result reg /
+  CPC / DMEM read-before-write / device decode). **The whole POST passes on the RTL model too** (via
+  `aru_post.run_post(aru_factory=ARU_RTL)`) = M2. A scout (netlist+SM) confirmed the single-step semantics +
+  the SBC port map (OUT 0x00=HALT, 0x01=RUN, 0x03=strobe, 0x05=CPC CLR, 0x06/07=XREG); WCS PC held in
+  single-step; XFER=0 read-back via the X-register. **NEXT = M3 free-run reverb.**
 - **2026-06-28 (PM) — ★ GATE-LEVEL MULTIPLIER STRUCTURALLY SOLVED + 3 SCHEMATIC ERRORS FOUND & OWNER-CONFIRMED.**
   Built the literal gate model `tools/aru_booth.py` (NAND array §4F.4/4F.5 + 5×74F283 carry chain §4F.7 + Σ→PR
   §4.7) and drove it with the fig-3.4 schedule (3 AS phases; 74194 LOAD F≪3 then SHIFT-RIGHT-by-2 → F·2⁰/F·2⁻²/
@@ -136,7 +160,7 @@ or hardware only.
   un-suppressed on the verified 8080** — so latch E32 + register E40 + multiplier E83 all pass on their own merits.
   POST then advances to and FAILS the **DMEM test (E91, 0x0B75)** — the failing step is unity ×1 (correct), so it is
   the DMEM addr/read-write path, not the ARU. That (the real DRAM addressing the ARU model stubs as a sparse dict) is
-  the next frontier.
+  the next frontier. **[2026-06-29: E91 now PASSES — faithful `CPC−OFST` + read-before-write model; whole POST passes.]**
 - **2026-06-28 (PM2) — GATE-LITERAL BACK-END built (rigorous close of cmag=63).** Built the literal back-end
   (subtract-XOR aru_U5–9 + adder aru_U19–23, carry-in=CSIGN/ confirmed via the aru_U2 pin5↔pin10 tie + owner-traced
   bias circuits on CSIGN//ARUCKE/ — analog/clock, no arithmetic effect; sat-mux aru_U33–37 + accumulator aru_U45–49).
@@ -150,6 +174,9 @@ or hardware only.
   effect, not a gate; needs a cycle-accurate POST single-step co-sim to confirm. `multiply()` keeps a `+3·dual-phase`
   CALIBRATED FIT (the 4 cmag=63 goldens) → 20/20 → E83 still passes. (Earlier "missing hot-one" / "sign-extension
   correction" framings RETRACTED: separate-rail==combined bit-identical, and no gate located.)
+  **[2026-06-29: RESOLVED — plan 016: the residual is NOT a pipeline/state effect; it is a unique flat +3 per
+  dual-Booth-rail phase (combinational); origin owner-confirmed OUTSIDE the traced wiring. `+3·dual` is the unique
+  derived correction, not an arbitrary fit.]**
 - **2026-06-28** — **PHASE 1 (plan `015`): L4 + L6 flipped ❌ FAITH → 🔶 LARGELY VERIFIED.** Built a
   netlist-faithful ARU (`tools/aru_post.py`) FROM the M0b netlist (field map §G3R + device decode §2T.1 +
   regfile §4F.1 + MAC §4) and wired it into the **verified 8080** (`I8080Machine` via `boot8080`), POST
@@ -188,3 +215,7 @@ or hardware only.
   all (every POST DMEM access pins offset=0 → the `CPC−offset` adder is invariant → **provably zero coverage**;
   L5 is purely free-run). Multiplier is the strongest POST constraint (pins /32 + ±2¹⁵ rail + exact 1-LSB
   rounding → gate-level serial Booth required).
+  **[2026-06-29 corrections: this analysis mis-read the DMEM test's addressing — the dedicated DMEM test
+  (0x0B75) DOES drive a nonzero offset (0x2000) with the CPC walking, so the `CPC−OFST` adder IS exercised
+  (one offset), and OFFSET+ZERO are exercised; only XFER's load path stays uncovered. The "gate-level Booth
+  required" is now satisfied (`tools/aru_booth.py`, 20/20). See plan 011's corrected coverage section.]**

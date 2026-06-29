@@ -639,6 +639,15 @@ operand nets named `_cpc0.._cpc15` (my naming; the trace gives them pin-to-pin, 
 | _cascade U51 | dmem_U51.pin13 (2CP) = dmem_U51.pin6 (1QD) | nibble ripple |
 | _cascade U65 | dmem_U65.pin13 (2CP) = dmem_U65.pin6 (1QD) | nibble ripple |
 
+> **★ POST-CONFIRMED (2026-06-29): in single-step, CPC advances ONE position per `OUT 0x03` strobe.** The firmware
+> DMEM test (0x0B75) walks 64K contiguous cells with a **constant** offset and **one strobe per cell** (probed live —
+> the data increments each strobe while OFST is held), so the address can only walk via CPC. The full-64K sweep makes
+> CPC **wrap** exactly, which is how the write pass and the read/verify pass realign cell-for-cell. (This pins the
+> ⚪ un-traced "RESET" count-clock source §G3D to a per-strobe edge in single-step; whether RUN mode advances CPC per
+> microinstruction or per audio sample is a separate, still-open question — not needed for POST.) A model that does
+> `addr = (CPC + OFST_stored + 1) & 0xFFFF` with CPC++ per strobe **passes the DMEM test E91 un-suppressed**
+> (`tools/aru_post.py`).
+
 **CPC Q → adder A-input** (driver = '393 Q, load = '283 A pin):
 | _cpc | Driver | Load | _cpc | Driver | Load |
 |---|---|---|---|---|---|
@@ -731,6 +740,14 @@ byte). Write path: DATA→DAB via U39 (→DAB0–7)/U41 (→DAB8–15). All XREG
 > ⚠ **dmem_U42** (bus-test): each `Dn` and `Qn` are the **same** DATA net, and the byte is **bit-reversed**
 > (D0/Q0=DATA7/ … D7/Q7=DATA0/) — owner-confirmed correct (a loopback bus-test register), not a transcription
 > flip. Bit mapping (DAB→DATA / DATA→DAB) within each '374 follows the verified pinout; bit-weight not asserted.
+
+> **★ READ-BEFORE-WRITE (POST-confirmed 2026-06-29).** The DMEM test reads each cell back via this X-register with a
+> microword that is a **MEMW (write)** for BOTH the write pass and the verify pass — so the read-back returns the
+> cell's **OLD contents** captured on the DAB *before* the new value is written (a read-modify-write DRAM cycle; the
+> DRAM DOUT is valid late, ~MS7, and the X-reg latches it on `WR XREG/`). The firmware's two complementary passes
+> exploit this: write 0x5555-seq, then a second pass writes 0xAAAA-seq while reading back (and verifying) the 0x5555
+> it overwrites, then verifies 0xAAAA. A model with read-before-write semantics on every DMEM cycle **passes E91
+> un-suppressed** (`tools/aru_post.py`); see §5.1 for the CPC-per-strobe addressing it relies on.
 
 ## 5.7 Offset read-back buffers `dmem_U48/U62` (74LS244) — OFST/ → DATA/ ✅
 Let the SBC read the current offset. **`dmem_U48`** buffers `OFST0–7/`→`DATA0–7/` (enable **DPORT0/**);
