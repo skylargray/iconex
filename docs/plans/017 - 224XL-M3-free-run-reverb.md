@@ -15,6 +15,54 @@
 
 ---
 
+## ★ STATUS (2026-06-29) — engine DONE + verified; CONCERT recirculation localized
+
+**Built: `tools/aru_freerun.py`** (the free-run engine; does NOT touch the POST-green M1/M2 files).
+`FreeRunARU` sweeps the WCS PC 0→99 (RESET@99), fetches+decodes each step (reusing the M2 `decode`
++ the verified gate Booth), routes the DAB per the §2T device decode, models the fig-3.4 **deferred
+MAC** as a 1-instruction pipeline (`pend`), accumulates a **clean signed MAC** (`sat16(ACC≫3)`),
+advances **CPC +1/sample**, recirculates the DMEM (`addr = CPC + OFST_stored + 1 = CPC − OFST`), and
+does the I/O (inject @ RD AD/, capture @ WR DA/ on channels A–D). Run: `python tools/aru_freerun.py`
+(fast structural suite) / `… concert` (boots + characterizes CONCERT).
+
+**Verified (success criteria 1–3 MET):**
+1. **Runs clean (M3.0)** — executes the whole 100-step CONCERT program for thousands of samples
+   (500k+ microinstructions) with **no decode/addressing fault**; sensible per-step DAB-driver
+   histogram (MEMR/RDRREG/RD_AD/RD_XREG/HOLD).
+2. **Zero-delay (M3.1) PASS** — a hand-loaded RD AD/→WR DA/ program passes the input straight to
+   outputs A & D **unchanged** (proves engine + 100-step loop + DAB routing + I/O boundary).
+3. **Max-delay (M3.2) PASS** — a hand-loaded DMEM delay reappears at the output **exactly `delay`
+   samples later** (verified 64 & 150), proving the DMEM write→read delay across samples.
+
+**Engine recirculation CAPABILITY (M3.3) PROVEN** — a hand-built feedback comb `y[n]=x[n]+½·y[n−D]`
+produces a coherent decaying echo train with ratios **exactly 0.5** — the loop closes from the wiring,
+decay set by the coeff, **no tuned constant**. So the structural engine *can* make a recirculating
+reverb when the WCS closes the loop (the holistic thesis).
+
+**CONCERT (criterion 4) — partial, root cause localized (NOT a dead engine):** running the captured
+**static** CONCERT WCS free, the **DMEM delay memory retains the input-burst energy and decays over
+~1.7 s (a reverb-like RT)** — writes store real values, the long read taps (0.9–1.4 s) read them back.
+But the **OUTPUT (WR DA/) is sparse** — the direct signal + **discrete echoes (~1.4–1.6 s)**, not a
+dense continuous tail. Diagnosis: storage/feedback works at a reverb timescale; the output isn't
+densified. Most-likely causes (next session): the **per-frame LFO modulation** (M4 — the 4 modulated
+taps 56/57/107/108 smear the delays into a dense field; the modulation is main-loop-paced, decoded in
+`224XL_modulation_lfo.md`, and is NOT yet driven by `boot8080`) and/or a **feedback-timing refinement**
+(the read-before-write / deferred-MAC conventions are the two un-POST-tested choices — probe them
+against fig-3.3/3.4). **Per the discipline: no gain knob was added; the finding is a localized
+output-density / modulation gap, not a tuned decay.**
+
+**Decisions baked into the engine (see file docstring):** deferred MAC = 1-instruction pipeline
+(fig-3.4); regfile/DMEM = **read-before-write** (ARUCK@MS6 operand load precedes the MS7 write —
+CONCERT decouples its MEMR-write-register from a later read step, consistent with this); accumulator =
+clean signed MAC (positive single-multiplies match the POST goldens exactly, negatives within ≤2 LSB
+≈ −84 dB by design, since a clean accumulator is the right model for multi-tap sums); CPC +1/sample at
+RESET@99 (resolves the §5.1 ⚪ RUN-mode count cadence). **POST regression still green** on `aru_rtl_dp.py`.
+
+**Open → M4:** drive the per-frame WCS modulation (the main-loop LFO, co-simulated with the free-run)
+so CONCERT's output densifies into a faithful decaying tail; then RT60-tracking + ≥3 programs + L7 IR.
+
+---
+
 ## 0. Goal and success criteria
 
 **Goal.** Extend the M2 RTL model from single-step to **free-run**: the T&C microsequencer fetches

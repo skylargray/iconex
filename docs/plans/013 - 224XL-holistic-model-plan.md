@@ -223,12 +223,21 @@ after correctness is proven — correctness first.
    single-step tests un-suppressed — E32 latch + E40 register + E83 multiplier + E91 DMEM — driven via
    `aru_post.run_post(aru_factory=ARU_RTL)`.** Single-step semantics scout-confirmed (WCS PC held; OUT 0x05=CPC CLR;
    XFER=0 read-back via the X-register). Primitives + wiring corroborated by the firmware itself.
-4. **M3 — NEXT (open). Plan: `docs/plans/017 - 224XL-M3-free-run-reverb.md`.** Free-run CONCERT produces a
-   coherent, decaying reverb whose RT60 tracks the size/decay parameter, with **no hand-tuned gain** (the loop
-   closes because the netlist closes it). Requires extending the RTL model with the real WCS program counter
-   (0-99 sweep, RESET@99), per-step DAB-source routing (device decode picks the bus driver), the deferred MAC
-   across instructions, and idle=hold. Staged: engine → zero-delay → max-delay → CONCERT → RT60/modulation.
-5. **M4 (open)** — consistent across ≥3 programs; then (if available) L7 IR match.
+4. **M3 — engine DONE + verified; CONCERT recirculation localized (2026-06-29). Plan + full status:
+   `docs/plans/017`.** Built `tools/aru_freerun.py` (free-run engine; does NOT touch the POST-green M1/M2
+   files): WCS PC 0→99 (RESET@99), per-step §2T device-decode DAB routing, the **fig-3.4 deferred MAC** as a
+   1-instruction pipeline, clean signed multiply-accumulate (`sat16(ACC≫3)`), CPC **+1/sample** at RESET@99,
+   DMEM recirc (`addr=CPC−OFST`), I/O (inject @RD AD/, capture @WR DA/). **Verified:** M3.0 runs the whole
+   100-step CONCERT for 500k+ microinstructions with no fault; **M3.1 zero-delay** (impulse→outputs A&D
+   unchanged) and **M3.2 max-delay** (impulse reappears exactly `delay` samples later, 64/150) PASS; **M3.3
+   engine recirculation capability PROVEN** (hand-built feedback comb decays exactly per coeff, no tuned
+   gain). **CONCERT (criterion 4) partial:** the static WCS retains delay-memory energy with a ~1.7 s
+   reverb-like RT, but the output is sparse echoes (direct + ~1.4 s), **not** a dense tail — localized to a
+   missing output densification, most likely the **per-frame LFO modulation** (M4; main-loop-paced, not yet
+   driven by `boot8080`) and/or a feedback-timing refinement. No gain knob added (discipline held). POST stays
+   green. Read-before-write + deferred-MAC are the two un-POST-tested timing choices to probe next.
+5. **M4 (open)** — co-simulate the per-frame WCS modulation with the free-run so CONCERT densifies into a
+   faithful decaying tail; then RT60-tracking + consistent across ≥3 programs; then (if available) L7 IR match.
 
 ## 7. Risks / honest unknowns
 - **★ Memory-derived part data (the failure that already bit us).** Stating a pinout/spec from training memory
