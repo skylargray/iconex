@@ -32,7 +32,9 @@ RT60_MIN_R2 = 0.90         # decay must be this log-linear (exponential = reverb
 RT60_AGREE = 0.20          # the 3 estimators must agree within ±20%
 OVER_UNITY_DB = 3.0        # late-third energy exceeding early-third by this -> growing (over-unity)
 NED_DENSE = 0.85           # max normalized echo density at/above this -> (candidate) DENSE
-SFM_DENSE = 0.10           # tail spectral flatness at/above this -> broadband (not a ringing tone)
+TONE_PEAK_FRAC = 0.50      # energy fraction in the dominant spectral mainlobe above this -> a tone.
+                           # (Notch-robust: real comb/colored reverbs sit at <0.03; a sine at ~0.99.
+                           # SFM was tried and rejected — reverb notches crush it; see realtest.)
 ERFC_1_SQRT2 = 0.317310507 # E[fraction beyond 1σ] for a Gaussian (NED normaliser)
 
 
@@ -79,6 +81,23 @@ def _estimate_dry(output, exc, fs, max_lag_s=0.05):
     dry_hat = np.zeros(n)
     dry_hat[d: d + len(es)] = a * es
     return dry_hat, d, a
+
+
+def _noise_floor_truncate(tail, fs):
+    """Lundeby-lite: cut the IR at the knee ~10 dB above its noise floor before backward integration,
+    so the Schroeder EDC stays clean and doesn't bend up into the noise/truncated-fade tail (which
+    otherwise corrupts T30 on real measured IRs — e.g. a 20 s reverb in a 20 s file)."""
+    n = len(tail)
+    if n < 100:
+        return tail
+    floor2 = float(np.mean(tail[int(0.9 * n):] ** 2)) + 1e-9    # noise-floor power (last 10%)
+    w = max(1, int(0.02 * fs))
+    e = np.convolve(tail ** 2, np.ones(w) / w, mode="same")
+    above = np.where(e > floor2 * 10.0)[0]                       # 10 dB above the floor
+    if len(above) == 0:
+        return tail
+    knee = int(above[-1])
+    return tail[: max(knee + 1, int(0.1 * n))]
 
 
 def _schroeder_db(tail):
@@ -157,15 +176,28 @@ def normalized_echo_density(tail, fs, win_ms=20.0):
 
 
 def spectral_flatness(x):
-    """Geometric-mean / arithmetic-mean of the power spectrum. ~1 for broadband (diffuse) noise,
-    ~0 for a pure tone — the guard that stops a decaying SINE from reading as a 'dense reverb'."""
+    """Geometric/arithmetic-mean of the power spectrum (diagnostic only — NOT used for the tonal
+    decision, because spectral notches in real comb/colored reverbs crush the geometric mean)."""
     if len(x) < 16:
         return 0.0
     X = np.abs(np.fft.rfft(x * np.hanning(len(x)))) ** 2 + 1e-20
-    X = X[1:]                                          # drop DC
-    gm = np.exp(np.mean(np.log(X)))
-    am = np.mean(X)
-    return float(gm / am)
+    X = X[1:]
+    return float(np.exp(np.mean(np.log(X))) / np.mean(X))
+
+
+def dominant_peak_fraction(x):
+    """Fraction of spectral energy in the single dominant mainlobe (argmax bin ±2). The notch-robust
+    tone/reverb discriminator: a pure tone concentrates ~all energy here (~0.99); any reverb — even a
+    heavily comb-colored or damped one — spreads it (<0.03). Unlike SFM, notches don't fool it."""
+    if len(x) < 16:
+        return 1.0
+    X = np.abs(np.fft.rfft(x * np.hanning(len(x)))) ** 2
+    X[0] = 0.0
+    tot = float(X.sum())
+    if tot <= 0:
+        return 1.0
+    k = int(np.argmax(X))
+    return float(X[max(0, k - 2):k + 3].sum() / tot)
 
 
 def _peaks_per_sec(tail, fs):
@@ -242,52 +274,63 @@ def analyze(output_int16, excitation_int16, fs, name, out_dir=None, burst_end_s=
         v["reasons"].append(f"tail energy grows {growth_db:.1f}dB (>{OVER_UNITY_DB}) — over-unity")
         return v
 
-    # density: DENSE requires BOTH high normalized echo density AND a broadband (flat) spectrum, so a
-    # ringing tone (high NED, near-zero flatness) cannot pass as a diffuse reverb tail.
+    # density: a high normalized echo density means DENSE, UNLESS the energy is concentrated in one
+    # spectral mainlobe (a ringing tone — high NED but not a diffuse reverb). dominant_peak_fraction
+    # is notch-robust, so real comb/colored reverbs pass while a pure sine is caught.
     ned = normalized_echo_density(tail, fs)
     ned_max = float(np.max(ned))
     pps = _peaks_per_sec(tail, fs)
-    sfm = spectral_flatness(tail)
-    if ned_max >= NED_DENSE and sfm >= SFM_DENSE:
+    peak_frac = dominant_peak_fraction(tail)
+    if peak_frac > TONE_PEAK_FRAC:
+        density = "TONAL"                              # a tone, not a diffuse reverb
+    elif ned_max >= NED_DENSE:
         density = "DENSE"
-    elif ned_max >= NED_DENSE and sfm < SFM_DENSE:
-        density = "TONAL"                              # high NED but not broadband -> a tone, not reverb
     else:
         density = "SPARSE"
-    v.update(density=density, ned_max=ned_max, peaks_per_s=float(pps), spectral_flatness=round(sfm, 4))
+    v.update(density=density, ned_max=ned_max, peaks_per_s=float(pps),
+             dominant_peak_frac=round(peak_frac, 4), spectral_flatness=round(spectral_flatness(tail), 4))
 
-    # P4 — RT60 three independent estimators + quality gates.
-    edc = _schroeder_db(tail)
-    clean_range = float(-edc[edc > -120].min()) if np.any(edc > -120) else 0.0
+    # P4 — RT60 from the two ISO-3382 Schroeder measures (T20,T30) on a noise-floor-truncated EDC,
+    # which are reliable on real measured IRs; the block-RMS envelope is kept as a cross-check
+    # diagnostic only (it is too noisy on real IRs to gate on). The quality gates (log-linear R²,
+    # sufficient clean decay range, T20/T30 agreement) are what refuse a number on a non-exponential
+    # or too-short decay.
+    tail_t = _noise_floor_truncate(tail, fs)
+    edc = _schroeder_db(tail_t)
+    clean_range = float(-edc.min())
     rt_t30, r2_t30, _ = _fit_decay(edc, fs, -5.0, -35.0)
     rt_t20, r2_t20, _ = _fit_decay(edc, fs, -5.0, -25.0)
-    rt_env, r2_env = _rt60_from_block_rms(tail, fs)
-    ests = {"schroeder_t30": rt_t30, "schroeder_t20": rt_t20, "block_rms": rt_env}
-    v["rt60_estimates"] = {k: (round(x, 4) if x else None) for k, x in ests.items()}
+    rt_env, r2_env = _rt60_from_block_rms(tail, fs)            # diagnostic cross-check only
+    v["rt60_estimates"] = {"schroeder_t30": round(rt_t30, 4) if rt_t30 else None,
+                           "schroeder_t20": round(rt_t20, 4) if rt_t20 else None,
+                           "block_rms_diag": round(rt_env, 4) if rt_env else None}
     v["rt60_quality"] = dict(clean_range_db=round(clean_range, 1),
                              r2_t30=round(r2_t30, 3), r2_t20=round(r2_t20, 3),
                              r2_env=round(r2_env, 3))
 
-    vals = [x for x in ests.values() if x is not None and x > 0]
-    gates_ok = (clean_range >= RT60_MIN_RANGE_DB and r2_t30 >= RT60_MIN_R2
-                and r2_t20 >= RT60_MIN_R2 and len(vals) == 3)
-    agree = False
-    if len(vals) == 3:
-        med = float(np.median(vals))
-        agree = all(abs(x - med) / med <= RT60_AGREE for x in vals)
-    if gates_ok and agree:
-        v["rt60_s"] = round(float(np.median(vals)), 4)
+    g30 = bool(rt_t30 and r2_t30 >= RT60_MIN_R2 and clean_range >= 35.0)
+    g20 = bool(rt_t20 and r2_t20 >= RT60_MIN_R2 and clean_range >= 25.0)
+    if g30 and g20:
+        mean = (rt_t30 + rt_t20) / 2.0
+        if abs(rt_t30 - rt_t20) / mean <= RT60_AGREE:
+            v["rt60_s"] = round(float(np.median([rt_t30, rt_t20])), 4)
+        elif r2_t20 >= 0.97:                                   # disagree -> deep tail (T30) unreliable
+            v["rt60_s"] = round(rt_t20, 4)
+            v["reasons"].append(f"T30 {rt_t30:.2f}s vs T20 {rt_t20:.2f}s differ — using T20 (deep "
+                                f"decay truncated/curved)")
+        else:
+            v["reasons"].append(f"RT60 INDETERMINATE: T20/T30 disagree ({rt_t20:.2f}/{rt_t30:.2f}s) "
+                                f"with no clean fallback")
+    elif g20:
+        v["rt60_s"] = round(rt_t20, 4)
+        v["reasons"].append("RT60 from T20 (insufficient clean range for T30)")
     else:
         reason = []
-        if clean_range < RT60_MIN_RANGE_DB:
-            reason.append(f"clean range {clean_range:.0f}dB<{RT60_MIN_RANGE_DB}")
-        if not (r2_t30 >= RT60_MIN_R2 and r2_t20 >= RT60_MIN_R2):
-            reason.append(f"decay not log-linear (R²={r2_t30:.2f}/{r2_t20:.2f})")
-        if len(vals) < 3:
-            reason.append("an estimator failed")
-        elif not agree:
-            reason.append(f"estimators disagree ({[round(x,2) for x in vals]})")
-        v["reasons"].append("RT60 INDETERMINATE: " + "; ".join(reason))
+        if clean_range < 25.0:
+            reason.append(f"clean range {clean_range:.0f}dB<25")
+        if not (r2_t20 >= RT60_MIN_R2):
+            reason.append(f"decay not log-linear (R²_t20={r2_t20:.2f})")
+        v["reasons"].append("RT60 INDETERMINATE: " + ("; ".join(reason) or "no valid Schroeder fit"))
 
     # P6 — combine.
     if v["rt60_s"] is not None and density == "DENSE":

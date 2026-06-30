@@ -105,8 +105,11 @@ supersedes it on POST + M3 + CONCERT.
 - **P3 — DRY-GATE FIRST; refuse to report reverb on a dry signal.** Before ANY RT60/density math, run the wetness
   gate (below). If it fails, the verdict is **`DRY`** and RT60/density return `N/A (dry)`. *(Kills "dry pulse reported
   as 2.6 s reverb" outright.)*
-- **P4 — Three agreeing estimators or `INDETERMINATE`.** RT60 is computed three independent ways; if they disagree or
-  the decay quality gates fail, the verdict is **`INDETERMINATE`** with the reason — never a confident wrong number.
+- **P4 — RT60 only when the decay is a clean exponential, else `INDETERMINATE`.** RT60 = the two ISO-3382 Schroeder
+  measures **T20 and T30** on a **noise-floor-truncated** energy-decay curve (the reliable pair on real measured IRs),
+  with a block-RMS envelope kept as a diagnostic cross-check. If the log-linear R² is poor, the clean decay range is
+  insufficient, or T20/T30 disagree without a clean fallback, the verdict is **`INDETERMINATE`** with the reason —
+  never a confident wrong number.
 - **P5 — Self-calibrate against known controls on every run.** `analyze()` refuses to judge CONCERT unless the control
   battery (below) classifies correctly in the same process. A metric that can't tell dry from wet from a known-RT60
   reverb is broken and is not trusted for *anything*. *(This is what makes it error-proof.)*
@@ -125,13 +128,15 @@ supersedes it on POST + M3 + CONCERT.
    - **If `wetness < 0.02` AND `late_ratio < −40 dB` → verdict `DRY`. STOP. Report "no reverb / passthrough."**
 2. **Tail isolation.** Tail = output strictly after the excitation ends (S1 impulse: after the click; S2 burst: after
    the 0.30 s `burst_end`). All decay/density metrics use the TAIL only, never the direct sound.
-3. **RT60 — three estimators + quality gates (P4).**
-   - (a) **Schroeder EDC**, slope fit over **−5…−35 dB** → T30×2.
-   - (b) **Log Hilbert-envelope** least-squares slope.
-   - (c) **Schroeder EDC −5…−25 dB** → T20×3.
-   - **Quality gates (all required, else `INDETERMINATE`):** (i) clean decay dynamic range ≥ 35 dB above the noise
-     floor; (ii) fit R² ≥ 0.9 (decay is actually log-linear = exponential = reverb-like); (iii) the three estimates
-     agree within ±20%. Report the median RT60 only if all gates pass.
+3. **RT60 — ISO-3382 T20/T30 on a noise-floor-truncated EDC + quality gates (P4).**
+   - Truncate the IR ~10 dB above its noise floor (Lundeby-lite) so the backward-integrated Schroeder curve doesn't
+     bend up into the noise/fade tail (this is what lets a 20 s reverb in a 20 s file measure correctly).
+   - **T30** = slope fit over **−5…−35 dB**; **T20** = over **−5…−25 dB**. Block-RMS envelope slope = diagnostic only
+     (too noisy on real IRs to gate on).
+   - **Quality gates:** R² ≥ 0.9 (log-linear = exponential = reverb-like); clean range ≥ 35 dB for T30 / ≥ 25 dB for
+     T20; T20/T30 agree within ±20% (→ median) — else use T20 when its fit is clean (deep tail truncated), else
+     `INDETERMINATE` with the reason. Validated on real IRs: 224XL Concert Hall → 2.5 s, the "20.0 Seconds" preset →
+     19.8 s, halls/plates 0.7–2.3 s (see AC0-M).
 4. **Echo density.**
    - **Abel–Huang Normalized Echo Density (NED)** profile: sliding-window fraction of samples beyond the window σ,
      normalized so fully-diffuse (Gaussian) → 1.0 and a lone echo → ~0. Report the NED(t) curve and the **mixing time**
@@ -159,6 +164,15 @@ correctly**, and the CONCERT run *imports and asserts* this selftest first:
 
 **If any control is mis-classified, the metric is broken — fix it before measuring CONCERT. No exceptions.**
 This battery is itself part of AC0-M (below) and runs at the top of every CONCERT measurement.
+
+**Beyond the synthetic controls, the harness is validated on (a) a REAL reverb ALGORITHM** — a Freeverb /
+Schroeder–Moorer network with analytic RT60 (`tools/reverb_metrics_realtest.py`; this is what caught and fixed an
+early spectral-flatness tonality bug that misread comb-colored reverbs) — **and (b) REAL measured impulse responses
+from `IR/`** including the actual target, the **Lexicon 224XL Concert Hall** (`tools/reverb_metrics_irtest.py`). The
+224XL Concert Hall measures `WET-PASS / DENSE`, **RT60 ≈ 2.5 s** (corroborating the ch.8 ~2.6 s spec), the "20.0
+Seconds" preset → 19.8 s, and halls/plates 0.7–2.3 s — so the metric is proven to report the right answer on genuine
+reverbs with real-world features (comb coloration, early reflections, frequency-dependent decay, measurement noise
+floor), not just ideal synthetic decays.
 
 ### Listening cross-check (the human ground truth)
 The harness always renders the WAV (P2, with the mandatory `YYYYMMDD-HHMMSS` timestamp prefix). At the milestone and
@@ -252,6 +266,23 @@ The milestone must not run on models the plan itself distrusts, or it will mis-a
   **minimal (even behavioral) FPC input/output scaling** so the excitation enters and the output leaves at realistic
   levels; the full gate FPC is Phase 4. Document any remaining bypass as a known confound on the milestone.
 
+### ★ Benchmark reference IR — the de-facto CONCERT target (NEW, 2026-06-30)
+For the first time the project has a concrete reference to compare the emulator's CONCERT output against **without a
+physical unit**: **`IR/Lexicon 224XL/Concert Hall V1.1.L.wav`** — identified by the owner as the default 224XL
+**CONCERT (Concert Hall)** program. Two things converged to make this usable: plan 019 PROVED the loaded CONCERT
+microwords are genuine, and this harness now measures that IR as `WET-PASS / DENSE`, **RT60 ≈ 2.5 s**, corroborating
+the ch.8 CONCERT spec (~2.6 s). The long-standing blocker ("which IR is the default Concert Hall?") is resolved, so
+this is the strongest available proxy for the target sound.
+
+- **USE (when appropriate): a STRUCTURAL benchmark.** Compare the emulator's CONCERT impulse response to this reference
+  on the metric's own quantities — **RT60, NED echo-density / mixing time, the Schroeder EDC shape, the spectral
+  decay** — for a quantitative similarity check, not merely "is there a plausible tail." This upgrades AC4 from
+  "plausible RT" to "**matches the reference IR's RT60 + density within tolerance.**"
+- **HONESTY / what it is NOT.** It is a third-party capture (not the owner's own unit; the exact variation/parameter
+  settings and capture chain are unverified), so it is a **structural reference, not bit-exact L7 ground truth.** A
+  true L7 (sample-exact IR match) still needs the physical unit or a provenance-verified WCS/IR dump. Do not claim L7
+  from this file — use it for shape/RT60/density similarity, with the WAV always rendered alongside for listening.
+
 ### ★★ MILESTONE M3.X — DOES THE CONCERT TAIL EMERGE? (a 2×2, not a single render)
 After Phases 1–3 + PM-1/PM-2, **free-run the § Test-stimulus battery (S1 level-swept + S2; S3 phase-ensemble for the
 modulated cells) through the four conditions** and measure every D/A output channel with `reverb_metrics` (proven on
@@ -263,8 +294,9 @@ its control battery first, P5), keeping the rendered WAVs:
 | **modulation-applied WCS** | **cell B** | **cell C** |
 
 **Pre-registered decision (thresholds from § Metric — fixed before running):**
-- **Cell C is `WET-PASS / DENSE` with a plausible RT60** → the timing-faithful model + live coefficients produce the
-  tail. Thesis confirmed; proceed to Phase 4–6 to complete fidelity and validate RT60.
+- **Cell C is `WET-PASS / DENSE` with a plausible RT60** — and ideally **structurally comparable to the benchmark
+  reference IR** (RT60 ≈ 2.5 s, NED/EDC shape in the same ballpark) → the timing-faithful model + live coefficients
+  produce the tail. Thesis confirmed; proceed to Phase 4–6 to complete fidelity and validate RT60 against the reference.
 - **Timed model densifies where `aru_freerun` does not (A or C beats its behavioral counterpart)** → timing is *a*
   lever; keep going, note how much it contributed.
 - **Only the modulated column (B/C) densifies, on EITHER engine** → the lever is **coefficients/modulation, not
@@ -321,8 +353,10 @@ run in **minutes**. Therefore:
 ## Acceptance criteria
 - **AC0 (regression, every phase):** `aru_post.py` E32/E40/E83/E91 PASS throughout. Non-negotiable.
 - **AC0-M (metric integrity, before any audio claim):** `reverb_metrics_selftest.py` passes the full control battery
-  (dry→`DRY`, single-echo→`SPARSE`, known-RT60→within ±15 %, over-unity→`FAIL`, silence→`INDETERMINATE`). Re-run at
-  the top of every CONCERT measurement. **No audio metric is reported unless this passed in the same process.**
+  (dry→`DRY`, single-echo→`SPARSE`, known-RT60→within ±15 %, over-unity→`FAIL`, silence→`INDETERMINATE`, tone→`TONAL`);
+  AND the metric is validated on a real reverb algorithm (`reverb_metrics_realtest.py`) and real IRs incl. the 224XL
+  Concert Hall (`reverb_metrics_irtest.py`). Re-run the control battery at the top of every CONCERT measurement.
+  **No audio metric is reported unless this passed in the same process.** [DONE — all three suites green 2026-06-30.]
 - **AC1 (M3 capability):** ported `test_zero_delay`/`test_max_delay`/`test_feedback_comb` classify `WET / SPARSE` with
   the correct delay on the free-run model.
 - **AC2 (the hypothesis, 2×2):** Milestone M3.X — at least the modulated timed cell (C) yields `WET-PASS / DENSE`, and
@@ -331,15 +365,19 @@ run in **minutes**. Therefore:
   it matters; the DAB is a resolved bus; every fidelity-audit "behavioral/abstracted/omitted" cell is upgraded **or
   documented as deliberately abstracted with justification.**
 - **AC4 (structural reverb):** under the § Test-stimulus battery (S1 level-swept + S2 agreeing within ±20 %), CONCERT's
-  tail is `WET-PASS / DENSE`, decays with a plausible RT (CONCERT Var-1 target cited from ch.8 variation presets —
-  state whether it is RT60 or "avg decay"), no over-unity rail, **and the WAV is audibly reverberant.** STRUCTURAL
-  acceptance only (see ceiling).
+  tail is `WET-PASS / DENSE`, no over-unity rail, **and the WAV is audibly reverberant**, with an RT60 in the right
+  ballpark for CONCERT — the **measured 224XL Concert Hall IR (`IR/Lexicon 224XL/Concert Hall V1.1`) reads RT60 ≈ 2.5 s**
+  via this very harness (and the ch.8 spec says ~2.6 s), so that is the concrete structural target. STRUCTURAL
+  acceptance only (see ceiling): a plausible measured-style RT60 + dense diffuse tail, NOT a bit-exact IR match.
 
 ## The ceiling (state it plainly)
-**L7 — a measured-IR match — needs the physical unit**, which is unavailable. AC4 is a **STRUCTURAL** acceptance (a
-dense, smoothly-decaying, audibly-reverberant tail with a plausible RT60 and no over-unity rail), **not** a bit-exact
-IR match. Do not claim L7 without hardware. Once the model produces the tail it becomes the oracle for the per-frame
-LFO/offset modulation and multi-program coverage.
+**A bit-exact L7 IR match still needs the physical unit** (or a provenance-verified dump), which is unavailable — so
+AC4 is a **STRUCTURAL** acceptance (a dense, smoothly-decaying, audibly-reverberant tail with a plausible RT60 and no
+over-unity rail), **not** a sample-exact IR match. What HAS changed (2026-06-30): we now have a **de-facto CONCERT
+reference IR** (`IR/Lexicon 224XL/Concert Hall V1.1.L.wav`, RT60 ≈ 2.5 s) to benchmark the *structure* against
+(RT60 / echo-density / EDC shape / spectral decay) — a real, quantitative target the project lacked before, even
+though it is a third-party capture rather than the owner's own unit. Do not claim L7 from it. Once the model produces
+the tail it also becomes the oracle for the per-frame LFO/offset modulation and multi-program coverage.
 
 ## Recommended order & ground rules
 - **Order:** Phase 0 (incl. the metric harness) → **Phase 0.5 discriminating experiments** → 1 → 2 → 3 → PM-1/PM-2 →
@@ -366,8 +404,9 @@ LFO/offset modulation and multi-program coverage.
 ## Key tools / netlist sections (quick reference)
 - Build base: `tools/aru_rtl.py` (ClockEngine), `tools/aru_rtl_dp.py` (datapath), `tools/aru_booth.py` (Booth),
   `tools/aru_post.py` (POST + driver), `tools/boot8080.py` (WCS image). New: `tools/aru_whole.py`,
-  **`tools/reverb_metrics.py` + `tools/reverb_metrics_selftest.py`** (the measurement gate), **`tools/stimulus.py`**
-  (the defined S1/S2/S3 input battery), `tools/render_wav.py`.
+  **`tools/reverb_metrics.py` + `tools/reverb_metrics_selftest.py`** (the measurement gate) + `reverb_metrics_realtest.py`
+  (Freeverb validation) + `reverb_metrics_irtest.py` (real-IR validation incl. 224XL Concert Hall), **`tools/stimulus.py`**
+  (the defined S1/S2/S3 input battery), `tools/render_wav.py`. Real IRs live under `IR/` (read via `soundfile`).
 - Harvest: `tools/aru_freerun.py` (§2T decode, FPC codec, conventions, behavioral oracle).
 - Netlist: `docs/reference/224/224XL_interconnect_netlist.md` — ARU §4/§4F, T&C §2T/§3/§6T, DMEM §5/§6D.
 - Timing: `docs/reference/224/224XL_timing_spec.md` (figs 3.2–3.6). FPC: `224XL FPC pinouts from 060-01320.txt`.
