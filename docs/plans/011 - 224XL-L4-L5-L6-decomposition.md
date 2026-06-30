@@ -24,8 +24,11 @@ We can't run the ARU/T&C hardware, so every L4–L6 atom must be pinned by one o
 > is also done: the M0b netlist (`224XL_interconnect_netlist.md`) is the owner's full schematic trace of the
 > control path. What remains is the **free-running execution** (T&C 100-step sequencing + per-step DAB routing
 > + cross-step MAC timing + recirculation) — which produces the reverb and is where every failure lived. It is
-> now assembled in a **phase-accurate RTL model** (plan 013 M1/M2, `tools/aru_rtl*.py`); making it close the
-> loop coherently is **plan 013 M3**, with a real-unit IR (or single-step port capture) as the final check.
+> now assembled in a **phase-accurate RTL model** (plan 013 M1/M2, `tools/aru_rtl*.py`) and, as of 2026-06-29,
+> **built as a running free-run engine** (plan 013 M3, `tools/aru_freerun.py`): the loop now CLOSES once the
+> per-step delay offsets come from the firmware 0x3F4D buffer (`tap_map`) instead of the WCS 0x4000 lanes 0/1
+> (that wrong source was **the dead-tank root cause**). A real-unit IR (or single-step port capture) is the
+> final check.
 
 Status legend: ✅ VERIFIED · 🔶 PARTIAL/IN-PROGRESS · ❌ FAITH (unproven) · ⬜ PENDING.
 
@@ -74,12 +77,21 @@ appears to supply the address via the CPC at offset≈0, never testing `CPC − 
 | **L5.5** | **Top carry-out** | the adder top carry-out `dmem_U64.pin9` — **n/c.** There is NO bank: single 64K×16, no bank-select | ✅ RESOLVED | [schematic] netlist §5.5/§G3D. **CORRECTION: the old "carry-out=17th bit=bank / flat 128K" is wrong** — `dmem_U1–U16` unpopulated, `CAS1/` hard-disabled | L5.3 |
 | **L5.6** | **DRAM row/col mux** | dmem_U18/U36 multiplex row/col onto the 8 DRAM addr lines; physical cell = linear addr | 🔶 LARGELY VERIFIED | [schematic] netlist §5.3/§5.4; [POST-step] the DMEM test's all-64K write/read sweep (E91 passes) covers address integrity | L5.5 |
 | **L5.7** | **Physical DMEM org** | ONE bank of 16×4164 (dmem_U20–U35), bit-sliced (column i → DABi), DIN/DOUT to the DAB | ✅ (owner-traced) | [schematic] netlist §5.5. (**Single bank** — `dmem_U1–U16` not populated; not 2 rows/banks) | — |
-| **L5.8** | **delay = offset samples** | a delay tap reads `CPC − OFST`, i.e. OFST samples back; realized recirc delay set by the offset values | ❌ FAITH (free-run) | derived from L5.2; needs the free-run model (M3) to confirm end-to-end | L5.2 |
+| **L5.8** | **delay = offset samples** | a delay tap reads `CPC − OFST`, i.e. OFST samples back; realized recirc delay set by the offset values | 🔶 PARTIAL (free-run) | **★ SOURCE CORRECTED (2026-06-29):** the per-step delay offsets do **NOT** come from the WCS 0x4000 lanes 0/1 (those give clustered ~0.9–1.7 s / ≈30000-sample GARBAGE → DMEM read/write address disjoint regions → DEAD TANK; this was the `tools/aru_freerun.py` root-cause bug). The REAL ms-scale per-step offsets live in the firmware **0x3F4D** offset buffer, extracted by `tools/aru224_emulate.py::tap_map(0xB800)` (B55B builder; byte-identical to the firmware load). The offset↔control per-step alignment is **CONFIRMED step-index-keyed**: `tap_map[s]` aligns with the 0x4000 COEFFICIENTS[s] (CONCERT step 0 = 362 ms predelay; steps 5–23 = varied 7–176 ms diffuser cluster; 176 ms recirc reused 4×). With the corrected offsets the loop CLOSES (output went dead 2–4 samples → dense field). 🟡 offset sign/encoding still being pinned (M3). CAVEAT: `tools/boot8080.py::read_offsets` reads a CONTAMINATED 0x3F4D (576 ms for step 2 vs 176) — use `tap_map` | L5.2 |
 
 **L5 exit criterion:** the `CPC − OFST` adder (active-low offset + carry-in high; single 64K bank) is
 net-traced AND exercised — **the DMEM test E91 now drives a nonzero constant offset (0x2000) and passes**, so
 the adder + CPC walk are covered at one offset. Residual: offset **variation** (only one value tested) + the
 dual-use bits 12/13, both confirmable only by free-run (M3) or hardware.
+
+> **★ Free-run offset SOURCE (2026-06-29):** the per-step delay offsets fed to this adder in free-run come
+> from the firmware **0x3F4D** offset buffer (`tools/aru224_emulate.py::tap_map`), **not** the WCS 0x4000
+> lanes 0/1. Sourcing offsets from 0x4000 lanes 0/1 gave clustered ~0.9–1.7 s garbage delays so DMEM reads
+> and writes addressed disjoint regions and the recirculation loop never closed (**the dead-tank root cause**,
+> the `tools/aru_freerun.py` bug). The `tap_map[s]` ms-scale offsets are step-index-keyed and align with the
+> 0x4000 COEFFICIENTS[s]; with them (`addr = CPC + offset[step]`) the feedback loops exist at ms-scale and a
+> SHORT ~0.5 s tail emerges — dead tank → audible (L5.8). 🟡 The full ~2.6 s decay is still open (loop gain too
+> low: quantization / coeff scaling / LFO modulation) — a further cause beyond the offset source (M3/M4).
 
 ---
 
@@ -100,20 +112,105 @@ actually breaks.
 | **L6.6** | **MAC pipeline timing** | product available ≈end of AS0 of the *next* cycle (deferred); XFER captures @AS0; ZERO clears @AS0 | 🔶 PARTIAL | [schematic] fig-3.4 + the M1 clock engine models the per-AS schedule; the cmag=63 cycle-accurate cosim (plan 016) explored the single-step pipeline. The **cross-instruction deferral in free-run** is M3 | L6.3, L6.4 |
 
 ## 6b. Free-run execution (NOT POST-testable — schematic/hardware only)
+
+> **★ M3 ENGINE BUILT (2026-06-29):** `tools/aru_freerun.py` = class `FreeRunARU` (separate from the
+> POST-green `tools/aru_rtl_dp.py`, which it does NOT touch). It sweeps the WCS program counter 0→99
+> (RESET@99), does per-step §2T device-decode DAB routing, runs the fig-3.4 deferred MAC as a 1-instruction
+> pipeline with a clean signed multiply-accumulate (`RES = sat16(ACC≫3)`), CPC +1/sample, DMEM recirculation,
+> and fixed-point I/O (inject at RD AD/, capture at WR DA/). **Verified:** M3.0 = the full 100-step CONCERT
+> runs 500k+ microinstructions with no fault; **M3.1** zero-delay passthrough PASS; **M3.2** max-delay
+> DMEM-delay PASS (impulse reappears exactly `delay` samples later); **M3.3** a hand-built feedback comb decays
+> exactly per coefficient (recirculation proven). POST regression stays green on `aru_rtl_dp.py`
+> (E32/E40/E83/E91; mult 20/20). `tools/render_wav.py` renders the output to a 34.13 kHz WAV.
+
 | ID | Component | What it is | Status | Validator(s) | Depends on |
 |---|---|---|---|---|---|
-| **L6.7** | **T&C microsequencer** | autonomously fetches & sequences the **100 WCS microwords/sample**; AS0/1/2, MS0–8, 293 ns cycle, 34.13 kHz | 🔶 NET-TRACED | [schematic] netlist §6T (PC tc_U14/U1, MS-gen, AS-gen); the M1 `ClockEngine` reproduces the MS/AS skeleton. The free-run 100-step PC sweep (RESET@99) is the **M3** build | L4.0 |
-| **L6.8** | **Per-step DAB-source routing (free-run)** | each step the **device decode** picks who drives the DAB (DMEM read / RES via RDRREG/ / audio-in / sub / **idle=hold**) — NOT the SBC | 🔶 NET-TRACED | [schematic] netlist §2T (tc_U47/U48/U49) — fully traced; the per-step free-run switching is the **M3** build | L4.2, L4.9, L6.2 |
+| **L6.7** | **T&C microsequencer** | autonomously fetches & sequences the **100 WCS microwords/sample**; AS0/1/2, MS0–8, 293 ns cycle, 34.13 kHz | 🔶 BUILT (M3) | [schematic] netlist §6T (PC tc_U14/U1, MS-gen, AS-gen); the M1 `ClockEngine` reproduces the MS/AS skeleton. **The free-run 100-step PC sweep (RESET@99) is now built in `tools/aru_freerun.py` — M3.0 runs 500k+ microinstructions/no fault.** Closure to a real-unit IR is L7 | L4.0 |
+| **L6.8** | **Per-step DAB-source routing (free-run)** | each step the **device decode** picks who drives the DAB (DMEM read / RES via RDRREG/ / audio-in / sub / **idle=hold**) — NOT the SBC | 🔶 BUILT (M3) | [schematic] netlist §2T (tc_U47/U48/U49) — fully traced; **now built in `tools/aru_freerun.py`** (per-step §2T device decode). ⚠ the output-channel decode (SDAA–D) in `aru_freerun.py` is a binary code, but netlist §2T.4 = 4 INDEPENDENT reversed strobes (OFST8/→SDAD … OFST11/→SDAA) — a channel-LABEL bug only, not an IR-value bug | L4.2, L4.9, L6.2 |
 | **L6.9** | **idle = hold** | undriven DAB floats and holds its last value (no pull resistors) | 🔶 | [schematic] (no pull resistors); modeled by the RTL `Net` hold-last. Its *effect per step* is free-run = M3 | L6.8 |
-| **L6.10** | **Register survival across steps** | does a value written to a register survive to be read later, or is it clobbered? (the old "R3-clobber") | 🔶 NET-TRACED | [schematic] regfile + WA/DAB-WSTB timing traced. The R3-clobber was a *sectional-model* artifact (plan 013 §0); resolve in the M3 free-run RTL model | L6.1, L6.7 |
+| **L6.10** | **Register survival across steps** | does a value written to a register survive to be read later, or is it clobbered? (the old "R3-clobber") | 🔶 BUILT (M3) | [schematic] regfile + WA/DAB-WSTB timing traced; **runs clean in `tools/aru_freerun.py`** (M3.0, 500k+ steps no fault). The R3-clobber was a *sectional-model* artifact (plan 013 §0). **The two un-POST-tested timing choices — read-before-write of the regfile operand + the deferred-MAC retire ordering — were PROVEN INERT** (toggling each leaves the loop eigenvalue bit-identical), so neither was the dead-tank cause | L6.1, L6.7 |
 | **L6.11** | **DMEM read latency / read-before-write** | DMEM DOUT valid late (≈MS7, Fig 3.3); every DMEM cycle is **read-before-write** | 🔶 LARGELY VERIFIED | [schematic] §5/§6D; the read-before-write semantics are POST-verified (E91 passes). Free-run load-delay timing = M3 | L5, L6.2 |
 | **L6.12** | **DMEM write data + timing** | written value = RES (via XFER); the write-head sweep (old "trample") | 🔶 NET-TRACED | [schematic] §5.5/§6D; single-step DMEM write verified (E91). Free-run write-head behavior = M3 | L6.5, L5, L6.7 |
 | **L6.13** | **Output node (WR DA/)** | the D/A output strobe = `WR DA/ = NAND(OFST7/, tcWR)` (tc_U49 g2); which step(s) drive the audio out | 🔶 NET-TRACED | [schematic] netlist §2T.2 | L4.2, L6.2 |
 
 **L6 exit criterion:** 6a primitives **each pass their POST sub-test on a faithful model — DONE** (the whole
 POST passes un-suppressed; mult is the gate-level Booth). 6b free-run components are now **net-traced** on the
-T&C/ARU control schematic (the M0b netlist) and assembled in the M1/M2 RTL model; remaining is to make them
-run free (M3) and match a hardware capture. **6a passing ≠ L6 done** — it's "primitives ✅, free-run = M3."
+T&C/ARU control schematic (the M0b netlist) and, **as of 2026-06-29, BUILT and running in `tools/aru_freerun.py`**
+(M3.0 = full CONCERT runs 500k+ microinstructions/no fault; M3.1 passthrough + M3.2 DMEM-delay + M3.3
+feedback-comb decay all PASS; sourcing offsets from `tap_map`/0x3F4D — not 0x4000 — makes the feedback loops
+exist at ms-scale so a SHORT ~0.5 s tail emerges (dead → audible); the full ~2.6 s decay is still 🟡 open).
+Remaining: pin the offset sign/encoding + run the per-frame LFO modulation inside the loop for a proper decaying
+tail, then match a real-unit IR (L7). **6a passing ≠ L6 done** — it's now "primitives ✅, free-run engine built
+(M3), IR match = L7."
+
+---
+
+# L7 — Parameter application (LARC params → WCS coefficients) — ★ FULLY TRACED (2026-06-29)
+
+How a stored program's parameter values become the per-step WCS coefficients/delays the free-run engine reads.
+Firmware-disassembly-verified this session.
+
+**Flat param array (NOT just the 6 live sliders).** All FIVE LARC control pages' parameter values live in ONE
+flat RAM array based at **0x3ca3** (6 bytes/page × 5 pages = 30 bytes; a record header/type byte at 0x3ca2).
+The 6 LARC faders at **0x3c00–0x3c05** are ONLY the live fader-echo of the CURRENT page. Array slot =
+`0x3ca3 + page*6 + slider`, computed at **0x862e** (A = (0x3c34)*6 + B).
+
+**Page state / paging.** **0x3c32** = raw page counter (PAGE-key handler **0x8f50** does INC); **0x3c34** =
+derived/clamped page index (read only at 0x862e; written at 0x1477). The PAGE key (0x8f50) advances 0x3c32,
+recomputes 0x3c34, and reloads the 6 sliders 0x3c00–05 from the new page's array slice (**0x87c2**).
+
+**Apply chain.** main-loop scan **0x8185** (DE=0x3c00 live, HL=0x3c16 last-seen, B=0..9; B≤5 → handler 0x85f2)
+→ **0x85f2** type-scales by program type (0x3c33), QUEUES a de-zip job (pending-flag array 0x3c20+B), sets
+dirty flag 0x3c51 → the DE-ZIPPER applier **0xB000** RAMPS the coeff/delay one step per main-loop pass and
+PACKS the byte into the WCS 0x4000 image (**0xB4F0** = 6-bit coeff magnitude into the upper bits; **0xB4FF** =
+sign into bit7 of the adjacent byte).
+
+**Group table 0x3CF4** (built by the interpreter 0xAA9F; 32 entries × 3 bytes; opcode low-nibble = count, bits
+0x30 = sub-type 0x00/0x10/0x20) LINKS each parameter's group to its target WCS step(s); the step→coeff-address
+transform is **0xAB0C** (`addr = 0x4003 + step*4`).
+
+**Recall at load.** program-load **0x13B6** → lookup **0x133e** finds the program record in the **0xB800** array
+(21 records × 0x2AA bytes; record 0 = CONCERT) → **0x13d9** (`LD DE,0x3ca2; LD B,0x30; CALL 0x0614`) RECALLS
+the 48-byte param/toggle block into 0x3ca2.. → the **0xa791** apply engine builds the FULL WCS image. ⇒ the
+variation defaults ARE recalled and the full WCS IS built at load (boot: **110/128** steps already have built
+coefficients).
+
+**Toggles (3 PARAM-key toggles) — stored as BITS in one RAM byte 0x3ccd**, loaded from the program record at
+load (0xA892). bit0 (0x01) = **Dynamic Decay** (gates LF/Mid Stop Decay; read at 0x83B4); bit6 (0x40) =
+**Mode Enhancement** (gates the Chorus/LFO modulation engine 0xAD5C: `AND 0x40; JP z` skips the whole LFO
+update when clear); bit7 (0x80) = **Decay Optimization** (read at 0x83D1). CONCERT boots **0x3ccd = 0xC0**
+(Mode Enhancement + Decay Optimization ON, Dynamic Decay OFF). Toggle cycle index = 0x3c41; mask table @0xa758.
+
+**CONCERT group→param→WCS-step map** (verified vs the param sweep + disassembly):
+- **P0 LF Decay** → steps 43, 95
+- **P1 Mid Decay** → anchors 64, 68, 115, 119 + interpolated allpass coeffs 62,63,66,67,113,114,117,118 (via
+  the decay generator 0x86b2/0x8da5/0x8e03, NOT in the group table)
+- **P2 Crossover** → 45, 46, 97, 98
+- **P3 Treble Decay / HF-damp** → 40, 41, 92, 93
+- **P4 Depth / input-diffusion** → 29–32, 81–84
+- **P5 Predelay** → DELAY steps 42, 94
+- **PAGE 2 Chorus** → group g0 steps 57, 108 (animated by the LFO over canonical taps 56/57/107/108; depth
+  0x3cd4, rate 0x3cd3=0x20)
+- **PAGE 2 Diffusion** → group g19 steps 52,60,72,104,111,123 (the recirculation ALLPASS, coeff ≈ −95/−0.74)
+- **Tank feedback** → g20–29 steps 27,28,79,80 (coeff −127, near-unity)
+
+> **★ PARAM HYPOTHESIS RULED OUT (the dead tank was NOT un-recalled parameters).** The page-1 slider coeffs
+> AND the page-2 Diffusion(=25)/Chorus(=50) defaults are all recalled into 0x3ca3 and baked into the WCS at
+> load (110/128 steps built; Diffusion/Chorus/feedback coeffs present at boot; Mode Enhancement ON). Applying
+> CONCERT Variation 1's full preset was a NO-OP. The dead tank was the **offset-source bug** (L5.8 / the
+> `tools/aru_freerun.py` 0x4000-offset bug), not parameters.
+
+**WCS image clarification.** The 0x4000 SBC image holds the CORRECT COEFFICIENTS in **lanes 2/3** (the
+param-derived decay/diffusion/feedback coeffs, byte-identical to the build, present at boot). Its **lanes 0/1
+are NOT a reliable free-run delay-offset source** (see L5.8). `aru_freerun.py` reads coeffs from 0x4000
+correctly; only its offset source was wrong.
+
+**CONCERT = Concert Hall, Variation 1** (docs/reference/224/224X_chapter8_variation_presets.md; Owner's Manual
+ch.4): 5 control pages, 7 variations, average decay 2.6 s. Var-1 preset: P1 LF Decay 3.0 s / Mid Decay 2.0 s /
+Crossover 720 Hz / Treble Decay 6.30 kHz / Depth 33 / Predelay 24.0 ms; P2 LF Stop 3.0 s / Mid Stop 3.0 s /
+Chorus 50 / HF Bandwidth 9.00 kHz / Diffusion 25 / Definition 00; P3 Preecho Levels 00; P4 Preecho Delays
+5.00/9.75/17.5/25.0 ms + Fine Predelay 0.36/10.2 ms; P5 Size/Gate; toggles Dynamic Decay OFF, Mode Enhancement
+ON, Decay Optimization OFF.
 
 ---
 
@@ -197,10 +294,17 @@ the M0b schematic and validated structurally; full confirmation needs the free-r
 2. **DONE — the schematic control-path trace exists:** the M0b interconnect netlist
    (`224XL_interconnect_netlist.md`) traces the T&C microsequencer (§6T), per-step DAB decode (§2T), MAC
    clocking (§6T.4), and the offset→adder wiring (§5.2) — the part POST cannot reach.
-3. **NEXT (plan 013 M3):** assemble the full **free-run** datapath in the phase-accurate RTL model (real WCS
-   PC 0–99, per-step DAB routing, deferred MAC, idle=hold) → coherent reverb; then (L7) compare to a real-unit IR.
+3. **DONE — the free-run datapath is BUILT (plan 013 M3, `tools/aru_freerun.py`):** real WCS PC 0–99 (RESET@99),
+   per-step §2T DAB routing, deferred MAC, idle=hold, CPC +1/sample, DMEM recirculation; M3.0 runs 500k+
+   microinstructions/no fault and M3.1/M3.2/M3.3 (passthrough / DMEM-delay / feedback-comb decay) PASS. The
+   **dead-tank root cause was the offset source** — fixed by reading per-step offsets from the firmware 0x3F4D
+   buffer (`aru224_emulate.tap_map`), not the WCS 0x4000 lanes 0/1 (L5.8). The L7 param-application chain is
+   fully traced (params recalled + WCS built at load; param hypothesis ruled out).
+4. **NEXT:** pin the offset sign/encoding, run the per-frame LFO modulation (Mode Enhancement engine 0xAD5C)
+   inside the loop for a proper ~2.6 s decaying tail, then (L7) compare to a real-unit IR.
 
 ## Dependency summary (bottom-up)
 `L4.0 → L4 fields → {L5 (needs L4.1/L4.9), L6.1–L6.5 (need L4 fields)} → L6.6 timing → L6.7 sequencer →
 L6.8–L6.12 free-run → L7 audio`. Nothing in 6b is trustworthy until 6a + L5 are pinned, and 6b itself needs
-the schematic/hardware validators, not POST.
+the schematic/hardware validators, not POST. **L7 (param→WCS) is fully traced (2026-06-29) and feeds the
+free-run engine** via the 0x4000 coefficient image (lanes 2/3) + the 0x3F4D offset buffer (tap_map).

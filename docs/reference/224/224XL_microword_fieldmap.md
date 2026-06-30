@@ -47,14 +47,34 @@ in), 0=idle; `00`→U47 **Y0 = NOT CONNECTED** (idle, DAB floats/holds). **WR DA
 
 **Coefficient scale ✅ `/32`** (result reg PP3..PP18 = product≫3; operand≪3). **Accumulator rails at ±2¹⁸ ✅.**
 
+**✅ `cmag=0` = the plan-016 active-low NAND-array baseline** (the "+3 ACC units per `cmag=0` multiply" = the
+all-ones product register). For a SINGLE multiply it correctly rounds to 0 at the `≫3` round-half-up (matches
+every golden). In the free-run MAC, 19 consecutive `cmag=0` bus-move steps accumulate ~+57 → a ≈−73 dB DC
+trickle — faithful to the gate model, NOT the dead-tank cause. *(Cross-multiply accumulation of the baseline
+is untested by plan 016, which only exercised single-step; sub-LSB open item, like the `cmag=63` +3.)*
+
 ## Open / unverified about the decode
 
 - 🟠 **`inv_l3`** — coefficient byte polarity (raw vs complemented). Only a weak lean (=True). Resolve by
   pin-tracing C0/–C5/ on 060-02475 (Track A of the validation plan), not by what makes a reverb ring.
-- ⚪ **Offset↔control alignment** — the offsets live in the `0x3F4D` buffer (one step order), the control
-  lanes are built by the interpreter (possibly another). The per-step pairing is not established. This is
-  why naive recombination still failed in Session 11.
+- ✅ **Offset↔control alignment — CONFIRMED step-index-keyed (2026-06-29).** The free-run engine
+  (`tools/aru_freerun.py`) verified that `tap_map[s]` aligns perfectly with the `0x4000` `COEFFICIENTS[s]`
+  at the same step index `s`: CONCERT step 0 = 362 ms predelay (the first MEMR), steps 5–23 = a VARIED
+  7–176 ms diffuser cluster (NOT the 19 identical ~1.7 s taps the wrong `0x4000` lane-0/1 source produced),
+  with a 176 ms recirc loop reused 4×. The naive Session-11 recombination failed because of the offset
+  *source* (`0x4000` lanes 0/1 = garbage), not the per-step pairing — which is correct.
 - 🟡 **Which image to apply this map to** — the firmware-built WCS image (via `aru224_emulate`), not `0x4000`.
+
+> **✅ Where the coefficient values come from (param-application chain, 2026-06-29).** The 6-bit COEFF
+> magnitude + CSIGN packed into this microword are produced by the de-zipper applier `0xB000`: it ramps each
+> coeff/delay one step per main-loop pass and PACKS the byte into the `0x4000` image (`0xB4F0` = 6-bit coeff
+> magnitude into the upper bits; `0xB4FF` = sign into bit7 of the adjacent byte). The source param values for
+> all five LARC pages live in ONE FLAT RAM array based at `0x3ca3` (6 bytes/page × 5 pages; recalled from the
+> `0xB800` program record at load via `0x13d9`/`0xa791`, so the full WCS image — 110/128 steps for CONCERT —
+> is already built at boot). The group table `0x3CF4` links each parameter's group to its target WCS step(s)
+> (step→coeff-address transform `0xAB0C`: `addr = 0x4003 + step*4`). Full chain (faders `0x3c00-05`, page state
+> `0x3c32`/`0x3c34`, apply scan `0x8185`→`0x85f2`, toggles `0x3ccd`) is in the **technical reference / system
+> architecture** doc — this doc only documents the resulting microword bits.
 
 ## Source of truth (corrected)
 
@@ -66,6 +86,23 @@ in), 0=idle; `00`→U47 **Y0 = NOT CONNECTED** (idle, DAB floats/holds). **WR DA
   actual delays and that `delay=−offset` is the right interpretation are pending Track A.
 - ❌ **Do not use** `mem[0x4000:0x4200]` (what `aru_datapath.py` reads). It is empty for non-FE programs and
   gives clustered ~30 000-sample garbage for CONCERT.
+- ⚠️ **Do not use** `tools/boot8080.py::read_offsets` either. It reads a **contaminated** `0x3F4D` from the
+  *booted* firmware (modified post-build): it gives 576 ms for CONCERT step 2 vs `tap_map`'s correct 176 ms.
+  Always use `aru224_emulate.tap_map`, which runs the B55B builder from the program record.
+
+> **✅ Free-run engine (M3, 2026-06-29).** `tools/aru_freerun.py` (`class FreeRunARU`; does NOT touch the
+> POST-green `tools/aru_rtl_dp.py`) sweeps the WCS program counter 0→99 (RESET@99), per-step §2T device-decode
+> DAB routing, the fig-3.4 deferred MAC as a 1-instruction pipeline, signed multiply-accumulate
+> (`RES = sat16(ACC≫3)`), DMEM recirculation, and fixed-point I/O (inject at RD AD/, capture at WR DA/). It
+> initially **re-introduced the documented `0x4000` offset bug** (sourced `ofst=(l1<<8)|l0` from `0x4000` lanes
+> 0/1 → dead tank); **fixed** by sourcing the per-step delays from the `0x3F4D` offset buffer via `tap_map`.
+> With the corrected ms-scale offsets (`addr = CPC + offset[step]`; of `{CPC−off, CPC+off, CPC−|off|}` only
+> `CPC+off` survives — settled by the offset matrix) the feedback loops EXIST at ms-scale and a **SHORT (~0.5 s)
+> decaying tail emerges** — CONCERT goes from a *fully dead* tank to an audible short tail (the DMEM buffer
+> decays ~1.7 s). *(An earlier "loop closes / dense continuous field" claim was a flawed-test artifact — that
+> test overwrote lanes 0/1 and corrupted the I/O routing; the clean result is the short tail.)* 🟡 The full
+> ~2.6 s hall decay is STILL OPEN — the tail decays too fast (loop gain too low: quantization / coeff scaling /
+> the per-frame LFO modulation). POST regression stays green on `aru_rtl_dp.py` (E32/E40/E83/E91, multiply 20/20).
 
 ## Execution model (ARU, Service Manual §3.7) ✅
 

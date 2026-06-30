@@ -1,0 +1,766 @@
+LEXICON 224XL FLOATING POINT CONVERTER (FPC) BOARD
+FPC pinouts from schematic 060-01320
+
+---
+
+U1, U2, U7, U8, U16, U40, U41, U43 (74LS163) — synchronous 4-bit binary counter, SYNC clear
+
+U1 "STROBE COUNTER":
+pin 1  (/CLR) = +5V
+pin 2  (CLK)  = fpcCLKA
+pin 3  (A)    = tied to ground
+pin 4  (B)    = +5V
+pin 5  (C)    = tied to ground
+pin 6  (D)    = tied to ground
+pin 7  (ENP)  = U1.10, U2.15
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = fpcSC
+pin 10 (ENT)  = U1.7, U2.15
+pin 11 (QD)   = not connected
+pin 12 (QC)   = U3.14
+pin 13 (QB)   = BUSY
+pin 14 (QA)   = U12.13
+pin 15 (RCO)  = not connected
+pin 16 (VCC)  = Not depicted
+
+U2 "STROBE COUNTER":
+pin 1  (/CLR) = +5V
+pin 2  (CLK)  = fpcCLKA
+pin 3  (A)    = tied to ground
+pin 4  (B)    = +5V
+pin 5  (C)    = tied to ground
+pin 6  (D)    = +5V
+pin 7  (ENP)  = +5V
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = fpcSC
+pin 10 (ENT)  = BUSY
+pin 11 (QD)   = not connected
+pin 12 (QC)   = not connected
+pin 13 (QB)   = U12.12
+pin 14 (QA)   = not connected
+pin 15 (RCO)  = U1.7, U1.10
+pin 16 (VCC)  = Not depicted
+
+U7 "INPUT CYCLE COUNTER":
+pin 1  (/CLR) = U8.1, U4.4
+pin 2  (CLK)  = fpcCLKA
+pin 3  (A)    = not connected
+pin 4  (B)    = not connected
+pin 5  (C)    = not connected
+pin 6  (D)    = not connected
+pin 7  (ENP)  = U8.7, U12.3
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = +5V
+pin 10 (ENT)  = U8.15, U5.9
+pin 11 (QD)   = U6.15
+pin 12 (QC)   = U6.1, U17.1, U5.1
+pin 13 (QB)   = U6.2, U17.13, U42.3, U42.6, U5.2
+pin 14 (QA)   = U6.3
+pin 15 (RCO)  = U12.1
+pin 16 (VCC)  = Not depicted
+
+U8 "INPUT CYCLE COUNTER":
+pin 1  (/CLR) = U7.1, U4.4
+pin 2  (CLK)  = fpcCLKA
+pin 3  (A)    = not connected
+pin 4  (B)    = not connected
+pin 5  (C)    = not connected
+pin 6  (D)    = not connected
+pin 7  (ENP)  = U12.3, U7.7
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = +5V
+pin 10 (ENT)  = +5V
+pin 11 (QD)   = U6.4
+pin 12 (QC)   = U6.7
+pin 13 (QB)   = U6.6, U5.5
+pin 14 (QA)   = U6.5, U5.4
+pin 15 (RCO)  = U7.10, U5.9
+pin 16 (VCC)  = Not depicted
+
+U16 "INPUT GAIN CONTROL":
+pin 1  (/CLR) = +5V
+pin 2  (CLK)  = fpcCLKA
+pin 3  (A)    = IGA0
+pin 4  (B)    = IGA1
+pin 5  (C)    = +5V
+pin 6  (D)    = not connected
+pin 7  (ENP)  = fpcEN
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = U17.8
+pin 10 (ENT)  = fpcEN
+pin 11 (QD)   = not connected
+pin 12 (QC)   = fpcEN
+pin 13 (QB)   = not connected
+pin 14 (QA)   = not connected
+pin 15 (RCO)  = not connected
+pin 16 (VCC)  = Not depicted
+
+U40 "SELECT CODE DOUBLE BUFFER":
+pin 1  (/CLR) = +5V
+pin 2  (CLK)  = fpcCLKA
+pin 3  (A)    = SDAA
+pin 4  (B)    = SDAB
+pin 5  (C)    = SDAC
+pin 6  (D)    = SDAD
+pin 7  (ENP)  = tied to ground
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = U4.12, U15.3, U3.3, U37.1, U36.1
+pin 10 (ENT)  = tied to ground
+pin 11 (QD)   = U41.6
+pin 12 (QC)   = U41.5
+pin 13 (QB)   = U41.4
+pin 14 (QA)   = U41.3
+pin 15 (RCO)  = not connected
+pin 16 (VCC)  = Not depicted
+
+U41:
+pin 1  (/CLR) = +5V
+pin 2  (CLK)  = fpcCLKA
+pin 3  (A)    = U40.14
+pin 4  (B)    = U40.13
+pin 5  (C)    = U40.12
+pin 6  (D)    = U40.11
+pin 7  (ENP)  = tied to ground
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = fpcSC
+pin 10 (ENT)  = tied to ground
+pin 11 (QD)   = U42.14
+pin 12 (QC)   = U42.11
+pin 13 (QB)   = U42.5
+pin 14 (QA)   = U42.2
+pin 15 (RCO)  = not connected
+pin 16 (VCC)  = Not depicted
+
+U43 "OUTPUT GAIN COUNTER":
+pin 1  (/CLR) = +5V
+pin 2  (CLK)  = fpcCLKA
+pin 3  (A)    = tied to ground
+pin 4  (B)    = tied to ground
+pin 5  (C)    = +5V
+pin 6  (D)    = +5V
+pin 7  (ENP)  = STOP/
+pin 8  (GND)  = Not depicted
+pin 9  (/LD)  = fpcSC
+pin 10 (ENT)  = +5V
+pin 11 (QD)   = not connected
+pin 12 (QC)   = not connected
+pin 13 (QB)   = OGA1
+pin 14 (QA)   = OGA0
+pin 15 (RCO)  = U14.5
+pin 16 (VCC)  = Not depicted
+
+---
+
+U4, U42 (74LS157) — quad 2-line-to-1-line multiplexer, non-inverting
+
+U4:
+pin 1  (SEL) = FPC DBUG (FPC DBUG is an input to this board. There is +5V connected to it via a 1K resistor)
+pin 2  (A1)  = RESET/
+pin 3  (B1)  = U5.6
+pin 4  (Y1)  = U8.1, U7.1
+pin 5  (A2)  = FPC CK
+pin 6  (B2)  = 02/
+pin 7  (Y2)  = fpcCLKA
+pin 8  (GND) = Not depicted
+pin 9  (Y3)  = U26.1, U26.19, U25.1, U25.19
+pin 10 (B3)  = U4.13, U5.8
+pin 11 (A3)  = RD AD/
+pin 12 (Y4)  = U40.9, U15.3, U3.3, U37.1, U36.1
+pin 13 (B4)  = U4.10, U5.8
+pin 14 (A4)  = WR DA/
+pin 15 (/G)  = tied to ground
+pin 16 (VCC) = Not depicted
+
+U42:
+pin 1  (SEL) = FPC DBUG
+pin 2  (A1)  = U41.14
+pin 3  (B1)  = U42.6, U17.13, U7.13, U6.2, U5.2
+pin 4  (Y1)  = OUTA
+pin 5  (A2)  = U41.13
+pin 6  (B2)  = U42.3, U17.13, U7.13, U6.2. U5.2
+pin 7  (Y2)  = OUTB
+pin 8  (GND) = Not depicted
+pin 9  (Y3)  = OUTC
+pin 10 (B3)  = U42.13, U17.12
+pin 11 (A3)  = U41.12
+pin 12 (Y4)  = OUTD
+pin 13 (B4)  = U42.10, U17.12
+pin 14 (A4)  = U41.11
+pin 15 (/G)  = U3.10
+pin 16 (VCC) = Not depicted
+
+---
+
+U3, U20, U21, U31, U32, U33 (74LS109) — dual JK flip-flop, positive-edge, async preset+clear
+NOTE: K input is complemented (/K, pin 3/13) — apply LOW to assert K=1. J is active-HIGH. /R = async clear, /S = async preset (both active-LOW). Positive-edge triggered.
+
+U3:
+pin 1  (1/R)  = +5V
+pin 2  (1J)   = U14.1
+pin 3  (1/K)  = U15.3, U40.9, U4.12, U37.1, U36.1
+pin 4  (1CLK) = fpcCLKA
+pin 5  (1/S)  = +5V
+pin 6  (1Q)   = NEW DAT/
+pin 7  (1/Q)  = not connected
+pin 8  (GND)  = Not depicted
+pin 9  (2/Q)  = not connected
+pin 10 (2Q)   = U42.15
+pin 11 (2/S)  = +5V
+pin 12 (2CLK) = fpcCLKA
+pin 13 (2/K)  = U12.11
+pin 14 (2J)   = U1.12
+pin 15 (2/R)  = +5V
+pin 16 (VCC)  = Not depicted
+
+U20 "CHANNEL 1 HEADROOM REGISTER":
+pin 1  (1/R)  = +5V
+pin 2  (1J)   = tied to ground
+pin 3  (1/K)  = LA3/
+pin 4  (1CLK) = CH1/
+pin 5  (1/S)  = fpcP1
+pin 6  (1Q)   = U19.4
+pin 7  (1/Q)  = not connected
+pin 8  (GND)  = Not depicted
+pin 9  (2/Q)  = not connected
+pin 10 (2Q)   = U19.2
+pin 11 (2/S)  = fpcP1
+pin 12 (2CLK) = CH1/
+pin 13 (2/K)  = LA4/
+pin 14 (2J)   = tied to ground
+pin 15 (2/R)  = +5V
+pin 16 (VCC)  = Not depicted
+
+U21 "CHANNEL 1 HEADROOM REGISTER":
+pin 1  (1/R)  = +5V
+pin 2  (1J)   = tied to ground
+pin 3  (1/K)  = LA1/
+pin 4  (1CLK) = CH1/
+pin 5  (1/S)  = fpcP1
+pin 6  (1Q)   = U19.10
+pin 7  (1/Q)  = not connected
+pin 8  (GND)  = Not depicted
+pin 9  (2/Q)  = not connected
+pin 10 (2Q)   = U19.6
+pin 11 (2/S)  = fpcP1
+pin 12 (2CLK) = CH1/
+pin 13 (2/K)  = LA2/
+pin 14 (2J)   = tied to ground
+pin 15 (2/R)  = +5V
+pin 16 (VCC)  = Not depicted
+
+U31 "CHANNEL 2 HEADROOM REGISTER":
+pin 1  (1/R)  = +5V
+pin 2  (1J)   = tied to ground
+pin 3  (1/K)  = LA4/
+pin 4  (1CLK) = CH1/
+pin 5  (1/S)  = fpcP2
+pin 6  (1Q)   = U30.2
+pin 7  (1/Q)  = not connected
+pin 8  (GND)  = Not depicted
+pin 9  (2/Q)  = not connected
+pin 10 (2Q)   = U30.4
+pin 11 (2/S)  = fpcP2
+pin 12 (2CLK) = CH1/
+pin 13 (2/K)  = LA3/
+pin 14 (2J)   = tied to ground
+pin 15 (2/R)  = +5V
+pin 16 (VCC)  = Not depicted
+
+U32 "CHANNEL 2 HEADROOM REGISTER":
+pin 1  (1/R)  = +5V
+pin 2  (1J)   = tied to ground
+pin 3  (1/K)  = LA2/
+pin 4  (1CLK) = CH1/
+pin 5  (1/S)  = fpcP2
+pin 6  (1Q)   = U30.6
+pin 7  (1/Q)  = not connected
+pin 8  (GND)  = Not depicted
+pin 9  (2/Q)  = not connected
+pin 10 (2Q)   = U30.10
+pin 11 (2/S)  = fpcP2
+pin 12 (2CLK) = CH1/
+pin 13 (2/K)  = LA1/
+pin 14 (2J)   = tied to ground
+pin 15 (2/R)  = +5V
+pin 16 (VCC)  = Not depicted
+
+U33 "CHANNEL 1 & 2 HEADROOM REGISTER" (halves split between the two):
+pin 1  (1/R)  = +5V
+pin 2  (1J)   = tied to ground
+pin 3  (1/K)  = LA0/
+pin 4  (1CLK) = CH1/
+pin 5  (1/S)  = fpcP2
+pin 6  (1Q)   = U30.12
+pin 7  (1/Q)  = not connected
+pin 8  (GND)  = Not depicted
+pin 9  (2/Q)  = not connected
+pin 10 (2Q)   = U19.12
+pin 11 (2/S)  = fpcP1
+pin 12 (2CLK) = CH1/
+pin 13 (2/K)  = LA0/
+pin 14 (2J)   = tied to ground
+pin 15 (2/R)  = +5V
+pin 16 (VCC)  = Not depicted
+
+---
+
+U23, U24, U27, U28, U34, U35, U38, U39 (74LS194) — 4-bit bidirectional universal shift register, async clear
+
+U23:
+pin 1  (/CLR)   = +5V
+pin 2  (SR_SER) = not connected
+pin 3  (A)      = U37.2
+pin 4  (B)      = U37.5
+pin 5  (C)      = U37.6
+pin 6  (D)      = U37.9
+pin 7  (SL_SER) = DA7
+pin 8  (GND)    = Not depicted
+pin 9  (S0)     = U15.9, U14.13, U24.9, U34.9, U35.9
+pin 10 (S1)     = U12.8, U24.10, U34.10, U35.10
+pin 11 (CLK)    = fpcCLKA
+pin 12 (QD)     = DA8
+pin 13 (QC)     = DA9
+pin 14 (QB)     = DA10
+pin 15 (QA)     = DA11/
+pin 16 (VCC)    = Not depicted
+
+U24:
+pin 1  (/CLR)   = +5V
+pin 2  (SR_SER) = not connected
+pin 3  (A)      = U37.12
+pin 4  (B)      = U37.15
+pin 5  (C)      = U37.16
+pin 6  (D)      = U37.19
+pin 7  (SL_SER) = DA3
+pin 8  (GND)    = Not depicted
+pin 9  (S0)     = U15.9, U14.13, U23.9, U34.9, U35.9
+pin 10 (S1)     = U12.8, U23.10, U34.10, U35.10
+pin 11 (CLK)    = fpcCLKA
+pin 12 (QD)     = DA4
+pin 13 (QC)     = DA5
+pin 14 (QB)     = DA6
+pin 15 (QA)     = DA7
+pin 16 (VCC)    = Not depicted
+
+U27:
+pin 1  (/CLR)   = +5V
+pin 2  (SR_SER) = not connected
+pin 3  (A)      = AD11
+pin 4  (B)      = AD11
+pin 5  (C)      = AD11
+pin 6  (D)      = AD11
+pin 7  (SL_SER) = U28.15, U26.2
+pin 8  (GND)    = Not depicted
+pin 9  (S0)     = LOAD
+pin 10 (S1)     = fpcEN
+pin 11 (CLK)    = fpcCLKA
+pin 12 (QD)     = U26.17
+pin 13 (QC)     = U26.15
+pin 14 (QB)     = U26.13
+pin 15 (QA)     = U26.11
+pin 16 (VCC)    = Not depicted
+
+U28:
+pin 1  (/CLR)   = +5V
+pin 2  (SR_SER) = not connected
+pin 3  (A)      = AD11
+pin 4  (B)      = AD10
+pin 5  (C)      = AD9
+pin 6  (D)      = AD8
+pin 7  (SL_SER) = U38.15, U25.11
+pin 8  (GND)    = Not depicted
+pin 9  (S0)     = LOAD
+pin 10 (S1)     = fpcEN
+pin 11 (CLK)    = fpcCLKA
+pin 12 (QD)     = U26.8
+pin 13 (QC)     = U26.6
+pin 14 (QB)     = U26.4
+pin 15 (QA)     = U26.2, U27.7
+pin 16 (VCC)    = Not depicted
+
+U34:
+pin 1  (/CLR)   = +5V
+pin 2  (SR_SER) = not connected
+pin 3  (A)      = U36.2
+pin 4  (B)      = U36.5
+pin 5  (C)      = U36.6
+pin 6  (D)      = U36.9
+pin 7  (SL_SER) = U35.15
+pin 8  (GND)    = Not depicted
+pin 9  (S0)     = U15.9, U14.13, U23.9, U35.9, U24.9
+pin 10 (S1)     = U12.8, U23.10, U35.10, U24.10
+pin 11 (CLK)    = fpcCLKA
+pin 12 (QD)     = DA0
+pin 13 (QC)     = DA1
+pin 14 (QB)     = DA2
+pin 15 (QA)     = DA3
+pin 16 (VCC)    = Not depicted
+
+U35:
+pin 1  (/CLR)   = +5V
+pin 2  (SR_SER) = not connected
+pin 3  (A)      = U36.12
+pin 4  (B)      = U36.15
+pin 5  (C)      = U36.16
+pin 6  (D)      = U36.19
+pin 7  (SL_SER) = not connected
+pin 8  (GND)    = Not depicted
+pin 9  (S0)     = U15.9, U14.13, U23.9, U34.9, U24.9
+pin 10 (S1)     = U12.8, U23.10, U34.10, U24.10
+pin 11 (CLK)    = fpcCLKA
+pin 12 (QD)     = not connected
+pin 13 (QC)     = not connected
+pin 14 (QB)     = not connected
+pin 15 (QA)     = U34.7
+pin 16 (VCC)    = Not depicted
+
+U38:
+pin 1  (/CLR)   = +5V
+pin 2  (SR_SER) = not connected
+pin 3  (A)      = AD7
+pin 4  (B)      = AD6
+pin 5  (C)      = AD5
+pin 6  (D)      = AD4
+pin 7  (SL_SER) = U39.15, U25.2
+pin 8  (GND)    = Not depicted
+pin 9  (S0)     = LOAD
+pin 10 (S1)     = fpcEN
+pin 11 (CLK)    = fpcCLKA
+pin 12 (QD)     = U25.17
+pin 13 (QC)     = U25.15
+pin 14 (QB)     = U25.13
+pin 15 (QA)     = U25.11, U28.7
+pin 16 (VCC)    = Not depicted
+
+U39:
+pin 1  (/CLR)   = +5V
+pin 2  (SR_SER) = not connected
+pin 3  (A)      = AD3
+pin 4  (B)      = AD2
+pin 5  (C)      = AD1
+pin 6  (D)      = AD0
+pin 7  (SL_SER) = tied to ground
+pin 8  (GND)    = Not depicted
+pin 9  (S0)     = LOAD
+pin 10 (S1)     = fpcEN
+pin 11 (CLK)    = fpcCLKA
+pin 12 (QD)     = U25.8
+pin 13 (QC)     = U25.6
+pin 14 (QB)     = U25.4
+pin 15 (QA)     = U25.2, U38.7
+pin 16 (VCC)    = Not depicted
+
+---
+
+U25, U26 (74LS244) — octal 3-state buffer, non-inverting
+
+U25:
+pin 1  (/1G) = U4.9, U25.19, U26.1, U26.19
+pin 2  (1A1) = U39.15, U38.7
+pin 3  (2Y4) = DAB4
+pin 4  (1A2) = U39.14
+pin 5  (2Y3) = DAB5
+pin 6  (1A3) = U39.13
+pin 7  (2Y2) = DAB6
+pin 8  (1A4) = U39.12
+pin 9  (2Y1) = DAB7
+pin 10 (GND) = Not depicted
+pin 11 (2A1) = U38.15, U28.7
+pin 12 (1Y4) = DAB0
+pin 13 (2A2) = U38.14
+pin 14 (1Y3) = DAB1
+pin 15 (2A3) = U38.13
+pin 16 (1Y2) = DAB2
+pin 17 (2A4) = U38.12
+pin 18 (1Y1) = DAB3
+pin 19 (/2G) = U4.9, U25.1, U26.1, U26.19
+pin 20 (VCC) = Not depicted
+
+U26:
+pin 1  (/1G) = U4.9, U25.1, U25.19, U26.19
+pin 2  (1A1) = U28.15, U27.7
+pin 3  (2Y4) = DAB12
+pin 4  (1A2) = U28.14
+pin 5  (2Y3) = DAB13
+pin 6  (1A3) = U28.13
+pin 7  (2Y2) = DAB14
+pin 8  (1A4) = U28.12
+pin 9  (2Y1) = DAB15
+pin 10 (GND) = Not depicted
+pin 11 (2A1) = U27.15
+pin 12 (1Y4) = DAB8
+pin 13 (2A2) = U27.14
+pin 14 (1Y3) = DAB9
+pin 15 (2A3) = U27.13
+pin 16 (1Y2) = DAB10
+pin 17 (2A4) = U27.12
+pin 18 (1Y1) = DAB11
+pin 19 (/2G) = U4.9, U25.1, U25.19, U26.1
+pin 20 (VCC) = Not depicted
+
+---
+
+U19, U30 (74LS367) — hex 3-state buffer, non-inverting (two OE groups: /G1 bits 1-3, /G2 bits 4-6)
+NOTE: A/Y pairs alternate (A1,Y1,A2,Y2...A6,Y6). /G1 pin 1 enables Y1-Y3; /G2 pin 15 enables Y4-Y6.
+
+U19:
+pin 1  (/G1) = HR1/
+pin 2  (A1)  = U20.10
+pin 3  (Y1)  = DATA0/
+pin 4  (A2)  = U20.6
+pin 5  (Y2)  = DATA1/
+pin 6  (A3)  = U21.10
+pin 7  (Y3)  = DATA2/
+pin 8  (GND) = Not depicted
+pin 9  (Y4)  = DATA3/
+pin 10 (A4)  = U21.6
+pin 11 (Y5)  = DATA4/
+pin 12 (A5)  = U33.10
+pin 13 (Y6)  = not connected
+pin 14 (A6)  = not connected
+pin 15 (/G2) = HR1/
+pin 16 (VCC) = Not depicted
+
+U30:
+pin 1  (/G1) = HR2/
+pin 2  (A1)  = U31.6
+pin 3  (Y1)  = DATA4/
+pin 4  (A2)  = U31.10
+pin 5  (Y2)  = DATA3/
+pin 6  (A3)  = U32.6
+pin 7  (Y3)  = DATA2/
+pin 8  (GND) = Not depicted
+pin 9  (Y4)  = DATA1/
+pin 10 (A4)  = U32.10
+pin 11 (Y5)  = DATA0/
+pin 12 (A5)  = U33.6
+pin 13 (Y6)  = not connected
+pin 14 (A6)  = not connected
+pin 15 (/G2) = HR2/
+pin 16 (VCC) = Not depicted
+
+---
+
+U36, U37 (74LS377) — octal D flip-flop with clock enable, outputs always driven
+
+U36 "DATA DOUBLE BUFFER":
+pin 1  (/E)  = U37.1, U4.12, U15.3, U3.3, U40.9
+pin 2  (Q0)  = U34.3
+pin 3  (D0)  = DAB7
+pin 4  (D1)  = DAB6
+pin 5  (Q1)  = U34.4
+pin 6  (Q2)  = U34.5
+pin 7  (D2)  = DAB5
+pin 8  (D3)  = DAB4
+pin 9  (Q3)  = U34.6
+pin 10 (GND) = Not depicted
+pin 11 (CP)  = fpcCLKA
+pin 12 (Q4)  = U35.3
+pin 13 (D4)  = DAB3
+pin 14 (D5)  = DAB2
+pin 15 (Q5)  = U35.4
+pin 16 (Q6)  = U35.5
+pin 17 (D6)  = DAB1
+pin 18 (D7)  = DAB0
+pin 19 (Q7)  = U35.6
+pin 20 (VCC) = Not depicted
+
+U37 "DATA DOUBLE BUFFER":
+pin 1  (/E)  = U36.1, U4.12, U15.3, U3.3, U40.9
+pin 2  (Q0)  = U23.3
+pin 3  (D0)  = DAB15
+pin 4  (D1)  = DAB14
+pin 5  (Q1)  = U23.4
+pin 6  (Q2)  = U23.5
+pin 7  (D2)  = DAB13
+pin 8  (D3)  = DAB12
+pin 9  (Q3)  = U23.6
+pin 10 (GND) = Not depicted
+pin 11 (CP)  = fpcCLKA
+pin 12 (Q4)  = U24.3
+pin 13 (D4)  = DAB11
+pin 14 (D5)  = DAB10
+pin 15 (Q5)  = U24.4
+pin 16 (Q6)  = U24.5
+pin 17 (D6)  = DAB9
+pin 18 (D7)  = DAB8
+pin 19 (Q7)  = U24.6
+pin 20 (VCC) = Not depicted
+
+---
+
+U18 (74LS175) — quad D flip-flop, common CLK + async /CLR
+
+pin 1  (/CLR) = +5V
+pin 2  (Q0)   = not connected
+pin 3  (/Q0)  = STCNV/
+pin 4  (D0)   = STBGN
+pin 5  (D1)   = U6.12
+pin 6  (/Q1)  = not connected
+pin 7  (Q1)   = STBGN
+pin 8  (GND)  = Not depicted
+pin 9  (CLK)  = fpcCLKA
+pin 10 (Q2)   = CH1
+pin 11 (/Q2)  = CH1/
+pin 12 (D2)   = U6.11
+pin 13 (D3)   = U6.10
+pin 14 (/Q3)  = not connected
+pin 15 (Q3)   = CNVCLK
+pin 16 (VCC)  = Not depicted
+
+---
+
+U29 (74LS123) — dual retriggerable monostable multivibrator
+NOTE: pinout confirmed vs TI SDLS043. One-shot 2's Q/Cext/Rext are pins 5/6/7; one-shot 1's are pins 13/14/15. Pulse width tw ~ K*Rext*Cext.
+
+pin 1  (1A)          = tied to ground
+pin 2  (1B)          = HR2/
+pin 3  (1/CLR)       = +5V
+pin 4  (1/Q)         = fpcP2
+pin 5  (2Q)          = not connected
+pin 6  (2Cext)       = tied to ground, C4.1 (100pF)
+pin 7  (2Rext/Cext)  = +5V via 20K resistor, C4.2 (100pF)
+pin 8  (GND)         = Not depicted
+pin 9  (2A)          = tied to ground
+pin 10 (2B)          = HR1/
+pin 11 (2/CLR)       = not connected
+pin 12 (2/Q)         = fpcP1
+pin 13 (1Q)          = not connected
+pin 14 (1Cext)       = tied to ground, C3.1 (100pF)
+pin 15 (1Rext/Cext)  = +5V via 20K resistor, C3.2 (100pF)
+pin 16 (VCC)         = Not depicted
+
+---
+
+U12 (74LS00) — quad 2-input NAND
+
+pin 1  (1A)  = U7.15
+pin 2  (1B)  = U15.2
+pin 3  (1Y)  = U8.7, U7.7
+pin 4  (2A)  = not connected
+pin 5  (2B)  = not connected
+pin 6  (2Y)  = not connected
+pin 7  (GND) = Not depicted
+pin 8  (3Y)  = U23.10, U24.10, U34.10, U35.10
+pin 9  (3A)  = fpcSC
+pin 10 (3B)  = U15.10
+pin 11 (4Y)  = U3.13
+pin 12 (4A)  = U2.13
+pin 13 (4B)  = U1.14
+pin 14 (VCC) = Not depicted
+
+---
+
+U13 (74LS86) — quad 2-input XOR
+
+pin 1  (1A)  = not connected
+pin 2  (1B)  = not connected
+pin 3  (1Y)  = not connected
+pin 4  (2A)  = not connected
+pin 5  (2B)  = not connected
+pin 6  (2Y)  = not connected
+pin 7  (GND) = Not depicted
+pin 8  (3Y)  = U14.6
+pin 9  (3A)  = DA10
+pin 10 (3B)  = DA11/
+pin 11 (4Y)  = not connected
+pin 12 (4A)  = not connected
+pin 13 (4B)  = not connected
+pin 14 (VCC) = Not depicted
+
+---
+
+U14 (74LS02) — quad 2-input NOR
+NOTE: output is pin 1 of each gate pair (unlike '00/'08 where output is pin 3).
+
+pin 1  (1Y)  = U3.2
+pin 2  (1A)  = U15.4
+pin 3  (1B)  = fpcSC
+pin 4  (2Y)  = STOP/
+pin 5  (2A)  = U43.15
+pin 6  (2B)  = U13.8
+pin 7  (GND) = Not depicted
+pin 8  (3A)  = not connected
+pin 9  (3B)  = not connected
+pin 10 (3Y)  = not connected
+pin 11 (4A)  = BUSY
+pin 12 (4B)  = NEW DAT/
+pin 13 (4Y)  = U15.9, U23.9, U24.9, U34.9, U35.9
+pin 14 (VCC) = Not depicted
+
+---
+
+U15, U17 (74LS04) — hex inverter
+
+U15:
+pin 1  (1A)  = FPC DBUG
+pin 2  (1Y)  = U12.2
+pin 3  (2A)  = U40.9, U3.3, U4.12, U37.1, U36.1
+pin 4  (2Y)  = U14.2
+pin 5  (3A)  = DA11/
+pin 6  (3Y)  = DA11
+pin 7  (GND) = Not depicted
+pin 8  (4Y)  = fpcSC
+pin 9  (4A)  = U14.13, U23.9, U24.9, U34.9, U35.9
+pin 10 (5Y)  = U12.10
+pin 11 (5A)  = STOP/
+pin 12 (6Y)  = not connected
+pin 13 (6A)  = not connected
+pin 14 (VCC) = Not depicted
+
+U17:
+pin 1  (1A)  = U7.12, U6.1, U5.1
+pin 2  (1Y)  = U5.10
+pin 3  (2A)  = not connected 
+pin 4  (2Y)  = not connected
+pin 5  (3A)  = not connected
+pin 6  (3Y)  = not connected
+pin 7  (GND) = Not depicted
+pin 8  (4Y)  = U16.9
+pin 9  (4A)  = LOAD
+pin 10 (5Y)  = not connected
+pin 11 (5A)  = not connected
+pin 12 (6Y)  = U42.10, U42.13
+pin 13 (6A)  = U42.3, U42.6, U7.13, U6.2, U5.2
+pin 14 (VCC) = Not depicted
+
+---
+
+U5 (74LS20) — dual 4-input NAND
+
+pin 1  (1A)  = U6.1, U7.12, U17.1
+pin 2  (1B)  = U42.3, U42.6, U7.13, U6.2, U17.13
+pin 3  (NC)  = not connected
+pin 4  (1C)  = U6.5, U8.14
+pin 5  (1D)  = U6.6, U8.13
+pin 6  (1Y)  = U4.3
+pin 7  (GND) = Not depicted
+pin 8  (2Y)  = U4.10, U4.13
+pin 9  (2A)  = U7.10, U8.15
+pin 10 (2B)  = U17.2
+pin 11 (NC)  = not connected
+pin 12 (2C)  = +5V
+pin 13 (2D)  = U7.14, U6.3
+pin 14 (VCC) = Not depicted
+
+---
+
+U6 (74S287) — 256×4 bipolar fuse PROM, 3-state outputs (DIP-16)
+NOTE: A0..A7 address bits are non-sequential on package. /G1 (pin 13) and /G2 (pin 14) are active-LOW output enables; either HIGH forces Q0-Q3 to HI-Z. Outputs Q0 (LSB)..Q3 (MSB).
+
+pin 1  (A6)  = U7.12, U5.1, U17.1
+pin 2  (A5)  = U7.13, U5.2, U17.13, U42.3, U42.6
+pin 3  (A4)  = U7.14, U5.13
+pin 4  (A3)  = U8.11
+pin 5  (A0)  = U8.14, U5.4
+pin 6  (A1)  = U8.13, U5.5
+pin 7  (A2)  = U8.12
+pin 8  (GND) = Not depicted
+pin 9  (Q3)  = LOAD
+pin 10 (Q2)  = U18.13
+pin 11 (Q1)  = U18.12
+pin 12 (Q0)  = U18.5
+pin 13 (/G1) = tied to ground
+pin 14 (/G2) = tied to ground
+pin 15 (A7)  = U7.11
+pin 16 (VCC) = Not depicted

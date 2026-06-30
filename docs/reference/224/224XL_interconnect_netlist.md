@@ -575,6 +575,13 @@ serial multiplier, per Service-Manual fig 3.4:
     16/20; `multiply()` = 20/20. **Wired into `tools/aru_post.py`, the firmware MULTIPLIER TEST E83 (0x0942) PASSES
     un-suppressed on the verified 8080** — with latch E32 + register E40, all three ARU POST gates pass on their own
     merits. Reproducer: `tools/aru_cycaccurate.py`.
+- **cmag=0 (all-zeros coefficient) — baseline reconciliation (2026-06-29, related sub-LSB item).** cmag=0 is the
+  plan-016 active-low NAND-array **baseline**: the all-ones product register (the "+3 ACC units per cmag=0 multiply"
+  is the all-ones state of that register). For a SINGLE multiply it correctly rounds to 0 at the `≫3` round-half-up
+  (matches every golden — faithful to the gate model). 🟡 In a free-run MAC, 19 consecutive cmag=0 bus-move steps
+  accumulate ~+57 → a ≈−73 dB DC trickle — faithful to the gate model, NOT a dead-tank cause. Cross-multiply
+  accumulation of the baseline is **untested** by plan 016 (which only exercised the single-step multiply); flag as
+  an open sub-LSB item alongside the cmag=63 +3.
 
 ---
 
@@ -678,6 +685,25 @@ dmem_U63.pin9→dmem_U64.pin7; dmem_U64.pin9(C4)=n/c.
 > A-inputs are `_cpc0.._cpc15` (§5.1). `OFST0–15/` come from the microword offset (T&C/WCS, §G3D). The A↔Σ
 > within-nibble ordering follows the verified 74283 pinout (non-monotonic upper nibble) — bit-weight not
 > asserted here (Ground Rule 2/3, cf §4.10).
+>
+> **★ FREE-RUN OFFSET SOURCE — CRITICAL MODELING NOTE (2026-06-29, M3).** The hardware delay offset on `OFST0–15/`
+> is exactly **MI0–15 of the running WCS microword** (latched at tc_U45/U31 — §3.6). It is **NOT** the `0x4000` SBC
+> WCS *image* lanes 0/1 read out of firmware RAM. A free-run model must source the per-step offset from the firmware
+> **`0x3F4D` offset buffer** — extracted by `tools/aru224_emulate.py::tap_map(0xB800)` (runs the B55B builder;
+> validated byte-identical to the firmware load), step-index-keyed to the `0x4000` COEFFICIENTS[s] — **not** from
+> `0x4000` lanes 0/1. For CONCERT those lanes hold clustered ~0.9–1.7 s (≈30000-sample) **garbage** delays that make
+> DMEM reads and writes address disjoint regions, so the recirculation loop never closes (the long-standing
+> *dead-tank* root cause). With the correct `tap_map` ms-scale offsets (step 0 = 362 ms predelay, steps 5–23 = a
+> varied 7–176 ms diffuser cluster, a 176 ms recirc loop reused 4×) the feedback loops EXIST (≈72 short write→read
+> loops; addresses overlap) and a SHORT ~0.5 s decaying tail emerges — CONCERT goes from a *fully dead* tank to an
+> audible short tail. The offset SIGN is settled: `addr = CPC + offset[step]` (of `{CPC−off, CPC+off, CPC−|off|}`
+> only `CPC+off` survives). 🟡 The full ~2.6 s hall decay is STILL OPEN — the tail decays too fast (loop gain too
+> low: quantization / coeff scaling / LFO modulation). This is a firmware-image-vs-hardware convention/datapath
+> question, **not** a wiring change here
+> (this adder is and remains `Σ = CPC − OFST`, carry-in tied HIGH). ⚠ Do **not** use `tools/boot8080.py::read_offsets`
+> for this — it reads a *contaminated* `0x3F4D` from the booted firmware (e.g. 576 ms for step 2 vs `tap_map`'s
+> correct 176 ms); use `aru224_emulate.tap_map`. (The free-run engine is `tools/aru_freerun.py`; it does not touch
+> the POST-green `tools/aru_rtl_dp.py`.)
 
 ## 5.3 Address bus `A0..A15` (adder Σ) → row/col mux ✅
 | Net | Driver (adder Σ) | Load (mux) | Net | Driver | Load |
@@ -967,6 +993,9 @@ bit-for-bit** (n = 0–15). Detail (tc_U45 = low byte):
 | D7(18) | MI0 | Q7(19) | OFST0/ |
 > `tc_U31` is identical for MI8–15 → OFST8–15/. `OFST0–15/` → DMEM offset adders (§5.2) + DMEM read-back
 > (§5.7) + tc_U32/U47/U49/U34 (device decode, §2T). **This resolves the DMEM `OFST0–15/` origin (§G3D).**
+> **★ Free-run note:** the *hardware* delay offset is therefore **MI0–15 of the live microword**, latched here. A
+> free-run model must source it from the firmware `0x3F4D` buffer (`tap_map`), **not** the `0x4000` SBC image lanes
+> 0/1 (garbage for CONCERT → dead tank). See the full modeling note in §5.2.
 > **Clock note (owner-resolved 2026-06-28):** the latch clock provisionally labeled `tcCLKA` is actually
 > **`DAB RSTB/`** — the schematic mis-draws its line onto the MI bus; the PCB traces the clock-input line back to
 > `tc_U14.pin2` = `DAB RSTB/`. So the **offset latch (§3.6) + field registers (§3.7) + RESET FF (§3.11) all latch
@@ -1174,6 +1203,75 @@ the AS-sequencing via tc_U38 + the off-sheet tc_U24, §G3T.)
 (chained; FF1 1D = tc_U22.pin9 & tc_U21.pin2); FF2 **2/Q(8) = `S0`**, 2Q(9) → tc_U38.pin13. So **`S0` = tc_U24 FF2 2/Q** (a sequenced AS signal), and
 **`S1` = tc_U38.pin12** (74LS27 NOR, with tc_U24.2Q as one input). Both feed `tc_U12` (the S0⊕S1 XOR, §6T.6) and on
 to the ARU 74194 shifter mode (S0/S1, §4F.3). **Resolves the §G3T `S0` + off-sheet `tc_U24` stub.**
+
+---
+
+# Net-group 7 (SBC firmware) — parameter-application architecture  ✅ (firmware, NOT hardware wiring)
+
+> **⚠ Scope.** This section documents the **SBC firmware** (8080/8085 control program) that *fills the WCS
+> `0x4000` image* — the coefficient/offset bytes that the T&C hardware above (§3.1/§3.6–§3.9) clocks out as the
+> microword. These are **RAM addresses + firmware routines**, NOT board nets — they complement, and do not alter,
+> the hardware netlist. Provenance = firmware disassembly + boot emulation (`tools/aru224_emulate.py`,
+> `tools/boot8080.py`), cross-checked vs the CONCERT parameter sweep, 2026-06-29. Included here because the
+> firmware is what DETERMINES the WCS coeff/offset bytes the hardware then runs.
+
+## 7.1 Parameter store (LARC control pages) ✅
+All FIVE LARC control pages' parameter values live in ONE FLAT RAM array based at **`0x3CA3`** (6 bytes/page × 5
+pages = 30 bytes; a record header/type byte at `0x3CA2`). It is **not** just the 6 sliders swapped per page. The 6
+LARC faders at **`0x3C00–0x3C05`** are ONLY the live fader-echo of the CURRENT page.
+- Array slot = `0x3CA3 + page*6 + slider`, computed at firmware **`0x862E`** (`A = (0x3C34)*6 + B`).
+- **Page state:** `0x3C32` = raw page counter (PAGE-key handler `0x8F50` does INC); `0x3C34` = derived/clamped page
+  index (read only at `0x862E`; written at `0x1477`).
+- **Paging:** the PAGE key (`0x8F50`) advances `0x3C32`, recomputes `0x3C34`, and reloads sliders `0x3C00–05` from
+  the new page's array slice (`0x87C2`).
+
+## 7.2 Apply chain → de-zipper → WCS image ✅
+Main-loop scan **`0x8185`** (DE=`0x3C00` live, HL=`0x3C16` last-seen, B=0..9; B≤5 → handler **`0x85F2`**) →
+`0x85F2` type-scales by program type (`0x3C33`), QUEUES a de-zip job (pending-flag array `0x3C20+B`), sets dirty
+flag `0x3C51` → the DE-ZIPPER applier **`0xB000`** RAMPS the coeff/delay one step per main-loop pass and PACKS the
+byte into the WCS `0x4000` image: **`0xB4F0`** packs the 6-bit coeff *magnitude* into the upper bits; **`0xB4FF`**
+packs the *sign* into bit7 of the adjacent byte. (These `0x4000` bytes are exactly the COEFFICIENT lanes the T&C
+control-field path §3.7–§3.9 serializes to C0–5/ → M0//M1/; the offset lanes feed §3.6.)
+- **Group table `0x3CF4`** (built by interpreter `0xAA9F`; 32 entries × 3 bytes; opcode low-nibble = count, bits
+  `0x30` = sub-type `0x00/0x10/0x20`) LINKS each parameter's group to its target WCS step(s). The
+  **step→coeff-address transform is `0xAB0C`: `addr = 0x4003 + step*4`**.
+
+## 7.3 Recall at program load ✅
+Program-load **`0x13B6`** → lookup `0x133E` finds the program record in the `0xB800` array (21 records ×
+`0x2AA` bytes; record 0 = CONCERT) → **`0x13D9`** (`LD DE,0x3CA2; LD B,0x30; CALL 0x0614`) RECALLS the 48-byte
+param/toggle block into `0x3CA2..` → **`0xA791`** apply engine builds the FULL WCS image. ⇒ the variation defaults
+ARE recalled and the full WCS IS built at load (at boot, **110/128 steps already have built coefficients**). This
+is why applying CONCERT Variation 1's full preset by hand is a NO-OP — the dead tank was the offset-source bug
+(§5.2), not un-recalled parameters.
+
+## 7.4 PARAM-key toggles ✅
+The 3 PARAM-key toggles are stored as BITS in one RAM byte **`0x3CCD`**, loaded from the program record at load
+(`0xA892`); toggle cycle index = `0x3C41`, mask table @`0xA758`.
+| bit | mask | toggle | effect / read site |
+|---|---|---|---|
+| 0 | `0x01` | **Dynamic Decay** | gates LF/Mid Stop Decay (read at `0x83B4`) |
+| 6 | `0x40` | **Mode Enhancement** | gates the Chorus/LFO modulation engine `0xAD5C` (`AND 0x40; JP z` skips the whole LFO update when clear) |
+| 7 | `0x80` | **Decay Optimization** | read at `0x83D1` |
+> CONCERT boots `0x3CCD = 0xC0` (Mode Enhancement + Decay Optimization ON, Dynamic Decay OFF).
+
+## 7.5 CONCERT group → param → WCS-step map ✅ (verified vs the param sweep + disassembly)
+PAGE 1: P0 LF Decay → steps **43,95**; P1 Mid Decay → anchors **64,68,115,119** + interpolated allpass coeffs
+62,63,66,67,113,114,117,118 (via the decay generator `0x86B2`/`0x8DA5`/`0x8E03`, NOT in the group table);
+P2 Crossover → **45,46,97,98**; P3 Treble Decay/HF-damp → **40,41,92,93**; P4 Depth/input-diffusion →
+**29–32,81–84**; P5 Predelay → DELAY steps **42,94**. PAGE 2: Chorus → group g0 steps **57,108** (animated by the
+LFO over canonical taps 56/57/107/108, depth `0x3CD4`, rate `0x3CD3 = 0x20`); Diffusion → group g19 steps
+**52,60,72,104,111,123** (the recirculation ALLPASS, coeff ≈ −95/−0.74); tank feedback → g20–29 steps
+**27,28,79,80** (coeff −127, near-unity).
+> CONCERT = Concert Hall, Variation 1 (5 control pages, 7 variations, average decay 2.6 s). Var-1 preset: P1 LF
+> Decay 3.0 s / Mid Decay 2.0 s / Crossover 720 Hz / Treble Decay 6.30 kHz / Depth 33 / Predelay 24.0 ms; P2 Chorus
+> 50 / Diffusion 25; toggles Dynamic Decay OFF, Mode Enhancement ON, Decay Optimization OFF
+> (`docs/reference/224/224X_chapter8_variation_presets.md`; Owner's Manual ch.4).
+
+> **WCS-image clarification (ties to §3 + §5.2):** the `0x4000` SBC image holds the **correct COEFFICIENTS** (its
+> lanes 2/3 — the param-derived decay/diffusion/feedback coeffs, byte-identical to the build, present at boot — the
+> bytes §3.7–§3.9 use). Its **lanes 0/1 are NOT a reliable free-run delay-offset source** (§5.2): the hardware
+> delay offset is MI0–15 of the live microword, but the `0x4000` image is not that source for free-run — use
+> `tap_map` (`0x3F4D`).
 
 ---
 

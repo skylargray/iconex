@@ -769,3 +769,5 @@ pin 1 (1G\)  = tied to ground
 pin 19 (2G\) = tied to ground
 
 [U61 OE\ pins and VCC/GND — not depicted on individual sections]
+
+---

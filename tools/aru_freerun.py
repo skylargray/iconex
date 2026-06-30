@@ -94,6 +94,50 @@ def res_from_acc(acc):
 
 
 # ---------------------------------------------------------------------------
+# FPC float<->fixed conversion (the 224XL is a FLOATING-POINT reverb; the DSP is fixed-point, the FPC
+# converts at the I/O boundary). Grounded from fig 3.5/3.6 + FPC pinout 060-01320 + SM §3.8/§3.9
+# (fpc-float-fixed-model workflow, 2026-06-30). ★ MAGNITUDE VERDICT (verified numerically): BOTH are
+# UNITY-GAIN at the boundary — the analog 2^IGA and the FPC 2^(4-IGA) shift cancel (×16 const) on input;
+# the output 2^OGA shift and GSA 2^-OGA cancel. So they do NOT change the internal recirculation magnitude
+# or the over-unity rail (that lives in the DSP loop coeffs). They add the real 12-bit float QUANTIZATION
+# grain (input A/D + output D/A) — needed for codec faithfulness, not for the decay/over-unity problem.
+# ---------------------------------------------------------------------------
+def fpc_input_float_to_fixed(x16):
+    """AIN 14-bit float (12-bit SAR mantissa + 2-bit exponent IGA) -> 16-bit fixed on the DAB at RD AD/.
+    The AIN gain-ranger picks IGA = octaves of headroom (cap 3); net magnitude ≈ identity + 12-bit grain."""
+    x = s16(x16)
+    a = abs(x)
+    if a >= 16384:      # >= FS/2  -> 0 dB
+        iga = 0
+    elif a >= 8192:     # FS/4..   -> 6 dB
+        iga = 1
+    elif a >= 4096:     # FS/8..   -> 12 dB
+        iga = 2
+    else:               # < FS/8   -> 18 dB
+        iga = 3
+    vpost = x * (1 << iga)                                # analog gain 2^IGA before the 12-bit SAR
+    m = (vpost >> 4) if vpost >= 0 else -((-vpost) >> 4)  # 12-bit SAR (trunc toward 0)
+    m = max(-2048, min(2047, m))                         # AD11..AD0
+    fixed = m << (4 - iga)                                # FPC normalize left-shift (00->4..11->1)
+    return sat16(fixed) & 0xFFFF                          # two's-complement word the DSP reads
+
+
+def fpc_output_fixed_to_float(fixed16):
+    """DSP 16-bit fixed (captured at WR DA/) -> 12-bit DAC mantissa + exponent OGA, then GSA 2^-OGA back to
+    level. Shift LEFT until the two MSBs disagree (STOP/) or 3 shifts (U43 cap). Net ≈ identity + 12-bit grain."""
+    v = fixed16 & 0xFFFF
+    oga, sr = 0, v
+    for _ in range(3):                                   # 3-shift cap (U43 RCO)
+        if ((sr >> 15) & 1) != ((sr >> 14) & 1):         # DA11 != DA10 -> STOP/ (U14.4)
+            break
+        sr = (sr << 1) & 0xFFFF                           # shift left, 0-fill LSB
+        oga += 1
+    mant12 = (sr >> 4) & 0xFFF                            # top 12 bits to the DAC; low 4 discarded
+    m_signed = mant12 - 0x1000 if (mant12 & 0x800) else mant12
+    return m_signed << (4 - oga)                          # GSA 2^-OGA undoes the 2^OGA shift
+
+
+# ---------------------------------------------------------------------------
 # §2T device decode — per-step DAB driver + strobes (the free-run routing)
 # ---------------------------------------------------------------------------
 # DAB driver classes:
@@ -123,7 +167,7 @@ def device_decode(d, ofst):
     driver = DRV_HOLD
     memwrite = False
     wr_da = wr_xreg = False
-    da_chan = None
+    da_chans = []          # list of D/A channel indices written this step (0=A,1=B,2=C,3=D)
 
     if MEMAC == 1 and MI16 == 0:            # §2T.1: MEMW/ — DMEM write; result reg drives DAB (RDRREG/)
         driver = DRV_RDRREG
@@ -136,16 +180,36 @@ def device_decode(d, ofst):
             driver = DRV_RD_AD              # 2Y3 -> RD AD/
         elif sel == 2:
             driver = DRV_RD_XREG            # 2Y2 -> RD XREG/
-        # else sel 0/1 -> no read driver (idle/hold)
+        elif sel == 1:
+            # 2026-06-29 result-reg-to-DAB on a sel==01 I/O step. The gate Boolean is faithful — §2T.3:
+            # RDRREG/ = NAND(NAND(MEMW/, 2Y1), DAB RSTB) genuinely ORs the MEMW case with the sel==01 (2Y1)
+            # case, so RES drives the DAB here. ⚠ PROVENANCE (provenance audit 2026-06-29): the gate OR is
+            # hardware-verified, but the FUNCTIONAL ROLE ("this is the intended wet output to WR DA/") is
+            # INFERRED — not stated by §2T/SM and not exercised by any POST golden. Treat as a hypothesis to
+            # confirm against the real FPC/D-A path, not a settled fact.
+            driver = DRV_RDRREG
+        # else sel 0 -> no read driver (idle/hold)
         if ob(7):                           # §2T.2 WR DA/ = NAND(OFST7/, tcWR)
             wr_da = True
-            # SDAA-D = OFST8-11/ (§2T.4): the D/A output-channel select
-            da_chan = (ob(8) << 0) | (ob(9) << 1) | (ob(10) << 2) | (ob(11) << 3)
-        if ob(6):                           # §2T.2 WR XREG/ = NAND(MS7, tcWR, OFST6/)
+            # SDAA-D = OFST8-11/ (§2T.4 tc_U32): FOUR INDEPENDENT one-hot D/A channel-write enables, in
+            # REVERSED order — OFST8/→SDAD, OFST9/→SDAC, OFST10/→SDAB, OFST11/→SDAA. A WR DA/ step writes the
+            # DAB to EVERY enabled channel (real CONCERT steps set several bits at once, e.g. A+C+D). This
+            # replaces the prior 4-bit-binary-nibble decode, which the provenance audit found CONTRADICTED by
+            # §2T.4 (wrong on both encoding AND bit order) — cross-confirmed by the firmware's multi-bit WR DA
+            # steps (a binary index can't be "3 channels"; strict one-hot would be illegal).
+            if ob(8):
+                da_chans.append(3)          # OFST8/ → SDAD → channel D
+            if ob(9):
+                da_chans.append(2)          # OFST9/ → SDAC → channel C
+            if ob(10):
+                da_chans.append(1)          # OFST10/ → SDAB → channel B
+            if ob(11):
+                da_chans.append(0)          # OFST11/ → SDAA → channel A
+        if ob(6):                           # §2T.2 WR XREG/ = NAND(MS7, tcWR, OFST6/) — MS7 term omitted (model simplification)
             wr_xreg = True
     # else (MEMAC=0,MI16=0): 1Y0 n/c -> no device (idle/hold)
 
-    return dict(driver=driver, memwrite=memwrite, wr_da=wr_da, wr_xreg=wr_xreg, da_chan=da_chan)
+    return dict(driver=driver, memwrite=memwrite, wr_da=wr_da, wr_xreg=wr_xreg, da_chans=da_chans)
 
 
 # ---------------------------------------------------------------------------
@@ -162,7 +226,9 @@ class FreeRunARU:
 
     NSTEPS = 100      # WCS program length (steps 0..99; RESET@99)
 
-    def __init__(self):
+    def __init__(self, fpc_enabled=False):
+        self.fpc_enabled = fpc_enabled  # apply the FPC float<->fixed codec at RD AD/ + WR DA/ (audio renders);
+        #                                 default OFF so the M3 transport tests stay bit-exact (pure fixed-point)
         self.R = [0, 0, 0, 0]          # 4×LS670 register file (signed 16-bit)
         self.ACC = 0                   # 20-bit ±2^18 accumulator (signed MAC across steps)
         self.RES = 0                   # 16-bit result register
@@ -180,26 +246,44 @@ class FreeRunARU:
         self.fault = None
 
     # ---- one microinstruction (one WCS step) ----
-    def step(self, l0, l1, l2, l3, audio_in, probe=None):
+    def step(self, l0, l1, l2, l3, audio_in, addr_offset=None, probe=None):
         d = decode(l2, l3)
-        ofst = ((l1 << 8) | l0) & 0xFFFF
+        ofst = ((l1 << 8) | l0) & 0xFFFF      # WCS lanes 0/1 — used for the §2T device decode (I/O cmd bits)
         dev = device_decode(d, ofst)
 
-        # (1) RETIRE the previous instruction's deferred back-end (fig-3.4 — one instruction late):
-        #     ZERO/ clears the accumulator, the instruction's product accumulates, XFER CK latches RES.
+        # (1) RETIRE the previous instruction's deferred back-end (fig-3.4 — one instruction late).
+        #     ★ SYNCHRONOUS-CLEAR ORDER (2026-06-29, owner timing + verified part): the accumulator
+        #     aru_U45-49 is a 74LS163 — its clear (ZERO/ → pin1) is SYNCHRONOUS, taking effect only on the
+        #     NEXT clock edge (i2.AS1), NOT immediately. fig-3.4: at i2.AS0, ZERO/ asserts at the start, then
+        #     XFER CK fires ~30-40 ns LATER — so XFER latches the FULLY-ACCUMULATED sum (incl. this product)
+        #     BEFORE the clear lands. Hardware order = ACCUMULATE → XFER-capture → (next-edge) CLEAR. The old
+        #     model cleared IMMEDIATELY before XFER, so every ZERO+XFER step latched ~0 — wiping the MAC sum
+        #     before it reached RES. (This is why CONCERT's reverb sum never reached the output.)
         if self.pend is not None:
             Vp, zerop, xferp = self.pend
-            if zerop:
-                self.ACC = 0
-            self.ACC = sat20(self.ACC + Vp)
+            self.ACC = sat20(self.ACC + Vp)              # product completes accumulating (ends at this AS0)
             if xferp:
-                self.RES = res_from_acc(self.ACC)
+                self.RES = res_from_acc(self.ACC)        # XFER captures the sum BEFORE the synchronous clear
+            if zerop:
+                self.ACC = 0                             # synchronous clear lands AFTER capture (next group)
 
         # (2) operand read — READ-BEFORE-WRITE (ARUCK@MS6 loads operand before the MS7 regfile write).
         opnd = self.R[d["RA"]]
 
-        # (3) DMEM address = CPC - OFST  (OFST stored complemented; adder carry-in high). §5.2
-        addr = (self.CPC + ofst + 1) & 0xFFFF
+        # (3) DMEM address — the POST-VERIFIED convention (2026-06-30): the DMEM offset is MI0-15 = the
+        # microword lanes 0/1 (l0|l1<<8), the SAME bytes the hardware latches, and addr = CPC + OFST_stored
+        # + 1 = CPC − OFST (SM §3.6 verbatim: add the COMPLEMENTED offset word, carry-in high). This is
+        # exactly what the POST-verified datapath aru_rtl_dp uses (it reads the WCS image l0/l1 and does
+        # CPC+ofst+1), and it passes E91 un-suppressed. ★ CORRECTION: the earlier 0x3F4D buffer +
+        # addr=CPC+offset path was a DIVERGENCE from the hardware — the 0x4000 lanes 0/1 are NOT garbage,
+        # they ARE the real offsets. Under this formula CONCERT's MEMW (offsets 0xC..0xEFFF) → cmag>0 MEMR
+        # (0x478F-0x8889) pairs give CAUSAL 0.5-1.2 s recirculation delays (32+ pairs) — the loop CLOSES
+        # from the wiring. E91 only checks write/read CONSISTENCY (constant offset + CPC sweep), so the
+        # SIGN rests on SM §3.6, not E91. (addr_offset kept as an explicit override for diagnostics only.)
+        if addr_offset is not None:
+            addr = (self.CPC + addr_offset) & 0xFFFF        # explicit override (diagnostics only)
+        else:
+            addr = (self.CPC + ofst + 1) & 0xFFFF           # POST-verified: addr = CPC − OFST (lanes 0/1)
 
         # (4) drive the DAB — exactly one source per §2T device decode, else hold last value.
         drv = dev["driver"]
@@ -209,23 +293,47 @@ class FreeRunARU:
         elif drv == DRV_RDRREG:
             self.DAB = self.RES & 0xFFFF
         elif drv == DRV_RD_AD:
-            self.DAB = audio_in & 0xFFFF
+            # A/D input onto the DAB — via the FPC input codec (float→fixed) when enabled (audio renders).
+            self.DAB = fpc_input_float_to_fixed(audio_in) if self.fpc_enabled else (audio_in & 0xFFFF)
         elif drv == DRV_RD_XREG:
-            self.DAB = self.XREG & 0xFFFF
+            # ★ XREG is the SBC↔DAB HOST BRIDGE, not an audio-path element (dmem_U38-U41 on 060-02512, §5.6;
+            # SM §3.6/§3.8). The two strobes touch SEPARATE banks with the 8080 DATA bus between them:
+            # WR XREG/ clocks U38/U40 (DAB→host readback) — a write-only SINK; RD XREG/ enables U39/U41
+            # (host→DAB) — driven by the *8080*, not by a microword WR_XREG. So a microword RD_XREG does NOT
+            # return what a microword WR_XREG wrote (the prior DAB→XREG→DAB same-step latch was physically
+            # impossible, output-alignment workflow 2026-06-30). During audio free-run the 8080 writes no
+            # X-data, so RD_XREG sources 0 (a constant). self.XREG is kept only as the host-readback sink.
+            self.DAB = 0
         # DRV_HOLD: leave self.DAB unchanged (bus hold; no pull resistors)
 
         # (5) consume the DAB:
         #   regfile write R[WA] <- DAB on DAB WSTB/ (¬MS7) — every step (§4F.1).
         self.R[d["WA"]] = s16(self.DAB)
-        #   DMEM write (MEMW/, DIN = result register driven onto DAB) — write-after-read (§5/fig3.3).
+        #   DMEM write (MEMW/, DIN). ★ memw_live (2026-06-29): fig-3.3 "critical path for DIN is XFER CK →
+        #   result register" — the write data is THIS instruction's just-completed MAC, not the stale
+        #   1-instruction-deferred RES register (which most MEMW steps have no XFER positioned to refresh).
+        #   Write the LIVE accumulator (res_from_acc(ACC)), matching the POST-verified aru_rtl_dp.py which
+        #   loads RES live every step. This CLOSES the recirculation loop (deferred-RES writeback was the
+        #   dead-tank regression: it threw the fed-back value away, giving loop gain ~0.014 / a single echo).
         if dev["memwrite"]:
-            self.DM[addr] = self.RES & 0xFFFF
-        #   X-register capture (WR XREG/) and D/A output capture (WR DA/) take the current DAB.
-        out_da = None
+            # ★ DIN = DAB = result register (fig-3.3: "critical path for DIN is XFER CK → result register";
+            # §2T a MEMW step drives the DAB from RDRREG = RES). With the synchronous-clear XFER fix now
+            # loading RES with the real accumulated sum, writing the DAB (=RES) is the hardware-grounded
+            # source — superseding the 2026-06-29 `memw_live` workaround (res_from_acc(ACC)), which only
+            # existed because the broken XFER left RES ≈ 0.
+            if getattr(self, "memw_live", False):       # diagnostic toggle: write the LIVE accumulator
+                self.DM[addr] = res_from_acc(self.ACC) & 0xFFFF
+            else:
+                self.DM[addr] = self.DAB & 0xFFFF
+        #   X-register capture (WR XREG/) and D/A output capture (WR DA/) take the current DAB. A WR DA/ step
+        #   writes the DAB to every enabled SDAA-D channel (§2T.4) — so this is a LIST of (chan, value).
+        out_da = []
         if dev["wr_xreg"]:
             self.XREG = self.DAB & 0xFFFF
         if dev["wr_da"]:
-            out_da = (dev["da_chan"], s16(self.DAB))
+            # D/A output capture — via the FPC output codec (fixed→float, 12-bit DAC grain) when enabled.
+            ov = fpc_output_fixed_to_float(self.DAB) if self.fpc_enabled else s16(self.DAB)
+            out_da = [(c, ov) for c in dev["da_chans"]]
 
         # (6) compute THIS instruction's product (deferred to retire next step). §fig-3.4
         V = product20(opnd, d["cmag"], d["CSIGN"])
@@ -240,23 +348,26 @@ class FreeRunARU:
         return out_da
 
     # ---- one audio sample = 100 microinstructions, then CPC += 1 (RESET@99) ----
-    def run_sample(self, wcs, audio_in, probe=None):
+    def run_sample(self, wcs, audio_in, offsets=None, probe=None):
         """wcs = list of 128 (l0,l1,l2,l3) tuples; runs steps 0..99 and returns the list of
-        (channel, value) D/A writes captured at WR DA/ this sample."""
+        (channel, value) D/A writes captured at WR DA/ this sample. offsets = optional 128-list of
+        signed per-step DMEM delay offsets from the firmware 0x3F4D buffer (addr = CPC + offset[k]);
+        None = hand-built mode (offset from the WCS lanes 0/1, addr = CPC - OFST)."""
         outs = []
         for k in range(self.NSTEPS):
             l0, l1, l2, l3 = wcs[k]
-            o = self.step(l0, l1, l2, l3, audio_in, probe=probe)
-            if o is not None:
-                outs.append(o)
+            ao = offsets[k] if offsets is not None else None
+            o = self.step(l0, l1, l2, l3, audio_in, addr_offset=ao, probe=probe)
+            outs.extend(o)               # step() returns a list of (chan, value) D/A writes (possibly empty)
         # CPC advances one sample position at the RESET@99 boundary (RUN cadence). §5.1/§3.5
         self.CPC = (self.CPC + 1) & 0xFFFF
         self.sample_count += 1
         return outs
 
     # ---- run N samples, capture the output IR per D/A channel ----
-    def run_free(self, wcs, input_signal, n_samples, probe_first=0):
-        """input_signal: callable(sample_index)->int16, or a list. Returns a dict:
+    def run_free(self, wcs, input_signal, n_samples, offsets=None, probe_first=0):
+        """input_signal: callable(sample_index)->int16, or a list. offsets = per-step 0x3F4D delay
+        table (see run_sample / concert_offsets); pass it for a REAL firmware program. Returns a dict:
           'A'..'D' -> list of per-sample output values (the last WR DA/ to that channel each sample),
           'mono'   -> per-sample sum of all WR DA/ writes (a quick scalar IR),
           'probe'  -> per-step probe records for the first `probe_first` samples.
@@ -270,7 +381,7 @@ class FreeRunARU:
             else:
                 ai = input_signal[s] if s < len(input_signal) else 0
             probe = [] if s < probe_first else None
-            outs = self.run_sample(wcs, ai & 0xFFFF, probe=probe)
+            outs = self.run_sample(wcs, ai & 0xFFFF, offsets=offsets, probe=probe)
             if probe is not None:
                 all_probe.append(probe)
             # per-channel: last write to each channel this sample; mono: sum of all writes
@@ -293,9 +404,24 @@ class FreeRunARU:
 # WCS helpers
 # ---------------------------------------------------------------------------
 def wcs_from_mem(mem, base=0x4000, n=128):
-    """Extract the 128-step WCS image (l0,l1,l2,l3 per step) from an SBC memory image."""
+    """Extract the 128-step WCS COEFFICIENT image (l0,l1,l2,l3 per step) from an SBC memory image.
+    NOTE: lanes 2/3 (the coefficients + device decode) are authoritative; lanes 0/1 are NOT the
+    free-run delay-offset source (garbage for CONCERT) — get the offsets from concert_offsets()."""
     return [(mem[base + 4 * k], mem[base + 4 * k + 1],
              mem[base + 4 * k + 2], mem[base + 4 * k + 3]) for k in range(n)]
+
+
+def concert_offsets(recbase=0xB800):
+    """★ The per-step DMEM delay offsets for a REAL firmware program — sourced from the firmware
+    0x3F4D buffer (NOT the 0x4000 WCS-image lanes 0/1, which are constant garbage for CONCERT).
+    Returns a 128-list of signed offsets; the free-run address is addr = CPC + offset[step]
+    (settled by the offset matrix 2026-06-29: of {CPC-off, CPC+off, CPC-|off|} only CPC+off closes
+    the loop). Extraction = aru224_emulate.tap_map (runs the firmware B55B builder, validated
+    byte-identical to the firmware load). recbase = the 0xB800 record array entry (0xB800 = CONCERT).
+    NB: do NOT use boot8080.read_offsets — it reads a contaminated (post-build-modified) 0x3F4D."""
+    import aru224_emulate
+    offs = aru224_emulate.tap_map(recbase, verbose=False)
+    return (offs + [0] * 128)[:128]
 
 
 def encode_step(offset=0, MEMAC=0, MI16=0, WA=0, RA=0, CSIGN=1, XFER=0, ZERO=0, cmag=0):
@@ -315,7 +441,9 @@ def encode_io_step(rd=None, wr_da=False, wr_xreg=False, da_chan=0, WA=0, RA=0,
                    CSIGN=1, XFER=0, ZERO=0, cmag=0):
     """Build an I/O step (MEMAC=0, MI16=1) with the OFST/ field carrying the I/O command bits:
        OFST12//13/ select the read source (RD AD/ = 11, RD XREG/ = 10); OFST7/ -> WR DA/;
-       OFST6/ -> WR XREG/; OFST8-11/ = SDAA-D D/A channel select. (§2T.1/§2T.2/§2T.4)"""
+       OFST6/ -> WR XREG/; OFST8-11/ = SDAA-D D/A channel enables. (§2T.1/§2T.2/§2T.4)
+       da_chan = channel index 0=A,1=B,2=C,3=D, set as the one-hot REVERSED enable OFST(11-idx)
+       (§2T.4: A=OFST11/, B=OFST10/, C=OFST9/, D=OFST8/)."""
     ofst = 0
     if rd == "AD":
         ofst |= (1 << 13) | (1 << 12)          # sel = 11
@@ -323,7 +451,7 @@ def encode_io_step(rd=None, wr_da=False, wr_xreg=False, da_chan=0, WA=0, RA=0,
         ofst |= (1 << 13)                       # sel = 10
     if wr_da:
         ofst |= (1 << 7)
-        ofst |= (da_chan & 0xF) << 8            # SDAA-D channel
+        ofst |= (1 << (11 - (da_chan & 3)))    # SDAA-D one-hot reversed enable (A→OFST11 … D→OFST8)
     if wr_xreg:
         ofst |= (1 << 6)
     l0 = ofst & 0xFF
@@ -373,19 +501,23 @@ def selftest_mac():
     XFER=1 to latch the accumulated 1000+500 into RES. The deferral means RES updates on the
     step AFTER B retires."""
     aru = FreeRunARU()
-    # We feed the operand on the DAB by writing R0 directly each step (no device drives DAB here,
-    # so set R0 before each compute). Use compute steps with WA pointing at an unused reg (R3).
-    progA = encode_step(MEMAC=0, MI16=0, WA=3, RA=0, CSIGN=1, XFER=0, ZERO=1, cmag=32)
-    progB = encode_step(MEMAC=0, MI16=0, WA=3, RA=0, CSIGN=1, XFER=1, ZERO=0, cmag=32)
+    # ★ SYNCHRONOUS-CLEAR semantics (74LS163, owner timing): ZERO closes a group AFTER its product +
+    # the XFER capture (the clear lands on the NEXT clock edge). So to ACCUMULATE two taps, the ZERO must
+    # sit on the step BEFORE the first tap (it clears for the fresh group); the last tap carries XFER.
+    # (The old version put ZERO on tap-A and expected 1500 — that encoded the disproven clear-BEFORE model.)
+    clr = encode_step(MEMAC=0, MI16=0, WA=3, RA=0, CSIGN=1, XFER=0, ZERO=1, cmag=0)   # clear for next group
+    progA = encode_step(MEMAC=0, MI16=0, WA=3, RA=0, CSIGN=1, XFER=0, ZERO=0, cmag=32)  # tap 1000
+    progB = encode_step(MEMAC=0, MI16=0, WA=3, RA=0, CSIGN=1, XFER=1, ZERO=0, cmag=32)  # tap 500 + XFER
     nop = nop_step()
+    aru.step(*clr, 0)            # pend=clr(ZERO)
     aru.R[0] = 1000
-    aru.step(*progA, 0)          # compute A (pend=A)
+    aru.step(*progA, 0)          # retire clr (ACC=0), compute A (pend=A)
     aru.R[0] = 500
-    aru.step(*progB, 0)          # retire A (ACC=0+1000_V), compute B (pend=B)
+    aru.step(*progB, 0)          # retire A (ACC+=1000_V), compute B (pend=B)
     aru.step(*nop, 0)            # retire B (ACC+=500_V, XFER -> RES=res(1000+500))
     res = aru.RES
     want = res_from_acc(product20(1000, 32, 1) + product20(500, 32, 1))
-    print(f"MAC two unity taps (1000+500) via engine+deferred pipeline: RES={res} want={want} "
+    print(f"MAC two unity taps (1000+500), ZERO-before-group: RES={res} want={want} "
           f"[{'OK' if res == want else 'FAIL'}] (~1500 expected)")
     return res == want
 
@@ -441,8 +573,11 @@ def test_max_delay(delay=64, n=200, verbose=True):
     a = out["A"]
     peak_idx = max(range(len(a)), key=lambda i: abs(a[i]))
     peak_val = a[peak_idx]
-    # success: a clear impulse at sample == delay, ~unchanged amplitude, near-zero elsewhere.
-    near_zero = all(abs(v) <= 2 for i, v in enumerate(a) if i != peak_idx)
+    # success: a clear impulse at sample == delay, ~unchanged amplitude, and elsewhere only the known
+    # cmag=0 all-ones-baseline DC trickle (netlist §4F.9, ≈−73 dB; here ~|34| from the cmag=0 MEMW/MEMR
+    # steps) — NOT a second echo. We tolerate ≤40 (the baseline) but require it be a flat residue, not a tap.
+    residue = [abs(v) for i, v in enumerate(a) if i != peak_idx]
+    near_zero = all(v <= 40 for v in residue)
     ok = (peak_idx == delay) and (abs(peak_val - 1000) <= 3) and near_zero
     if verbose:
         print(f"M3.2 max-delay (delay={delay} samples):")
@@ -461,17 +596,20 @@ def test_feedback_comb(D=50, g_cmag=16, n=400, verbose=True):
     the coeff produces. This is the structural capability check; the REAL CONCERT decay comes
     from CONCERT's own coeffs + per-frame modulation (M3.4), NOT from this chosen g.
 
-    The MAC chain (read-before-write honored): input->R0 (step0); MEMR y[n-D]->R1 + start the
-    sum with x[n] (step1, ZERO); +g·y[n-D] then XFER (step2); MEMW y[n]->DMEM[CPC] (step3);
-    WR DA out<-y[n] (step4)."""
+    The MAC chain, SYNCHRONOUS-CLEAR semantics (ZERO clears for the NEXT group, so it sits on the
+    step BEFORE the first tap; the last tap carries XFER): input->R0 (step0); MEMR y[n-D]->R1 + ZERO
+    (clear) (step1); tap x[n]=R0×1 (step2); tap g·y[n-D]=R1×g + XFER->RES=y[n] (step3); MEMW
+    y[n]->DMEM[CPC], DIN=RES (step4); WR DA out<-y[n] (step5)."""
     wcs = list([nop_step()] * 128)
-    wcs[0] = encode_io_step(rd="AD", WA=0, RA=3, cmag=0)                       # input -> R0
-    wcs[1] = encode_step(offset=D, MEMAC=1, MI16=1, WA=1, RA=0, CSIGN=1,        # MEMR y[n-D]->R1;
-                         XFER=0, ZERO=1, cmag=32)                              # acc = x[n] (R0×1)
-    wcs[2] = encode_step(MEMAC=0, MI16=0, WA=3, RA=1, CSIGN=1,                  # acc += g·y[n-D];
+    wcs[0] = encode_io_step(rd="AD", WA=0, RA=3, cmag=0)                        # x[n] -> R0
+    wcs[1] = encode_step(offset=D, MEMAC=1, MI16=1, WA=1, RA=3, CSIGN=1,        # MEMR y[n-D]->R1;
+                         XFER=0, ZERO=1, cmag=0)                               # ZERO=clear next group
+    wcs[2] = encode_step(MEMAC=0, MI16=0, WA=3, RA=0, CSIGN=1,                  # tap x[n] (R0×1)
+                         XFER=0, ZERO=0, cmag=32)
+    wcs[3] = encode_step(MEMAC=0, MI16=0, WA=3, RA=1, CSIGN=1,                  # tap g·y[n-D] (R1×g);
                          XFER=1, ZERO=0, cmag=g_cmag)                          # XFER -> RES = y[n]
-    wcs[3] = encode_step(offset=0, MEMAC=1, MI16=0, WA=2, RA=2, CSIGN=1, cmag=0)  # MEMW y[n]->DMEM[CPC]
-    wcs[4] = encode_io_step(rd=None, wr_da=True, da_chan=0)                     # out <- DAB (=y[n])
+    wcs[4] = encode_step(offset=0, MEMAC=1, MI16=0, WA=2, RA=2, CSIGN=1, cmag=0)  # MEMW y[n]->DMEM[CPC]
+    wcs[5] = encode_io_step(rd=None, wr_da=True, da_chan=0)                     # out <- DAB (=y[n])
     aru = FreeRunARU()
 
     def impulse(s):

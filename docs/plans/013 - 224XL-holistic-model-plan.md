@@ -166,9 +166,12 @@ shortcut:
 ### Phase 3 — Wire it together & run (single-step DONE; free-run = M3)
 The elements are wired via the Phase-0 nets, with the WCS bits driving control inputs directly (no field map),
 and the model is driven through the firmware's single-step port protocol — passing the whole POST (Phase 4.1).
-The **DAB** is one shared 16-bit net with hold-last-value when undriven (no pull resistors). **Still to do for
-M3:** run the clock free for N samples with the real WCS PC sweeping 0–99 + per-cycle device-decode-selected
-DAB driver, and capture the **output node** (WR DA/) so the reverb emerges over the recirculating loop.
+The **DAB** is one shared 16-bit net with hold-last-value when undriven (no pull resistors). **Free-run BUILT
+(M3, `tools/aru_freerun.py`):** the clock runs free for N samples with the real WCS PC sweeping 0–99 +
+per-cycle device-decode-selected DAB driver, capturing the **output node** (WR DA/). With the per-step DMEM
+offset sourced correctly (firmware 0x3F4D buffer via `aru224_emulate.tap_map`, **not** the 0x4000 lanes 0/1 —
+see Phase 4.2) the recirculating loops EXIST at ms-scale and a SHORT (~0.5 s) decaying tail emerges (dead →
+audible); getting the full faithful ~2.6 s decay (the loop gain is still too low) + LFO modulation is M4.
 
 ### Phase 4 — Validate by emergence (not by hand-checking)
 1. **POST as an emergent property ✅ DONE (strongest available check).** The model, driven through the
@@ -179,10 +182,26 @@ DAB driver, and capture the **output node** (WR DA/) so the reverb emerges over 
    the gate-level Booth, which this model has by construction.) *Correction to the earlier POST-coverage note:
    the DMEM test E91 DOES exercise the `CPC−OFST` adder at one nonzero offset (0x2000) with the CPC walking; the
    rest of L5 (offset variation, dual-use 12/13) + the free-run routing are validated structurally + by item 2.*
-2. **Free-run coherence — NEXT (M3).** Run a program (CONCERT) for thousands of samples; the recirculating loop
-   should close at a stable sub-unity decay **because the wires close it**, not because we tuned a gain. RT60
-   should track the decay/size parameter across programs. If it doesn't, the failure is a *specific* mis-wired
-   net or mis-timed edge — localizable by probing the model's internal nets against fig-3.3/3.4.
+2. **Free-run coherence — IN PROGRESS (M3, `tools/aru_freerun.py`).** Run a program (CONCERT) for thousands of
+   samples; the recirculating loop should close at a stable sub-unity decay **because the wires close it**, not
+   because we tuned a gain. RT60 should track the decay/size parameter across programs. **Dead-tank root cause
+   FOUND + fixed (2026-06-29):** the engine was sourcing the per-step DMEM delay OFFSET from the WRONG place —
+   WCS lanes 0/1 of the 0x4000 image — which for CONCERT give clustered ~0.9–1.7 s (≈30000-sample) garbage
+   delays, so DMEM reads/writes address DISJOINT regions and the loop never closes (the classic dead tank,
+   already flagged in Session 11 / system-architecture doc). The REAL per-step delays live in the firmware
+   **0x3F4D offset buffer**, extracted by `tools/aru224_emulate.py::tap_map(0xB800)` (the B55B builder; validated
+   byte-identical to the firmware load) — step-index-keyed and aligned with the 0x4000 COEFFICIENTS[s]: step 0 =
+   362 ms predelay, steps 5–23 = a VARIED 7–176 ms diffuser cluster (not 19 identical 1.7 s taps), a 176 ms
+   recirc loop reused 4×. With the ms-scale offsets the feedback loops now EXIST (≈72 short write→read loops at
+   1–200 ms; write/read addresses overlap) and a **SHORT (~0.5 s) decaying tail emerges** — CONCERT went from a
+   *fully dead* tank (impulse → 2–4 live samples) to an audible short tail (noise burst → ~0.3 s tail; the DMEM
+   buffer decays ~1.7 s). The offset SOURCE is the confirmed fix (`addr = CPC + offset[step]`, settled by the
+   offset matrix: of {CPC−off, CPC+off, CPC−|off|} only CPC+off survives), wired into `tools/aru_freerun.py`
+   (`concert_offsets()`). **🟡 STILL OPEN — the full ~2.6 s hall decay:** the loop gain is too low (the tail
+   decays too fast), so a further cause remains beyond the offset source — quantization-to-zero / coeff scaling
+   / the per-frame LFO modulation. (CAVEAT: `tools/boot8080.py::read_offsets` reads a CONTAMINATED 0x3F4D from
+   the booted firmware — 576 ms vs the correct 176 ms for step 2 — so use `aru224_emulate.tap_map`.) The offset
+   failure was a *specific* mis-sourced value, localized exactly as the discipline predicts.
 3. **L7 — real-unit IR (last).** If/when a hardware capture exists, compare. Pass/fail only; meaningful now
    because everything beneath is structural.
 
@@ -223,21 +242,42 @@ after correctness is proven — correctness first.
    single-step tests un-suppressed — E32 latch + E40 register + E83 multiplier + E91 DMEM — driven via
    `aru_post.run_post(aru_factory=ARU_RTL)`.** Single-step semantics scout-confirmed (WCS PC held; OUT 0x05=CPC CLR;
    XFER=0 read-back via the X-register). Primitives + wiring corroborated by the firmware itself.
-4. **M3 — engine DONE + verified; CONCERT recirculation localized (2026-06-29). Plan + full status:
-   `docs/plans/017`.** Built `tools/aru_freerun.py` (free-run engine; does NOT touch the POST-green M1/M2
-   files): WCS PC 0→99 (RESET@99), per-step §2T device-decode DAB routing, the **fig-3.4 deferred MAC** as a
-   1-instruction pipeline, clean signed multiply-accumulate (`sat16(ACC≫3)`), CPC **+1/sample** at RESET@99,
-   DMEM recirc (`addr=CPC−OFST`), I/O (inject @RD AD/, capture @WR DA/). **Verified:** M3.0 runs the whole
-   100-step CONCERT for 500k+ microinstructions with no fault; **M3.1 zero-delay** (impulse→outputs A&D
-   unchanged) and **M3.2 max-delay** (impulse reappears exactly `delay` samples later, 64/150) PASS; **M3.3
-   engine recirculation capability PROVEN** (hand-built feedback comb decays exactly per coeff, no tuned
-   gain). **CONCERT (criterion 4) partial:** the static WCS retains delay-memory energy with a ~1.7 s
-   reverb-like RT, but the output is sparse echoes (direct + ~1.4 s), **not** a dense tail — localized to a
-   missing output densification, most likely the **per-frame LFO modulation** (M4; main-loop-paced, not yet
-   driven by `boot8080`) and/or a feedback-timing refinement. No gain knob added (discipline held). POST stays
-   green. Read-before-write + deferred-MAC are the two un-POST-tested timing choices to probe next.
-5. **M4 (open)** — co-simulate the per-frame WCS modulation with the free-run so CONCERT densifies into a
-   faithful decaying tail; then RT60-tracking + consistent across ≥3 programs; then (if available) L7 IR match.
+4. **M3 — engine DONE + verified; dead-tank OFFSET-SOURCE bug found + fixed → short tail emerges; full ~2.6 s
+   decay still open (2026-06-29). Plan + full status: `docs/plans/017`.** Built `tools/aru_freerun.py`
+   (free-run engine; does NOT touch the POST-green
+   M1/M2 files): WCS PC 0→99 (RESET@99), per-step §2T device-decode DAB routing, the **fig-3.4 deferred MAC** as
+   a 1-instruction pipeline, clean signed multiply-accumulate (`sat16(ACC≫3)`), CPC **+1/sample** at RESET@99,
+   DMEM recirc, I/O (inject @RD AD/, capture @WR DA/). **Verified:** M3.0 runs the whole 100-step CONCERT for
+   500k+ microinstructions with no fault; **M3.1 zero-delay** (impulse→outputs A&D unchanged) and **M3.2
+   max-delay** (impulse reappears exactly `delay` samples later) PASS; **M3.3 engine recirculation capability
+   PROVEN** (hand-built feedback comb decays exactly per coeff, no tuned gain). `tools/render_wav.py` renders the
+   free-run output to a 34.13 kHz WAV. **★ DEAD-TANK ROOT CAUSE (the big one):** the engine sourced the per-step
+   DMEM delay OFFSET from the WRONG place — WCS lanes 0/1 of the 0x4000 image (`ofst=(l1<<8)|l0`) — which for
+   CONCERT give clustered ~0.9–1.7 s (≈30000-sample) garbage delays, so reads/writes hit DISJOINT regions and
+   the loop never closes. The REAL per-step delays live in the firmware **0x3F4D offset buffer**, extracted by
+   `tools/aru224_emulate.py::tap_map(0xB800)` (B55B builder; byte-identical to the firmware load), step-index-keyed
+   and aligned with the 0x4000 COEFFICIENTS[s] (step 0 = 362 ms predelay, steps 5–23 = a VARIED 7–176 ms diffuser
+   cluster, 176 ms recirc reused 4×). With the corrected ms-scale offsets (`addr = CPC + offset[step]`, wired into
+   `concert_offsets()`) the feedback loops EXIST (≈72 short write→read loops; addresses overlap) and a **SHORT
+   (~0.5 s) decaying tail emerges** — dead tank → audible short tail (the DMEM buffer decays ~1.7 s). (CAVEAT:
+   `boot8080.read_offsets` reads a CONTAMINATED 0x3F4D — use
+   `aru224_emulate.tap_map`.) **Parameter hypothesis RULED OUT:** the dead tank was NOT un-recalled params — the
+   full param/variation defaults ARE recalled into 0x3ca3 and baked into the WCS at load (110/128 steps built;
+   Diffusion/Chorus/feedback coeffs present at boot; Mode Enhancement ON), and applying CONCERT Variation 1's
+   full preset was a NO-OP; it was the offset-source bug. The param-application architecture is now FULLY TRACED
+   (flat RAM array @0x3ca3, 6×5 pages; de-zipper applier 0xB000 packs ramped coeffs into 0x4000; recall at load
+   0x13B6→0x13d9; see `docs/plans/017`). 🟡 STILL OPEN — the full ~2.6 s decay: with the correct offsets +
+   `addr=CPC+offset` the tail decays too FAST (~0.5 s, loop gain too low), so a further cause remains beyond the
+   offset source — quantization-to-zero / coeff scaling / the **per-frame LFO modulation** run inside the free-run.
+   (The offset sign is settled: of {CPC−off, CPC+off, CPC−|off|} only `addr=CPC+offset` survives.) No gain knob added
+   (discipline held). POST stays green. Read-before-write + deferred-MAC PROVEN INERT (toggling each leaves the
+   loop eigenvalue bit-identical) — NOT the dead-tank cause.
+5. **M4 (open)** — (a) pin the exact DMEM offset sign/encoding so the closed loop yields a proper decaying tail
+   (not the current weak flat ~unity sustain); (b) co-simulate the per-frame WCS LFO modulation (gated by Mode
+   Enhancement bit6 of 0x3ccd; engine 0xAD5C) with the free-run so CONCERT densifies into a faithful ~2.6 s decay;
+   then RT60-tracking + consistent across ≥3 programs; then (if available) L7 IR match. The param-application
+   chain that feeds the WCS (flat array @0x3ca3, de-zipper 0xB000, group table 0x3CF4, recall at load 0x13d9) is
+   already traced — see `docs/plans/017`.
 
 ## 7. Risks / honest unknowns
 - **★ Memory-derived part data (the failure that already bit us).** Stating a pinout/spec from training memory

@@ -298,6 +298,13 @@ verify the C++ implementation.
   magnitude comes direct from 0xB510 `AND 0x7F`). `mag & 0x3F` is REFUTED. A single 6-bit coefficient
   is always < 1 (≤ 63/64). **The "2 extra LSBs"** (NVS4 packer 0xB4F0, `AND 3 / OR 3` at 0xAE72)
   belong to the **modulation fractional-delay interpolation coefficient**, NOT the main multiply.
+- **`cmag=0` baseline (plan-016 active-low NAND array) — reconciled.** `cmag=0` is the plan-016
+  active-low NAND-array baseline (the "+3 ACC units per `cmag=0` multiply" = the all-ones product
+  register). For a **single** multiply it correctly rounds to 0 at the `>>3` round-half-up (matches every
+  golden). In the free-run MAC, 19 consecutive `cmag=0` bus-move steps accumulate ~+57 → a ≈−73 dB DC
+  trickle — **faithful to the gate model, NOT the dead-tank cause** (§6.4). Cross-multiply accumulation
+  of the baseline is untested by plan 016 (which only exercised single-step); flag as a sub-LSB open
+  item, like the `cmag=63` +3.
 - **Gains ≥ 1 arise from MAC accumulation, not a single multiply (RESOLVED).** The Service Manual's
   ×1, ×5/4, ×42/32 gains arise from **4-step MAC accumulation gated by the ZERO bit**, firmware-
   confirmed via the ADD'L MULT diagnostic (handler 0x0D99): stored lane3 bytes → gains:
@@ -397,8 +404,77 @@ steps each parameter rewrites and the value→coeff/delay curve**. These are rec
 
 **Param path:** LARC slider positions `0x3c00–0x3c05` → main-loop scan `0x8185` diffs vs last-seen
 `0x3c16+` → handler `0x85f2` (type-scaling, param type in `0x3c33`) → apply walks the **`0x3CF4` group
-table** (built by the interpreter `0xAA9C`) → rewrites the linked WCS coeff/delay bytes, **ramped by
-the de-zipper** (so transitions smooth, not instantaneous).
+table** (built by the interpreter `0xAA9F`) → rewrites the linked WCS coeff/delay bytes, **ramped by
+the de-zipper** (so transitions smooth, not instantaneous). **Full disassembly-verified architecture in
+§6.1; toggles §6.2; CONCERT group map §6.3; the free-run engine + dead-tank offset-source bug §6.4.**
+
+### 6.1 Parameter-application architecture (FULLY TRACED — firmware-disassembly-verified, 2026-06-29)
+
+The full apply path is now disassembled end-to-end. The headline correction: **all five LARC control
+pages' parameter values live in ONE flat RAM array based at `0x3ca3`** (6 bytes per page × 5 pages =
+30 bytes; a record header/type byte sits at `0x3ca2`). The 6 LARC faders at `0x3c00–0x3c05` are **only
+the live fader-echo of the *current* page** — paging does **not** just swap the 6 sliders; the whole
+30-byte block persists.
+
+- **Array slot** = `0x3ca3 + page*6 + slider`, computed at **`0x862e`** (`A = (0x3c34)*6 + B`).
+- **Page state:** `0x3c32` = raw page counter (the PAGE-key handler `0x8f50` does INC); `0x3c34` =
+  derived/clamped page index (read only at `0x862e`; written at `0x1477`). *(This supersedes the
+  earlier "page `0x3c3c`" pointer in the quick-reference.)*
+- **Paging:** the PAGE key (`0x8f50`) advances `0x3c32`, recomputes `0x3c34`, and reloads the 6 sliders
+  `0x3c00–05` from the new page's array slice (`0x87c2`).
+- **Apply chain:** main-loop scan `0x8185` (DE=`0x3c00` live, HL=`0x3c16` last-seen, B=0..9; **B≤5 →
+  handler `0x85f2`**) → `0x85f2` type-scales by program type (`0x3c33`), **queues a de-zip job**
+  (pending-flag array `0x3c20+B`), sets dirty flag `0x3c51` → the **de-zipper applier `0xB000`** ramps
+  the coeff/delay one step per main-loop pass and **packs the byte into the WCS `0x4000` image**
+  (`0xB4F0` = 6-bit coeff magnitude into the upper bits; `0xB4FF` = sign into bit7 of the adjacent byte).
+- **Group table `0x3CF4`** (built by the interpreter `0xAA9F`; 32 entries × 3 bytes; opcode low-nibble =
+  count, bits `0x30` = sub-type `0x00`/`0x10`/`0x20`) links each parameter's group to its target WCS
+  step(s); the step→coeff-address transform is **`0xAB0C`: `addr = 0x4003 + step*4`**.
+- **Recall at load:** program-load `0x13B6` → lookup `0x133e` finds the program record in the `0xB800`
+  array (21 records × `0x2AA` bytes; record 0 = CONCERT) → **`0x13d9`** (`LD DE,0x3ca2; LD B,0x30;
+  CALL 0x0614`) recalls the **48-byte param/toggle block** into `0x3ca2..` → `0xa791` apply engine
+  builds the **full** WCS image. ⇒ the variation defaults **are** recalled and the full WCS **is** built
+  at load (boot: 110/128 steps already have built coefficients).
+
+### 6.2 Toggles (the 3 PARAM-key switches)
+
+Stored as **bits in one RAM byte `0x3ccd`**, loaded from the program record at load (`0xA892`):
+- **bit0 (`0x01`) = Dynamic Decay** — gates LF/Mid Stop Decay; read at `0x83B4`.
+- **bit6 (`0x40`) = Mode Enhancement** — gates the Chorus/LFO modulation engine `0xAD5C`
+  (`AND 0x40; JP z` skips the whole LFO update when clear). *(This is the modulation enable referenced
+  in §7 as "`0x3ccd` bit6.")*
+- **bit7 (`0x80`) = Decay Optimization** — read at `0x83D1`.
+
+**CONCERT boots `0x3ccd = 0xC0`** (Mode Enhancement + Decay Optimization ON, Dynamic Decay OFF). Toggle
+cycle index = `0x3c41`; mask table @`0xa758`.
+
+### 6.3 CONCERT group → param → WCS-step map (verified vs the param sweep + disassembly)
+
+Page 1 (the 6 sliders, §6 table): **P0 LF Decay** → steps 43,95 · **P1 Mid Decay** → anchors
+64,68,115,119 + interpolated allpass coeffs 62,63,66,67,113,114,117,118 (via the decay generator
+`0x86b2`/`0x8da5`/`0x8e03`, **NOT** in the group table) · **P2 Crossover** → 45,46,97,98 · **P3 Treble
+Decay/HF-damp** → 40,41,92,93 · **P4 Depth/input-diffusion** → 29–32,81–84 · **P5 Predelay** → DELAY
+steps 42,94.
+
+Page 2: **Chorus** → group g0 steps 57,108 (animated by the LFO modulation over the canonical taps
+56/57/107/108, depth `0x3cd4`, rate `0x3cd3=0x20`) · **Diffusion** → group g19 steps 52,60,72,104,111,123
+(the recirculation **allpass**, coeff ≈ −95/−0.74) · **tank feedback** → g20–29 steps 27,28,79,80
+(coeff −127, near-unity).
+
+### 6.5 CONCERT = Concert Hall, Variation 1 — boot preset
+
+CONCERT (id `0x01`, record 0 in the `0xB800` array) = **Concert Hall, Variation 1**
+(`docs/reference/224/224X_chapter8_variation_presets.md`; Owner's Manual ch.4). 5 control pages, 7
+variations, average decay **2.6 s**; the manual notes Halls "have a relatively low initial echo density,
+which gradually builds as time progresses" to a dense tail. The Var-1 preset recalled at load:
+
+- **Page 1:** LF Decay 3.0 s · Mid Decay 2.0 s · Crossover 720 Hz · Treble Decay 6.30 kHz · Depth 33 ·
+  Predelay 24.0 ms.
+- **Page 2:** LF Stop 3.0 s · Mid Stop 3.0 s · Chorus 50 · HF Bandwidth 9.00 kHz · Diffusion 25 ·
+  Definition 00.
+- **Page 3:** Preecho Levels 00. **Page 4:** Preecho Delays 5.00/9.75/17.5/25.0 ms + Fine Predelay
+  0.36/10.2 ms. **Page 5:** Size/Gate.
+- **Toggles (`0x3ccd` = `0xC0`):** Dynamic Decay OFF · Mode Enhancement ON · Decay Optimization OFF.
 
 **Transfer data:** `tools/param_sweep.py` / `batch_sweep.py` → `224XL_param_sweep_<id>.json` for all 20
 programs. Each file lists, per parameter, the affected coeff steps and delay steps, with the value at 8
@@ -417,6 +493,63 @@ exactly linear, Δ16/step). CONCERT example:
 For the C++ core: expose params as 0..1, map through the per-program JSON curve to the target
 coeff/delay at the linked steps, and de-zipper (ramp) toward target (multi-rate, ≈ −4/−1 per control
 tick) for click-free changes.
+
+### 6.4 Free-run engine + the offset-source bug recurrence (M3, 2026-06-29)
+
+A **free-run execution engine** now exists: `tools/aru_freerun.py` = class `FreeRunARU` (does **not**
+touch the POST-green `tools/aru_rtl_dp.py`). It sweeps the WCS program counter 0→99 (RESET@99), does
+per-step §2T device-decode DAB routing, the fig-3.4 deferred MAC as a 1-instruction pipeline, a signed
+multiply-accumulate (`RES = sat16(ACC>>3)`), DMEM recirculation, and fixed-point I/O (inject at `RD AD/`,
+capture at `WR DA/`). Verified: runs the whole 100-step CONCERT for 500k+ microinstructions with no fault;
+zero-delay passthrough PASS; max-delay DMEM-delay PASS (impulse reappears exactly `delay` samples later);
+a hand-built feedback comb decays exactly per coefficient. POST regression stays green on `aru_rtl_dp.py`
+(E32/E40/E83/E91, multiply 20/20). `tools/render_wav.py` renders the free-run output to a 34.13 kHz WAV.
+
+**★ Dead-tank root cause (the big one) — the `0x4000` offset-source bug recurred.** `aru_freerun.py`
+initially sourced the per-step DMEM delay **offset** from WCS lanes 0/1 of the `0x4000` image
+(`ofst=(l1<<8)|l0; addr=CPC+ofst+1`) — the **wrong source** (the same Session-11 error). For CONCERT
+those `0x4000` lanes 0/1 give clustered ~0.9–1.7 s (≈30000-sample) **garbage** delays, so DMEM reads and
+writes address **disjoint** regions and the recirculation loop never closes → **dead tank**. The real
+per-step delays live in the firmware **`0x3F4D` offset buffer**, extracted by
+`tools/aru224_emulate.py::tap_map(0xB800)` (runs the B55B builder; validated byte-identical to the
+firmware load). *This reinforces the §2/banner authority of `0x3F4D` over `0x4000` for delays — the
+`0x4000` image is the correct source for the COEFFICIENTS (lanes 2/3), not the free-run delay offsets.*
+
+- ✅ **Offset↔control per-step alignment CONFIRMED** step-index-keyed and correct: `tap_map[s]` aligns
+  perfectly with the boot8080 `0x4000` COEFFICIENTS[s] — step 0 = 362 ms predelay (the first MEMR),
+  steps 5–23 = a **varied** 7–176 ms diffuser cluster (NOT the 19 identical 1.7 s taps the wrong source
+  produced), a 176 ms recirc loop reused 4×. *(This advances the formerly-⚪ "offset↔control per-step
+  alignment" item in the Session-11 banner to ✅ alignment-confirmed.)*
+- ✅ **Offset SOURCE fixed → a SHORT decaying tail emerges.** With the corrected ms-scale offsets
+  (`addr = CPC + offset[step]`, wired into `aru_freerun.concert_offsets()`) the feedback loops EXIST (≈72
+  short write→read loops at 1–200 ms; write/read addresses overlap) and CONCERT goes from a *fully dead*
+  tank (impulse → 2–4 live samples) to a **short ~0.5 s decaying tail** (noise burst → ~0.3 s tail; the
+  DMEM buffer decays ~1.7 s). *(Earlier "loop closes / dense continuous field" was a flawed-test artifact —
+  that matrix overwrote lanes 0/1 and corrupted the I/O routing; the clean `run_free(offsets=…)` result is
+  the short tail above.)*
+- 🟡 **The full ~2.6 s hall decay is STILL OPEN.** The tail decays too FAST (~0.5 s) — the loop gain is too
+  low, so a further cause remains beyond the offset source: quantization-to-zero / coeff scaling / the
+  per-frame LFO modulation. The offset SIGN is settled (of `{CPC−off, CPC+off, CPC−|off|}` only
+  `addr=CPC+offset`/`delay=−offset` survives). A prior note that `0x4000`-raw matches
+  `tap_map` for ~120/128 steps with ~5 head steps (lane0=`0x89`, i.e. CONCERT steps 0–4) repacked, and
+  `delay=+offset`, is part of this still-being-reconciled picture. *(Do not overwrite the §2 `delay=−offset`
+  convention — it remains 🟡; this is an added data point.)* A proper ~2.6 s decay also needs the
+  per-frame LFO modulation (§7) run inside the free-run.
+- ✅ **CAVEAT — contaminated `read_offsets`.** `tools/boot8080.py::read_offsets` reads a **contaminated**
+  `0x3F4D` from the *booted* firmware (modified post-build: gives 576 ms for step 2 vs `tap_map`'s correct
+  176 ms). Use `aru224_emulate.tap_map`, not the booted `read_offsets`, for free-run delays.
+
+**Parameter hypothesis RULED OUT.** The dead tank was **not** caused by un-recalled parameters: the
+page-1 slider coeffs **and** the page-2 Diffusion(=25)/Chorus(=50) defaults are all recalled into
+`0x3ca3` and baked into the WCS at load (110/128 steps built; Diffusion/Chorus/feedback coeffs present at
+boot; Mode Enhancement ON). Applying CONCERT Variation 1's full preset was a **no-op**. The dead tank was
+the offset-source bug above.
+
+**Engine timing (M4 diagnosis).** The two un-POST-tested timing choices — read-before-write of the
+regfile operand, and the deferred-MAC retire ordering — were **proven inert** (toggling each leaves the
+loop eigenvalue bit-identical), so neither is the dead-tank cause. The free-run output channel decode
+(SDAA–D) in `aru_freerun.py` is a binary code but netlist §2T.4 says **4 independent reversed strobes**
+(OFST8/→SDAD … OFST11/→SDAA) — a channel-**label** bug only, not an IR-value bug.
 
 ---
 
@@ -458,7 +591,10 @@ modulation frames, and param mappings.
 | `harvest_xl.py` | all-program names + delays + gains |
 | `param_sweep.py` / `batch_sweep.py` | param→coeff/delay transfer tables (per-program JSON) |
 | `aru_datapath.py` | **the ARU execution reference** (routing correct; arithmetic to tune) |
-| `aru224_emulate.py` | build-engine decode (delays via tap_map, gains via capture_coeffs) |
+| `aru224_emulate.py` | build-engine decode (delays via `tap_map(0xB800)` from `0x3F4D`, gains via capture_coeffs) |
+| `aru_rtl.py` / `aru_rtl_dp.py` | phase-accurate RTL clock engine + datapath (**POST-green**: E32/E40/E83/E91, mult 20/20) |
+| `aru_freerun.py` | **free-run engine** (`FreeRunARU`): runs the whole 100-step program continuously (§6.4) |
+| `render_wav.py` | renders the free-run output to a 34.13 kHz WAV |
 
 Driving the live firmware (to capture modulation frames / param effects): boot to the main loop, then
 step the CPU while firing the serial interrupt (`if cpu.IFF1 and (icount-last)>=64 and (larc.tx_en or
@@ -594,8 +730,16 @@ DMEM #060-02273, Block-Diagram-Memory + zoom crops.
 - Name table `0xA002`; directory `0xA446` (`{flags=ID,group,sub,page-hi,len}`).
 - Build engine: interpreter `0xAA9F`, step-builder `0xB55B` (FE path) / `0xB65A` (non-FE pre-built
   table @recbase+0xA7..0x2A7), coeff packers `0xB4F0`/`0xB4FF`, coeff source `0xB510`.
-- Params: sliders `0x3c00–0x3c05`, last-seen `0x3c16+`, handler `0x85f2`, group table `0x3CF4`,
-  param type `0x3c33`, page `0x3c3c`.
+- Params: live sliders `0x3c00–0x3c05` (current-page fader echo only), **flat param array `0x3ca3`**
+  (6 bytes × 5 pages; slot = `0x3ca3 + page*6 + slider`, computed at `0x862e`; header byte `0x3ca2`),
+  last-seen `0x3c16+`, scan `0x8185`, handler `0x85f2`, group table `0x3CF4` (built `0xAA9F`;
+  step→addr `0xAB0C` = `0x4003 + step*4`), de-zipper applier `0xB000`, pending-flags `0x3c20+`,
+  dirty `0x3c51`, param type `0x3c33`, **page state `0x3c32` (raw) / `0x3c34` (clamped)**, PAGE key
+  `0x8f50`, page-reload `0x87c2`.
+- Param recall at load: `0x13B6 → 0x133e` (find record) → `0x13d9` (`LD DE,0x3ca2; LD B,0x30;
+  CALL 0x0614`, recalls 48-byte param/toggle block) → `0xa791` (build full WCS image).
+- Toggles: `0x3ccd` (bit0 Dynamic Decay @`0x83B4`, bit6 Mode Enhancement @`0xAD5C`, bit7 Decay
+  Optimization @`0x83D1`; loaded `0xA892`; CONCERT = `0xC0`); cycle index `0x3c41`, mask table `0xa758`.
 - Modulation: engine `0xAD5C`, rate `0x3cd3`, depth `0x3cd4`, enable `0x3ccd` bit6, phase counters
   `0x3e45/0x3e46`, value writes `0xAE6C` (delay) / `0xAE8E` (interp coeff).
 - Boot/normal-op: reset `0x0000→0x003B`, LARC handshake `0x0067`/`0xC8`, POST → `0x00CC` → `0x813B`
