@@ -43,6 +43,7 @@ SINGLE-STEP SEMANTICS (netlist + Service-Manual, scout-confirmed):
 """
 import os
 import sys
+from functools import lru_cache
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import aru_rtl as F        # core (Net/Reg/Counter/Latch) + ClockEngine (M1)
@@ -65,6 +66,33 @@ def sat16(v):
 
 def sat20(v):
     return ACC_MAX if v > ACC_MAX else (ACC_MIN if v < ACC_MIN else v)
+
+
+def res_from_acc(acc):
+    """Result register = sat16 of the accumulator ≫3 with round-half-up (the ARU PP3..18 tap).
+    Same as aru_freerun.res_from_acc — the value XFER CK latches from the 20-bit accumulator."""
+    return sat16((acc + 4) >> 3)
+
+
+@lru_cache(maxsize=None)
+def _booth_product_cached(F_op, cmag, csign):
+    """Signed 20-bit accumulator contribution of F·(coeff/32) via the VERIFIED gate Booth array
+    (aru_booth.comb_array + 74F283 carry chain + plan-016 +3/dual-rail correction), coeff sign included.
+    Deterministic in (F_op, cmag, csign) → memoized (the gate array is the free-run hot path; without this
+    a multi-second render is ~10⁷ uncached gate evals). Numerically == aru_freerun.product20."""
+    C = [(cmag >> i) & 1 for i in range(6)]
+    SR = B.load_SR(s16(F_op))
+    phases = [(C[4], C[5]), (C[2], C[3]), (C[0], C[1])]
+    acc = 0
+    dual = 0
+    for p, (m0, m1) in enumerate(phases):
+        if p > 0:
+            SR = B.shift_right2(SR)
+        acc += B._s20(B.comb_array(SR, m0, m1))
+        if m0 and m1:
+            dual += 1
+    v = -acc + 3 * dual
+    return v if csign else -v
 
 
 # ---------------------------------------------------------------------------
@@ -132,6 +160,54 @@ class ARU_RTL:
         self.ACC = sat20(-neg_acc)                            # 20-bit signed accumulator
         Mpos = sat16((neg_acc + 4) >> 3)                      # result-register round-half-up @ ≫3
         return Mpos if csign else (-Mpos - 1)                 # two's-complement sign at output
+
+    # ======================================================================
+    # PHASE 1 — edge-driven deferred MAC (fig-3.4), for the free-running model.
+    # single_step()/_multiply() above are the POST path and are LEFT UNTOUCHED.
+    # ======================================================================
+    def _booth_product(self, F_op, cmag, csign):
+        """Signed 20-bit ACCUMULATOR contribution of one multiply F·(coeff/32), coeff sign INCLUDED.
+        Same verified gate-Booth core as _multiply() but returns the accumulator TERM (not the two's-
+        complement result value) so a cross-instruction MAC sums cleanly; == aru_freerun.product20.
+        Delegates to the memoized module function (the free-run hot path)."""
+        return _booth_product_cached(s16(F_op), cmag, csign)
+
+    def free_reset(self):
+        """Initialise the persistent free-run MAC state (accumulator + result reg + deferred pipeline)."""
+        self.ACCf = 0                                         # 20-bit accumulator, PERSISTS across steps
+        self.RESf = 0                                         # 16-bit result register (74F374)
+        self._pend = None                                    # deferred back-end of the PREVIOUS instruction
+        self._retire_zero = False
+
+    def mac_step(self, opnd, cmag, csign, xfer, zero):
+        """One microinstruction of the fig-3.4 DEFERRED MAC, sequenced by the ClockEngine edge list.
+
+        The back-end (accumulate + XFER capture + ZERO sync-clear) of the PREVIOUS instruction retires at
+        THIS instruction's AS0 — the 1-instruction pipeline latency. The ORDER (accumulate → XFER capture →
+        ZERO clear) is dictated by the ClockEngine's AS0 edges (it emits XFER_CK BEFORE ZERO), NOT by Python
+        statement order — this is the Phase-1 point. The 74LS163 accumulator's clear is SYNCHRONOUS, so even
+        though ZERO/ asserts at AS0 it lands only AFTER XFER CK has captured the fully-accumulated sum.
+
+        Returns the current result register (RESf). Numerically reproduces aru_freerun's deferred MAC."""
+        for ms, edge in self.clk.microinstruction_edges():
+            if edge == "XFER_CK":
+                if self._pend is not None:
+                    Vp, zerop, xferp = self._pend
+                    self.ACCf = sat20(self.ACCf + Vp)         # accumulate completes at AS0 (i3.AS0)
+                    if xferp:
+                        self.RESf = res_from_acc(self.ACCf)   # XFER CK captures sum BEFORE the clear lands
+                    self._retire_zero = zerop
+            elif edge == "ZERO":
+                if self._pend is not None and self._retire_zero:
+                    self.ACCf = 0                             # synchronous clear lands AFTER the capture
+                self._pend = None
+                self._retire_zero = False
+            # ARUCK@AS0/1/2 edges drive the front-end partial products (in _booth_product below);
+            # DAB_WSTB / DAB_RSTB_RISE are consumed by the regfile/CPC in the free-run step (Phase 2/3).
+        # front-end: THIS instruction's product, deferred to retire next step (fig-3.4)
+        V = self._booth_product(opnd, cmag, csign)
+        self._pend = (V, zero, xfer)
+        return self.RESf
 
     def single_step(self):
         """OUT 0x03 strobe -> run ONE microinstruction (MS0..MS8 / AS0..AS2).
