@@ -1727,7 +1727,7 @@ You are really going to town with your new designs.
 ---
 
 ### Post #92 -- Page 4
-**User:** Deleted ab87343
+**User:** Deleted Nobody Special 
 **Info:** Posts: n/a
 **Date:** 30th May 2009
 **Link:** <https://gearspace.com/board/showpost.php?p=4233729&postcount=92>
@@ -3048,7 +3048,7 @@ Discovering object oriented DSP construction software which allowed me to quickl
 ---
 
 ### Post #186 -- Page 7
-**User:** Nobody Special (Deleted ab87343)
+**User:** Nobody Special (Deleted Nobody Special )
 **Info:** Posts: n/a
 **Date:** 3rd July 2009
 **Link:** <https://gearspace.com/board/showpost.php?p=4342878&postcount=186>
@@ -3061,7 +3061,7 @@ Happened in a lot of ways for me. Childhood was a mix of science and music. I sp
 ---
 
 ### Post #187 -- Page 7
-**User:** Nobody Special (Deleted ab87343)
+**User:** Nobody Special (Deleted Nobody Special )
 **Info:** Posts: n/a
 **Date:** 3rd July 2009
 **Link:** <https://gearspace.com/board/showpost.php?p=4342904&postcount=187>
@@ -3097,7 +3097,7 @@ The "constant density" algorithms seem to take the solution of avoiding allpasse
 ---
 
 ### Post #190 -- Page 7
-**User:** Nobody Special (Deleted ab87343)
+**User:** Nobody Special (Deleted Nobody Special )
 **Info:** Posts: n/a
 **Date:** 3rd July 2009
 **Link:** <https://gearspace.com/board/showpost.php?p=4343356&postcount=190>
@@ -3197,7 +3197,7 @@ Long post discussing Voxengo Impulse Modeler (ray-tracing based reverb generatio
 ---
 
 ### Post #202 -- Page 7
-**User:** Nobody Special (Deleted ab87343)
+**User:** Nobody Special (Deleted Nobody Special )
 **Info:** Posts: n/a
 **Date:** 7th July 2009
 **Link:** <https://gearspace.com/board/showpost.php?p=4354339&postcount=202>

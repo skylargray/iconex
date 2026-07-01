@@ -311,7 +311,7 @@ Quote: > How would you characterize the differences in depth that you have obser
 ---
 
 ### Post #384 -- Page 13
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=4536902&postcount=384>
@@ -370,7 +370,7 @@ Quote: > Originally Posted byNobody Special➡️Sorry I missed this one.  The o
 ---
 
 ### Post #388 -- Page 13
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=4574605&postcount=388>

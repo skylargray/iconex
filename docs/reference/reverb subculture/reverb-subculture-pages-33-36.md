@@ -344,7 +344,8 @@ This is an audio plugin that enables you to run pd patches inside your DAW. You 
 
 Quote: > Originally Posted bytoitoy➡️https://github.com/logsol/Pd-PulpThis is an audio plugin that enables you to run pd patches inside your DAW. You can use the automation feature of your DAW to control up to 10 parameters of the loaded pd patch.Great, thanks!
 
- @
+
+ @
 [acreil](https://gearspace.com/board/member.php?u=143351)
 : Is there a place where I can download your algorithm? Thanks!
 

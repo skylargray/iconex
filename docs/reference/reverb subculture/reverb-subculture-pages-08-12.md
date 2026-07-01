@@ -1040,7 +1040,7 @@ PS I've done my test as follows - took two channels with identical audio on both
 ---
 
 ### Post #275 -- Page 10
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=4452811&postcount=275>
@@ -1073,7 +1073,7 @@ I did some tests and  with convo verbs it doesn't matter (as it should be as con
 ---
 
 ### Post #277 -- Page 10
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=4453149&postcount=277>
@@ -1587,7 +1587,7 @@ I used a chorus setting of 56 (range 0 - 99).
 ---
 
 ### Post #306 -- Page 11
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=4498536&postcount=306>
@@ -2054,7 +2054,7 @@ Quote: > Originally Posted byzmix➡️Yes, Depth modifies the output taps.  I h
 ---
 
 ### Post #337 -- Page 12
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=4514116&postcount=337>
@@ -2118,7 +2118,7 @@ Quote: > Originally Posted byseancostello➡️Casey, would you care to comment 
 ---
 
 ### Post #341 -- Page 12
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=4514443&postcount=341>
@@ -2262,7 +2262,7 @@ Quote: > Originally Posted byWarp69➡️The fast attack of a reverb is not (nec
 ---
 
 ### Post #351 -- Page 12
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=4516593&postcount=351>

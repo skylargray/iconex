@@ -330,7 +330,7 @@ A new photo of "reverberators"....... Although clean shaved.
 ---
 
 ### Post #682 -- Page 23
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8424408&postcount=682>
@@ -350,7 +350,7 @@ Quote: > Originally Posted byCasey➡️Attachment 316196A little waltzing bird 
 ---
 
 ### Post #684 -- Page 23
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8480068&postcount=684>
@@ -365,7 +365,7 @@ Quote: > Originally Posted byzmix➡️A little waltzing bird told me that Micha
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8480074&postcount=685>
 
-Quote: > Originally Posted byDeleted ab87343➡️No secret there.  Gone almost a year.News travels fast...erm..
+Quote: > Originally Posted byDeleted Nobody Special ➡️No secret there.  Gone almost a year.News travels fast...erm..
 
 ---
 
@@ -523,7 +523,7 @@ The AKG ADR68K is based on the Lexicon design.
 ---
 
 ### Post #697 -- Page 24
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8497479&postcount=697>
@@ -538,14 +538,14 @@ Quote: > Originally Posted byWarp69➡️The AKG ADR68K is based on the Lexicon 
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8499571&postcount=698>
 
-Quote: > Originally Posted byDeleted ab87343➡️Although I never had a chance to play with that box, I believe it's built on the old Concert Hall.  It's not widely known, but in the very early '90s, Barry Blesser headed up a project at AKG (pre Harman), building a RAM-based audio editor for radio spots.  I've never asked Barry if his work with AKG predated that, but itisinteresting.Interesting. IIRC, Chris Moore designed some reverbs for Kurzweil as well. I also recall reading that Bill Gardner worked at Kurzweil at some point. Going back to Gardner's quote:
+Quote: > Originally Posted byDeleted Nobody Special ➡️Although I never had a chance to play with that box, I believe it's built on the old Concert Hall.  It's not widely known, but in the very early '90s, Barry Blesser headed up a project at AKG (pre Harman), building a RAM-based audio editor for radio spots.  I've never asked Barry if his work with AKG predated that, but itisinteresting.Interesting. IIRC, Chris Moore designed some reverbs for Kurzweil as well. I also recall reading that Bill Gardner worked at Kurzweil at some point. Going back to Gardner's quote:
 
 Quote: > It should be mentioned that these reverberator structures are not new, although there has been little written about them in the literature. The author’s first exposure to them occurred years ago when working in the electronic musical instrument industry. Without a doubt, there are many wonderful sounding commercially available reverberators, all based upon various efficient algorithms. It is unfortunate that the necessities of industrial competition have prevented the open discussion of such algorithms, because they are truly fascinating.If Chris Moore had figured out the 224-style reverbs for the AKG reverb, then it is possible that he introduced these structures to Kurzweil. I guess someone could ask him about this.
 
 ---
 
 ### Post #699 -- Page 24
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8500154&postcount=699>
@@ -656,7 +656,7 @@ Thank you for the info, Casey - very appreciated.
 ---
 
 ### Post #705 -- Page 24
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8508794&postcount=705>
@@ -966,7 +966,7 @@ Quote: > Originally Posted byCasey➡️Sean, this would be a very cool dream. U
 ---
 
 ### Post #723 -- Page 25
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8536181&postcount=723>
@@ -996,7 +996,7 @@ Michael what is an F16? Are you arguing that we can hear well above the highest 
 ---
 
 ### Post #725 -- Page 25
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8537121&postcount=725>
@@ -1079,7 +1079,7 @@ Quote: > Originally Posted byCasey➡️Sean, this would be a very cool dream. U
 ---
 
 ### Post #730 -- Page 25
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8542793&postcount=730>
@@ -1094,7 +1094,7 @@ Quote: > Originally Posted byseancostello➡️A good hall can be viewed as havi
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8543203&postcount=731>
 
-Quote: > Originally Posted byDeleted ab87343➡️I read an article several years back (ofcourseI can't remember where) that discussed theaters during the classical period of Greece.  Apparently large vases were placed around the theater to act as Helmholz resonators (an early version of LARES I guess).  It was probably quite an experience to be there (to watch Aristophanes take his curtain call), but it must have been bizarre acoustically.There are many old Cathedrals into the walls of which were built Helmholtz resonators. It's a highly effective and proven method of controlling standing waves, actually makes the acoustics less bizarre..!
+Quote: > Originally Posted byDeleted Nobody Special ➡️I read an article several years back (ofcourseI can't remember where) that discussed theaters during the classical period of Greece.  Apparently large vases were placed around the theater to act as Helmholz resonators (an early version of LARES I guess).  It was probably quite an experience to be there (to watch Aristophanes take his curtain call), but it must have been bizarre acoustically.There are many old Cathedrals into the walls of which were built Helmholtz resonators. It's a highly effective and proven method of controlling standing waves, actually makes the acoustics less bizarre..!
 
 ---
 
@@ -1104,7 +1104,7 @@ Quote: > Originally Posted byDeleted ab87343➡️I read an article several year
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=8544329&postcount=732>
 
-Quote: > Originally Posted byDeleted ab87343➡️It was probably quite an experience to be there (to watch Aristophanes take his curtain call), but it must have been bizarre acoustically.It can still be. About 20 years ago I saw a performance of Shakespeare's Cymbeline at the [Epidaurus Theatre](https://en.wikipedia.org/wiki/Epidaurus) in Greece. It sits 15,000 and to this day dramatic performances are done un-amplified. I was amazed at the time by how intelligible speech was despite being 3/4 of the way up the center. I don't know if this theatre used resonators, but it definitely didn't sound un-natural.
+Quote: > Originally Posted byDeleted Nobody Special ➡️It was probably quite an experience to be there (to watch Aristophanes take his curtain call), but it must have been bizarre acoustically.It can still be. About 20 years ago I saw a performance of Shakespeare's Cymbeline at the [Epidaurus Theatre](https://en.wikipedia.org/wiki/Epidaurus) in Greece. It sits 15,000 and to this day dramatic performances are done un-amplified. I was amazed at the time by how intelligible speech was despite being 3/4 of the way up the center. I don't know if this theatre used resonators, but it definitely didn't sound un-natural.
 
 ---
 
@@ -1387,7 +1387,7 @@ Frank
 ---
 
 ### Post #749 -- Page 25
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=9486997&postcount=749>
@@ -1417,7 +1417,7 @@ Quote: > Originally Posted byAvast!➡️Valhalla hardware?No hardware yet. I'm 
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=9488235&postcount=751>
 
-Quote: > Originally Posted byDeleted ab87343➡️I'm very much looking forward to it.  I hope a few of you will be able to come.I won't be there, but I hope you and Casey wear some fake beards to get into the spirit of the event.
+Quote: > Originally Posted byDeleted Nobody Special ➡️I'm very much looking forward to it.  I hope a few of you will be able to come.I won't be there, but I hope you and Casey wear some fake beards to get into the spirit of the event.
 
 ---
 
@@ -1442,7 +1442,7 @@ Quote: > Originally Posted bykptainfilou➡️Is that why there's still no updat
 ---
 
 ### Post #754 -- Page 26
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=9489104&postcount=754>
@@ -1457,7 +1457,7 @@ Quote: > Originally Posted byseancostello➡️I won't be there, but I hope you 
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=9489208&postcount=755>
 
-Quote: > Originally Posted byDeleted ab87343➡️No, but we will be wearing our superhero capes.  Casey may have leotards on.Here's my million dollar idea: Come onstage as Mummenschanz. Black leotards, paper masks. Do some wacky, surrealistic mimes, then take off your paper masks, and - surprise, Mummenschanz is a couple of noted reverb developers! People would go crazy, I tell ya, CRAZY.
+Quote: > Originally Posted byDeleted Nobody Special ➡️No, but we will be wearing our superhero capes.  Casey may have leotards on.Here's my million dollar idea: Come onstage as Mummenschanz. Black leotards, paper masks. Do some wacky, surrealistic mimes, then take off your paper masks, and - surprise, Mummenschanz is a couple of noted reverb developers! People would go crazy, I tell ya, CRAZY.
 
 {
   "@context": "https://schema.org/",
@@ -1586,7 +1586,7 @@ One thing I am a bit curious about is what the EMT-250 sounds like. I've never h
 ---
 
 ### Post #764 -- Page 26
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=9509243&postcount=764>
@@ -2112,7 +2112,7 @@ This leads us to an interesting question : How many impulses/sec are necessary b
 ---
 
 ### Post #798 -- Page 27
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=9670334&postcount=798>
@@ -2127,7 +2127,7 @@ Quote: > Originally Posted byWarp69➡️This leads us to an interesting questio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=9670514&postcount=799>
 
-Quote: > Originally Posted byDeleted ab87343➡️If that many.  In the typical case I'd bet it's in the hundreds.The number was for broadband - as an example, it's 1/5 (800+) for lowpass filtered (1.5KHz).
+Quote: > Originally Posted byDeleted Nobody Special ➡️If that many.  In the typical case I'd bet it's in the hundreds.The number was for broadband - as an example, it's 1/5 (800+) for lowpass filtered (1.5KHz).
 
 ---
 
@@ -2163,10 +2163,10 @@ Stian
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=9705708&postcount=802>
 
-Quote: > Originally Posted byDeleted ab87343➡️If that many.  In the typical case I'd bet it's in the hundreds.  That's mainly why I'v stayed out of this conversation.  I really think that pursuing maximum density is a trip down the rathole, because that's not the way our hearing system works.  We do a pretty decent job of decoding early reflections.  Given the dangers that awaited our distant ancestors, there was a lot of evolutionary pressure to make sure we could tell where sounds were coming from.  But once we reach the point where there's no vector information in the sound--and that comes very quickly--a different part of our auditory cortex takes over.  Just like the visual cortex, the auditory cortex is very good at data reduction.  In the many things necessary to keep an organism alive (and the energy budget required to do so), it's simply not worth trying to decode all that information.  So what do we get out of all those reflections?  We get frequency, loudness and momentary inter-aural differences.  The number of reflections required to create that effect is incidental and I think that information is thrown away (if it's even there) early in the hearing process.As perhaps one of the few contributors to this thread who  makes his primary living by mixing records, I'd like to add that I seldom use reverb in a mix unless I cannot achieve my goals any other way.  My first choice for "ambience" is usually one or two short delays, always with subtle modulation.  The number of times this is referred to as "reverb" by the producer or artist would astonish you.   When I do use reverb it's always my Sony DRE-2000, Lexicon 224 (non x non xl), AMS RMX, or my Ursa Major Space Station.  I find that "modern" reverbs are far too dense to be useful in  any context other than in isolation, particularly the plugin reverbs available today.   As is happens I've done quite a bit of reverb preset programming over the past several decades and it's always been nice to get feedback from real professionals who've used my presets and commented that they were the only useful settings in the box. ( I remember Chuck Ainley saying this to me in the 1990s when, after talking about his Ensoniq DP/2,  I mentioned those were my presets).  
+Quote: > Originally Posted byDeleted Nobody Special ➡️If that many.  In the typical case I'd bet it's in the hundreds.  That's mainly why I'v stayed out of this conversation.  I really think that pursuing maximum density is a trip down the rathole, because that's not the way our hearing system works.  We do a pretty decent job of decoding early reflections.  Given the dangers that awaited our distant ancestors, there was a lot of evolutionary pressure to make sure we could tell where sounds were coming from.  But once we reach the point where there's no vector information in the sound--and that comes very quickly--a different part of our auditory cortex takes over.  Just like the visual cortex, the auditory cortex is very good at data reduction.  In the many things necessary to keep an organism alive (and the energy budget required to do so), it's simply not worth trying to decode all that information.  So what do we get out of all those reflections?  We get frequency, loudness and momentary inter-aural differences.  The number of reflections required to create that effect is incidental and I think that information is thrown away (if it's even there) early in the hearing process.As perhaps one of the few contributors to this thread who  makes his primary living by mixing records, I'd like to add that I seldom use reverb in a mix unless I cannot achieve my goals any other way.  My first choice for "ambience" is usually one or two short delays, always with subtle modulation.  The number of times this is referred to as "reverb" by the producer or artist would astonish you.   When I do use reverb it's always my Sony DRE-2000, Lexicon 224 (non x non xl), AMS RMX, or my Ursa Major Space Station.  I find that "modern" reverbs are far too dense to be useful in  any context other than in isolation, particularly the plugin reverbs available today.   As is happens I've done quite a bit of reverb preset programming over the past several decades and it's always been nice to get feedback from real professionals who've used my presets and commented that they were the only useful settings in the box. ( I remember Chuck Ainley saying this to me in the 1990s when, after talking about his Ensoniq DP/2,  I mentioned those were my presets).  
 
 
-To sum up: Discussing maximum theoretical density is as Deleted ab87343 says above, "a trip down the rathole".   The best advice I can offer is to make sure that there are no obvious "tells" in the reverb itself, and above all use your ears (or better yet, enlist a professional to help you to understand obstacles to practical application of your algo and craft it with you).
+To sum up: Discussing maximum theoretical density is as Deleted Nobody Special  says above, "a trip down the rathole".   The best advice I can offer is to make sure that there are no obvious "tells" in the reverb itself, and above all use your ears (or better yet, enlist a professional to help you to understand obstacles to practical application of your algo and craft it with you).
 
 ---
 
@@ -2185,7 +2185,7 @@ Those boys were way clever in their time!
 ---
 
 ### Post #804 -- Page 27
-**User:** Deleted ab87343Posts: n/aMy Studio
+**User:** Deleted Nobody Special Posts: n/aMy Studio
 **Info:** Posts: n/aMy Studio
 **Date:** Unknown
 **Link:** <https://gearspace.com/board/showpost.php?p=9708621&postcount=804>
