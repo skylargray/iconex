@@ -1024,7 +1024,7 @@ pin 16 (VCC)  = Not depicted
 ---
 
 U19 (74LS377) — octal D flip-flop with clock enable
-pin 1  (/E)  = AS0
+pin 1  (/E)  = AS0/
 pin 2  (Q0)  = DP
 pin 3  (D0)  = U34 pin 3
 pin 4  (D1)  = U18 pin 14

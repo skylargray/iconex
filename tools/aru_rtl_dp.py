@@ -112,7 +112,13 @@ class ARU_RTL:
 
     def __init__(self, mem):
         self.mem = mem
-        self.clk = F.ClockEngine()
+        # ★ The datapath's MS/AS/strobe schedule now EMERGES from the master clock MC through the
+        # transcribed T&C chips (tc_clock.EmergentClock), validated against fig-3.2/3.3/3.4 — it is NOT
+        # the hardcoded aru_rtl.ClockEngine. The emergent edge schedule is verified logically equivalent
+        # to the old asserted one for the MAC (so POST stays green), while now DERIVING from MC and
+        # carrying the corrections (MS4 active-low; XFER CK gated by ARUCKE/ = tc_U25.pin9).
+        import tc_clock
+        self.clk = tc_clock.EmergentClock()
         # --- ARU storage elements ---
         self.R = [F.Reg(f"R{i}", 16) for i in range(4)]     # 4×LS670 register file
         self.SR = [0] * 20                                   # 74194 dual-rank shifter
@@ -205,6 +211,42 @@ class ARU_RTL:
             # ARUCK@AS0/1/2 edges drive the front-end partial products (in _booth_product below);
             # DAB_WSTB / DAB_RSTB_RISE are consumed by the regfile/CPC in the free-run step (Phase 2/3).
         # front-end: THIS instruction's product, deferred to retire next step (fig-3.4)
+        V = self._booth_product(opnd, cmag, csign)
+        self._pend = (V, zero, xfer)
+        return self.RESf
+
+    def mac_step_subslot(self, opnd, cmag, csign, xfer, zero):
+        """Sub-slot MAC back-end: the 74LS163 accumulator (parallel-load register + SYNCHRONOUS clear) +
+        the 74F374 result register (edge-load), driven by the EMERGENT per-MS-slot strobes from MC
+        (self.clk.p: ZERO/, XFER CK, ARUCKE/), so capture-vs-clear EMERGES rather than being assumed.
+
+        The fig-3.4 deferred back-end of the PREVIOUS instruction retires over THIS instruction's AS0.
+        Structural guarantee (NOT an ns race): the 163 clear is SYNCHRONOUS — ZERO/ asserted during AS0
+        ARMS the clear, which lands on the NEXT ARUCKE/ rising edge (= AS1); the 374 captures on XFER CK's
+        rising edge (in AS0), which precedes that next ARUCKE/ edge. Hence accumulate → XFER-capture →
+        clear-lands. XFER CK's presence is gated by the ARUCKE/ term (tc_U25.pin9) in the emergent strobe.
+        Returns the current result register. Should reproduce the deferred MAC (mac_step) exactly."""
+        p = self.clk.p                                # emergent 9-slot strobe period (MS0-anchored)
+        if self._pend is not None:
+            Vp, zerop, xferp = self._pend
+            armed_clear = False
+            accumulated = False
+            for ms in range(9):
+                arucke_bar_rise = (p["ARUCKE/"][ms] == 1 and p["ARUCKE/"][(ms - 1) % 9] == 0)
+                xfer_rise = (p["XFER CK"][ms] == 1 and p["XFER CK"][(ms - 1) % 9] == 0)
+                zero_low = (p["ZERO/"][ms] == 0)
+                if arucke_bar_rise:
+                    if armed_clear:
+                        self.ACCf = 0                 # 163 sync clear LANDS (next ARUCKE/ after ZERO/ armed)
+                        armed_clear = False
+                    elif not accumulated:
+                        self.ACCf = sat20(self.ACCf + Vp)   # accumulate completes at the retire edge
+                        accumulated = True
+                if zero_low and zerop:
+                    armed_clear = True                # ZERO/ arms the sync clear (takes effect next edge)
+                if xfer_rise and xferp:
+                    self.RESf = res_from_acc(self.ACCf)  # 374 captures in AS0, BEFORE the clear lands
+            self._pend = None
         V = self._booth_product(opnd, cmag, csign)
         self._pend = (V, zero, xfer)
         return self.RESf

@@ -255,6 +255,64 @@ def check_vs_fig32(rows):
     return total_ok
 
 
+def steady_period(sig):
+    """Return one steady-state 9-slot MS cycle of every emergent signal, phase-anchored to MS0 (slot 0)."""
+    period = 9
+    L = len(sig["MS0"])
+    seg = {k: sig[k][L - period:] for k in sig}
+    ms0_state = [1 - b for b in seg["MS4"]]           # (unused here; MS0 already active-high)
+    s = seg["MS0"].index(1)
+    return {k: (seg[k][s:] + seg[k][:s]) for k in seg}
+
+
+class EmergentClock:
+    """Drop-in replacement for aru_rtl.ClockEngine, but the MS/AS/strobe schedule EMERGES from MC through
+    the transcribed T&C chips (tc_clock.simulate_clock) — nothing asserted. Validated against fig-3.2/3.3/3.4
+    (run tc_clock.py). Exposes the same microinstruction_edges() the datapath consumes; the edges are DERIVED
+    from the generated strobe waveforms, not hardcoded.
+
+    The one substantive correction it carries: XFER CK = NAND(AS0, XFER, ARUCKE/) — the result-register
+    capture is gated by the ARU clock phase (tc_U25.pin9 = ARUCKE/), which the asserted model missed."""
+    NMS = 9
+
+    def __init__(self):
+        self.p = steady_period(simulate_clock())
+
+    def _rising(self, name):
+        w = self.p[name]
+        return [ms for ms in range(9) if w[ms] == 1 and w[(ms - 1) % 9] == 0]
+
+    def _falling(self, name):
+        w = self.p[name]
+        return [ms for ms in range(9) if w[ms] == 0 and w[(ms - 1) % 9] == 1]
+
+    def microinstruction_edges(self):
+        """Datapath edge list for one microinstruction, in MS-slot order — DERIVED from the emergent
+        strobes. Emits the same events the datapath consumes:
+          ARUCK@AS{0,1,2}  at the ARUCK rising edges (AS boundaries — product reg / shifter / AS gen)
+          XFER_CK, ZERO    at the AS0 leading edge (result-reg capture then sync-clear; capture-before-clear)
+          DAB_WSTB         where DAB WSTB/ is low (regfile write, MS7)
+          DAB_RSTB_RISE    at the DAB RSTB/ rising edge (PC / offset latch / field regs)"""
+        order = []
+        aruck_rises = self._rising("ARUCK")           # emergent: MS0/MS3/MS6
+        as0_rise = self._rising("AS0")                # emergent: MS1 (AS0 leading edge, retire point)
+        wstb_low = [ms for ms in range(9) if self.p["DAB WSTB/"][ms] == 0]   # MS7
+        rstb_rise = self._rising("DAB RSTB/")         # MS0 boundary (wraps from MS8)
+        as_idx = 0
+        for ms in range(self.NMS):
+            if ms in aruck_rises:
+                order.append((ms, f"ARUCK@AS{as_idx}"))
+                as_idx += 1
+            if ms in as0_rise:                         # retire: XFER capture BEFORE ZERO clear
+                order.append((ms, "XFER_CK"))
+                order.append((ms, "ZERO"))
+            if ms in wstb_low:
+                order.append((ms, "DAB_WSTB"))
+            if ms in rstb_rise:
+                order.append((ms, "DAB_RSTB_RISE"))
+        return order
+
+
 def check_clock_vs_fig32(sig):
     """Validate the emergent ARUCK / AS0 (and MS) against fig-3.2. MS4 shown as its active-high state."""
     with open(TIMING_JSON, encoding="utf-8") as f:

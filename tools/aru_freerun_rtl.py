@@ -80,9 +80,11 @@ class FreeRunRTL(ARU_RTL):
         zero_eff = d["ZERO"]
         if prot and self.prot_mode == "no_zero":
             zero_eff = 0
-        # edge-driven deferred MAC: retire the PREVIOUS instruction's back-end (ACC/XFER/ZERO on the
-        # ClockEngine AS0 edges), compute THIS instruction's product (deferred), return current RES.
-        self.mac_step(opnd, d["cmag"], d["CSIGN"], xfer_eff, zero_eff)
+        # SUB-SLOT deferred MAC: the 74LS163 accumulator (synchronous clear) + 74F374 result register,
+        # driven by the EMERGENT per-slot strobes (ZERO/, XFER CK gated by ARUCKE/, ARUCKE/) from MC —
+        # so the result-register capture-vs-clear timing EMERGES, not asserted. (Reproduces the deferred
+        # MAC 300/300; the ARUCKE/-gated XFER CK does not change capture-before-clear.)
+        self.mac_step_subslot(opnd, d["cmag"], d["CSIGN"], xfer_eff, zero_eff)
 
         # DMEM address — POST-verified convention addr = CPC + ofst + 1 = CPC − OFST (§3.6/§5.2).
         if addr_offset is not None:
