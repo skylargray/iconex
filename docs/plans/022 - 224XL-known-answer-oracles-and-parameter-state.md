@@ -14,10 +14,10 @@
 > method all ELIMINATED. **D2c** re-rendered from settled images (ids 3/4 = selector namespace findings).
 > **D2d gated** (D2b LF open). **Remaining → next plan:** ARU §5.7 datapath signature co-sim (pins the
 > capture arithmetic at hardware pins; needs the 0x0D10 XREG pump), **the crossover band-INVERSION
-> hypothesis** (d2b2: LOW moves words 43/95 but the LF band doesn't respond — the bytes double the MID
-> band instead; one shelf sign/group flip predicts LF+8k+lever fixes simultaneously — falsify via the
-> ARU tables / shelf transfer measurement, never sign-fitting), CHAMBER near-silence, PLATE 3.5-vs-1.8,
-> D3d DMEM/FPC tables, D4 true co-sim.
+> hypothesis — ➜ RESOLVED same day in session 0025** (the global cs_eff convention vs the E83 anchor;
+> post-flip the octave ladder matches the benchmark and the LOW lever works — see
+> `docs/sessions/0025 - the-csign-lag-falsification-and-the-shelf-injection-law.md`), CHAMBER
+> near-silence, PLATE 3.5-vs-1.8, D3d DMEM/FPC tables, D4 true co-sim.
 
 **Status:** READY TO EXECUTE (written 2026-07-02 at the close of session 0023).
 **Read first:** `docs/sessions/0023 - the-rtl-arbiter-answered-the-accumulator-pipeline-and-the-first-tail.md`

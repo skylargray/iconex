@@ -1,5 +1,9 @@
 # 0024 — The known-answer oracles: D1 closed, the T&C signature lock, and the PP-bus capture correction
 
+> **➜ The §7 LF finding (crossover band-inversion) is RESOLVED in session 0025** (same day): the
+> inversion was the engine's global cs_eff convention (0023's complement), adjudicated by the E83
+> golden anchor — see `0025 - the-csign-lag-falsification-and-the-shelf-injection-law.md`.
+
 **Date:** 2026-07-02 (same day as 0023)
 **Scope:** execution of `docs/plans/022 - 224XL-known-answer-oracles-and-parameter-state.md`
 (D1 complete, D2a/D2b/D2c + diagnosis, D3 T&C complete, D4-lite probe; D2d gated, D3d/D4 banked).

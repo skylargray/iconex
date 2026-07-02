@@ -19,9 +19,23 @@ THE EMERGENT ALIGNMENT (discrete MS-slot convention, calibrated by tc_clock vs f
                    slot-3 edge of each step from stage-1 => holds w_n from slot3(n)..slot2(n+1).
   CSIGN JK         tc_U20 (74S112, CLK=ARUCKE/, J/K = AS0-gated tc_U19.Q4): follows Q4's
                    PRE-load value at the slot-3 edge => holds w_{n-1}'s MI23 during
-                   slot3(n)..slot2(n+1) — exactly aligned with w_{n-1}'s partial products.
-                   Effective sign = the Multibus level (~stored bit7): E3b-stable, and the
-                   traced chain (stored -> MI23 -> JK -> sub-ctrl) natively carries it.
+                   slot3(n)..slot2(n+1). Effective sign = the Multibus level (~stored bit7):
+                   E3b-stable, and the traced chain (stored -> MI23 -> JK -> sub-ctrl)
+                   natively carries it.
+                   ** SIGN SCHEDULE = OWN-SIGN AT EVERY PP (falsification-tested, session
+                   0025). ** The JK window [3.0(n), 3.0(n+1)) nominally covers
+                   ppC(w_{n-2})@4.43(n) + ppA(w_{n-1})@7.43(n) + ppB(w_{n-1})@1.43(n+1) —
+                   i.e. the LIVE level at the pairC edges belongs to the NEXT word. But the
+                   sub-XOR control (§4.6) feeds the SAME settle-limited adder as the data
+                   (~1.4-slot propagation, the constant that defers the ACC): a control
+                   flip at 3.0 has not propagated by 3.06 (capture) and is marginal at
+                   4.43 — and the EMPIRICAL arbiter (the factory program under the
+                   documented-defaults oracle) REJECTS next-sign pairC at either consumer:
+                   live-sign register adds collapse CONCERT to a ~0.8 s TONAL husk, while
+                   own-sign renders the coherent 1.5-1.9 s bank. The control path defers
+                   one AS exactly like the data path (fig-3.4), so every pp is signed by
+                   its own word. RTL22(csign_lag=True) keeps the falsified live-sign
+                   register variant for the record (dead-end registry #23).
   serializer       tc_U11/U10 (74195, CLK=ARUCKE, SH//LD=AS1/, P3=Q2 feedback): loads w_n's
                    C-bits at the slot-6 edge of step n; w_n's Booth pairs (C4,C5),(C2,C3),
                    (C0,C1) are live during AS0/AS1/AS2 OF STEP n+1 (the third pair via the
@@ -117,9 +131,19 @@ def booth3(F, cmag, cs):
 
 
 def cs_eff(l2):
-    """Effective coefficient sign = the Multibus level of stored bit 7 (E3b-stable; the traced
-    chain stored -> MI23 -> tc_U20 JK -> sub-ctrl natively inverts the stored bit)."""
-    return ((l2 >> 7) & 1) ^ 1
+    """Effective coefficient sign = STORED l2 bit 7 DIRECTLY, 1 = positive (session 0025).
+
+    THE ANCHOR: the POST E83 multiplier test — the firmware's own ROM golden table of signed
+    products, checked against the real ARU at every hardware boot — passes 20/20 bit-exact in
+    aru_post with CSIGN = stored bit7 (1=pos). Session 0022 recorded the same. 0023's port to
+    this engine complemented it ('the Multibus line level'), a free choice at the time because
+    every output oracle is double-negation-blind to a GLOBAL flip: D1 unity gain, POST, the
+    combs, and broadband RT60 (|g| unchanged) all pass either way. What the flip DOES change
+    is each recursion's per-frame sign alternation — z=+0.875 lowpass poles vs z=-0.875
+    HF-alternators — i.e. WHICH BAND each state cell shapes: the complemented convention was
+    the crossover band-inversion (0024 §7). d2g localized it (the w43/95 injection worked
+    mid-band under either injection sign); E83 adjudicates the convention."""
+    return (l2 >> 7) & 1
 
 
 def decode_word(w):
@@ -158,7 +182,7 @@ class RTL22:
     so RD-AD steps in EXECUTION ORDER alternate halves: first read -> half-1, second ->
     half-2. Which half is LEFT is pinned by the D1 diag oracle (d1_diag_oracles.py)."""
 
-    def __init__(self, fpc_enabled=False, taint=False, taint_th=40):
+    def __init__(self, fpc_enabled=False, taint=False, taint_th=40, csign_lag=False):
         self.R = [0, 0, 0, 0]
         self.ACC = 0
         self.RES = 0
@@ -167,12 +191,14 @@ class RTL22:
         self.CPC = 0
         self.XREG_wr = 0                 # DSP->host latch (WR XREG captures the DAB; readback only)
         self.fpc_enabled = fpc_enabled
+        self.csign_lag = csign_lag       # True = FALSIFIED live-sign register variant (registry #23)
         self._rdad_n = 0                 # per-frame RD-AD occurrence counter (stereo halves)
         # cross-step pipeline registers
         self.wp = None                   # w_{n-1}: gates this step's capture/clear; its operand
                                          # loads at this step's slot-0; its ppA lands @7.43 here
         self.ppB_pend = 0                # w_{n-2}'s ppB (lands @1.43 of this step)
-        self.ppC_pend = 0                # w_{n-2}'s ppC (lands @4.43, or dies to the clear)
+        self.ppC_pend = 0                # w_{n-2}'s ppC, OWN sign (the 3.06 capture/PP-bus term)
+        self.ppC_reg_pend = 0            # w_{n-2}'s ppC, LIVE sign (the 4.43 register add)
         self.step_count = 0
         self.sample_count = 0
         # optional taint tracking (operand provenance) — B3 probe support
@@ -193,13 +219,17 @@ class RTL22:
         wp = self.wp
         R = self.R
 
-        # slot-0 edge: operand SR loads regfile[RA(wp)] POST-write (write-through); wp's three
-        # partial products are fixed here (CSIGN JK carries wp's sign for all three).
+        # slot-0 edge: operand SR loads regfile[RA(wp)] POST-write (write-through). wp's
+        # ppA/ppB carry wp's own sign (inside its CSIGN window); its pairC is consumed
+        # next step at TWO edges with DIFFERENT live sub-XOR control (see header): the
+        # 3.06 capture still sees the own-sign sum (adder un-settled 0.06 slots after
+        # the JK flip); the 4.43 register add uses the reloaded control = cs(w_n) = d.
         if wp is not None:
             opnd = R[wp["RA"]]
             ppA, ppB, ppC = booth3(opnd, wp["cmag"], wp["cs"])
+            ppC_reg = (booth3(opnd, wp["cmag"], d["cs"])[2] if self.csign_lag else ppC)
         else:
-            opnd, ppA, ppB, ppC = 0, 0, 0, 0
+            opnd, ppA, ppB, ppC, ppC_reg = 0, 0, 0, 0, 0
 
         # slot-1.43 edge: += ppB(w_{n-2}) (the adder-pipeline lag: fig-3.4 "one AS behind")
         self.ACC = wrap20(self.ACC + self.ppB_pend)
@@ -217,12 +247,13 @@ class RTL22:
 
         # slot-4.43 edge: sync clear (owner = wp) replaces the ppC(w_{n-2}) REGISTER add —
         # the value already reached RES via the PP bus; else ppC(w_{n-2}) accumulates
+        # under the LIVE (reloaded) sign control
         if wp is not None and wp["ZERO"]:
             self.ACC = 0
             if self.taint:
                 self.ACCsrc = []
         else:
-            self.ACC = wrap20(self.ACC + self.ppC_pend)
+            self.ACC = wrap20(self.ACC + self.ppC_reg_pend)
             if self.taint and self.ppC_src:
                 self.ACCsrc.append(self.ppC_src)
 
@@ -284,6 +315,7 @@ class RTL22:
         # carry the pipeline
         self.ppB_pend = ppB
         self.ppC_pend = ppC
+        self.ppC_reg_pend = ppC_reg
         if self.taint:
             tag = (f"R{wp['RA']}({self.Rsrc[wp['RA']]})x{'+' if wp['cs'] else '-'}{wp['cmag']}/32"
                    if wp is not None else "")
@@ -350,10 +382,11 @@ def _rows(words):
 def _test_passthrough():
     # RTL-authored: the MAC word's product lands one step later than behavioral, so XFER sits
     # one word AFTER the MAC word. In-window residues: w0's three cmag-0 phases at cs_eff=0
-    # (-3) plus the MAC's FULL product via the PP-bus capture: (8x-3+4)>>3 = x.
+    # (-3) CANCEL the +3 residues inside P20(x,32,1)=8x+3 — the factory's opposite-sign
+    # idiom: (8x-3+3+4)>>3 = x.
     rows = _rows([
-        enc_io(sel=SRC_RDAD, wa=1, cmag=0, zero=1, csign=1),   # DAB=in; R1<-in; ZERO clears @step1
-        enc_idle(ra=1, cmag=32, csign=0),                      # MAC: in x 1.0 (cs_eff=1)
+        enc_io(sel=SRC_RDAD, wa=1, cmag=0, zero=1, csign=0),   # DAB=in; R1<-in; ZERO clears @step1
+        enc_idle(ra=1, cmag=32, csign=1),                      # MAC: in x 1.0 (csign WYSIWYG: +)
         enc_idle(xfer=1),                                      # capture @step3 slot-3.06
         enc_io(sel=SRC_RDRREG, wrda=True, chans="A", reset=True),
     ])
@@ -364,24 +397,25 @@ def _test_passthrough():
     print("  RTL passthrough               OK (out == in, same frame; XFER one word after MAC)")
 
 
-def _comb_rows(D, g):
+def _comb_rows(D, g, flag_csign=1):
     return _rows([
-        enc_io(sel=SRC_RDAD, wa=0, cmag=0, zero=1, csign=1),   # R0<-x; ZERO; residues -2 in-window
-        enc_memr(D, wa=1, ra=0, cmag=32, csign=0),             # DAB=y[n-D]; R1<-y[n-D]; MAC x*1.0
-        enc_idle(ra=1, cmag=g, csign=0),                       # MAC g/32 * y[n-D]
-        enc_idle(xfer=1),                                      # capture x + g*y @step4
-        enc_memw(0x0000),                                      # DM[CPC] <- RES = y[n]
+        enc_io(sel=SRC_RDAD, wa=0, cmag=0, zero=1, csign=0),   # R0<-x; ZERO; -3 residues in-window
+        enc_memr(D, wa=1, ra=0, cmag=32, csign=1),             # DAB=y[n-D]; R1<-y[n-D]; MAC x*1.0
+        enc_idle(ra=1, cmag=g, csign=1),                       # MAC +g/32 * y[n-D]
+        enc_idle(xfer=1, csign=flag_csign),                    # capture @step4; csign sets the
+        enc_memw(0x0000),                                      # LIVE sign for w2's pairC (lag)
         enc_io(sel=SRC_RDRREG, wrda=True, chans="A", reset=True),
     ])
 
 
-def _test_feedback_comb(D=40, g=16, n=200):
-    """Exact vs the closed-form recurrence under the traced alignment. The capture (gated by
-    w3.XFER, landing at step 4) reads the PP bus = ACC + PR: w0's three cs0 residues (-3),
-    w1's full product, and w2's FULL product — pairC included via the combinational adder
-    path (§4.2: the result reg D pins sit on PP3..18). The feedback coefficient acts at
-    full stored weight: y[n] = sat16((-3 + P20(x,32,1) + P20(y',g,1) + 4) >> 3)."""
-    rows = _comb_rows(D, g)
+def _test_feedback_comb(D=40, g=16, n=200, opposite=False):
+    """Exact vs the closed-form recurrence. Own-sign schedule at every pp (the 0025
+    falsification outcome): the capture reads the PP bus = ACC + own-signed pairC (§4.2),
+    the feedback coefficient acts at FULL stored g, and the flag word's sign is
+    IRRELEVANT (opposite=True asserts that invariance):
+        y[n] = sat16((-3 + P20(x,32,1) + P20(y',g,1) + 4) >> 3)
+    (-3 = w0's three cs_eff=0 residues — the opposite-sign cancellation idiom)."""
+    rows = _comb_rows(D, g, flag_csign=(0 if opposite else 1))
     eng = RTL22()
     out, exp, ym = [], [], {}
     for i in range(n):
@@ -397,8 +431,50 @@ def _test_feedback_comb(D=40, g=16, n=200):
     ideal = [(k * D, int(16000 * (g / 32) ** k)) for k in range(5)]
     for (pi, pv), (ei, ev) in zip(peaks, ideal):
         assert pi == ei and abs(pv - ev) <= 6, f"comb peak {(pi, pv)} vs ideal {(ei, ev)}"
-    print(f"  RTL feedback comb g={g}/32     OK (closed-form EXACT; FULL g={g}/32 via PP-bus capture; "
-          f"peaks {peaks[:5]})")
+    tag = "OPPOSITE-sign flag (leak clears)" if opposite else "same-sign flag"
+    print(f"  RTL feedback comb g={g}/32     OK (closed-form EXACT; FULL g; {tag}; peaks {peaks[:4]})")
+
+
+def _test_csign_split():
+    """Regression-pin BOTH sign schedules: the default own-sign engine and the FALSIFIED
+    live-sign-register variant (csign_lag=True, dead-end #23) against term-exact
+    references, and assert they differ exactly at the register-consumed pairC. A cmag-5
+    (pairC != 0) MAC at cs_eff=1 sits between opposite-sign words; capture#1 reads the
+    own-signed product off the PP bus in both variants; capture#2 exposes which sign the
+    register add took."""
+    rows = _rows([
+        enc_io(sel=SRC_RDAD, wa=0, cmag=0, zero=1, csign=1),   # cs_eff=1
+        enc_idle(ra=0, cmag=5, csign=1),                       # cs_eff=1 (+5/32, pairC != 0)
+        enc_idle(cmag=0, xfer=1, csign=0),                     # cs_eff=0 (OPPOSITE)
+        enc_io(sel=SRC_RDRREG, wrda=True, chans="A", xfer=1, csign=1),
+        enc_io(sel=SRC_RDRREG, wrda=True, chans="B", reset=True),
+    ])
+
+    def expect(x, lag):
+        """Term-exact reference: post-clear ACC through both captures. Every word's
+        operand is x (R0, write-through). cs chain: w0=1, w1=1, w2=0."""
+        b0, b1, b2 = booth3(x, 0, 1), booth3(x, 5, 1), booth3(x, 0, 0)
+        c0reg = booth3(x, 0, 1)[2] if lag else b0[2]    # w0 ppC_reg signed by cs(w1)=1
+        c1reg = booth3(x, 5, 0)[2] if lag else b1[2]    # w1 ppC_reg signed by cs(w2)=0
+        S1 = b0[0] + b0[1] + c0reg + b1[0] + b1[1] + b1[2]     # capture#1: own-sign ppC(w1)
+        S2 = (S1 - b1[2]) + c1reg + b2[0] + b2[1] + b2[2]      # register took c1reg instead
+        return sat16((S1 + 4) >> 3), sat16((S2 + 4) >> 3)
+
+    eng = RTL22(csign_lag=True)          # the falsified live-sign register variant
+    eng_own = RTL22()                    # default: own-sign everywhere
+    n_diff = 0
+    for x in (1000, -2000, 12345, 32767, -32768, 7):
+        outs = dict(eng.run_sample(rows, x & 0xFFFF))
+        outs_own = dict(eng_own.run_sample(rows, x & 0xFFFF))
+        eA, eB = expect(x, True)
+        oA, oB = expect(x, False)
+        assert (outs.get("A", 0), outs.get("B", 0)) == (eA, eB), (x, outs, (eA, eB), "lag")
+        assert (outs_own.get("A", 0), outs_own.get("B", 0)) == (oA, oB), (x, outs_own, (oA, oB), "own")
+        if oB != eB:
+            n_diff += 1
+    assert n_diff >= 4, "variants should differ at capture#2 (the register-consumed pairC)"
+    print("  CSIGN split (cap=own/reg=live) OK (capture#1 unaffected; capture#2 sees the "
+          "flipped register pairC; own-sign variant differs)")
 
 
 def _test_concert_extraction():
@@ -436,5 +512,7 @@ if __name__ == "__main__":
     _test_passthrough()
     _test_feedback_comb(D=40, g=16)
     _test_feedback_comb(D=37, g=21)     # multi-pair cmag: pairs (1,0),(1,0),(1,0) span all 3 phases
+    _test_feedback_comb(D=37, g=21, opposite=True)   # flag-word sign invariance (own-sign schedule)
+    _test_csign_split()                 # pins own-sign default vs the falsified #23 variant
     _test_concert_extraction()
     print("ALL PASS")
