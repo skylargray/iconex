@@ -1,5 +1,11 @@
 # 224X / 224XL — System Architecture (reverb signal path)
 
+> **✅ UPDATED INLINE THROUGH SESSION 0027 (2026-07-02).** The frame/fs, offset-source, modulation,
+> and ARU-arithmetic content below now reflects the verified model: L+1-step frames (per-program fs;
+> CONCERT measured 32,508 Hz), offsets read directly from the WCS, measured LFO modulation, and the
+> **complement-domain datapath** pinned by the ARU signature tables (1467/1469 pins;
+> `docs/sessions/0027 …`). Historical banners retained below for provenance.
+>
 > **⚠ COORDINATE-SYSTEM CORRECTION (2026-07-01, session 0022) — read before trusting step-indexed
 > content:** the WCS executes CPU words **127 down to (128−L)** (reversed; L per program, CONCERT=104,
 > reset word 24) and all four lanes read through the **Multibus complement** (type `l2&3`: 0=MEMR 1=MEMW
@@ -44,9 +50,13 @@
 ## 1. The core model: a microcoded DSP
 
 The reverb is **not** software running on the host CPU. It is a **dedicated hardware DSP** formed by three
-modules — **T&C + DMEM + ARU** — that executes a **100-step microprogram once per sample at 34.13 kHz**
-(100 micro-steps × 293 ns = 29.3 µs per sample). The 8080 host is orders of magnitude too slow to touch
-audio in real time; it only *authors and updates* the microprogram.
+modules — **T&C + DMEM + ARU** — that executes an **(L+1)-step microprogram once per sample**, where L
+is set by each program's reset word: **fs = 30.72 MHz / 9 / (L+1)**. The 224XL is a
+**variable-frame-rate machine** (31.3–34.1 kHz across the program bank): the L=99 programs give the
+canonical 100 steps → 34.13 kHz, while CONCERT (L=104, 105 steps) runs at **32,508 Hz — measured from
+a real unit's impulse response** (session 0024 §6b; envelope-warp s=1.000, autocorr lags to ~0.2%).
+The 8080 host is orders of magnitude too slow to touch audio in real time; it only *authors and
+updates* the microprogram.
 
 The reverb *topology* — which delays feed which gains feed which sums — is **defined entirely by the
 microcode in the Writable Control Store (WCS)**. There is no dedicated "reverb filter" hardware. Combs,
@@ -86,6 +96,15 @@ delay memory by a multiply-accumulate engine.**
 Everything in the DSP communicates over the **DAB, a shared 16-bit bus.** Each 293 ns micro-cycle, **exactly
 one device drives the DAB and the others read it.** This single fact governs the entire reverb: all audio
 movement — between the delay memory, the math engine, and the analog I/O — is DAB traffic.
+
+**★ The DAB is an ACTIVE-LOW (complement-domain) bus (session 0027, pin-proven).** The SBC's
+Multibus-complemented data lines reach the DAB through the XREG write bridge (`dmem_U39/U41`)
+with **no inversion**, so every value on the DAB — and everything downstream: the register file,
+the multiplier operand, the delay memory contents, the result register — is the **bitwise
+complement of its CPU-domain meaning**. Every boundary complements back (XREG readback
+`dmem_U38/U40`, the FPC converters), so the double complement is invisible end-to-end — but the
+ARU's arithmetic only reads simply in the complement domain (see §7). Measured per-pin by the
+ARU signature tables (1467/1469 match; `tools/session0022_probes/e1_aru_signatures.py`).
 
 Devices on the DAB and when each one **drives** it:
 
@@ -134,8 +153,13 @@ The DSP's instruction-fetch/decode/control. Three jobs:
 1. **Clock generation.** A PLL locks to the host's 2.048 MHz clock and multiplies it to a 30.72 MHz master
    clock (MC). MC is divided to the **293 ns system cycle (3.41 MHz)**, which is split into **nine time slots
    MS0–MS8**, grouped into **three ARU states AS0 / AS1 / AS2**.
-2. **State generation.** An 8-bit program counter walks the WCS; it is **reset at step 99**, giving a
-   **100-step program per sample → 34.13 kHz** sample rate.
+2. **State generation.** An 8-bit program counter walks the WCS **downward — CPU word 127 first**
+   (the SBC address lines are active-low Multibus and the WCS word-address mux is uncompensated,
+   session 0022: CPU word k = physical row 127−k). The program's **reset word** fires RESET during
+   its own step and the PC sync-clears one step later, so **the hardware frame is L+1 steps**
+   (the row after the reset word executes too — an idle in all 13 factory programs; session 0023,
+   hardware-confirmed by the T&C signature reference FP54 = +5V @ N=30 for the 30-step diag-3
+   frame). Sample rate **fs = 30.72 MHz / 9 / (L+1)**, per program (CONCERT 32,508 Hz measured).
 3. **WCS + microinstruction decode.** Four 128×8 static RAMs (**MCM68B10**, `tc_U43/U29/U15/U2`) hold the
    **32-bit microinstruction (MI0–MI31)** per step (loaded by the SBC). The T&C **decodes the microword into the
    control signals** that drive the ARU and DMEM each cycle — XFER (load result register, =MI24), ZERO (clear
@@ -164,10 +188,12 @@ A 16-bit **Current Position Counter (CPC)** advances **+1 per sample**; a 16-bit
 ✅ owner-traced, **OFST straight order**) computes **addr = CPC − offset** (active-low offset + carry-in high),
 where the `offset` *is the delay length of that tap*. The DRAM mux (U36/U18, ✅) is standard row(A0–7)/col(A8–15)
 — no bit scramble; physical cell = linear address. This arithmetic ✅ is what selects each delay tap — see §6.
-**🟡 Where the offset values come from:** NOT `mem[0x4000]` (the long-used wrong source) — the firmware
-*computes* the per-step offsets at program-load (B55B builder → the **`0x3F4D` buffer**) and they are short
-(4–176 ms). Use `tools/aru224_emulate.py`. *(Faithful read confirmed; that `delay=−offset` and that these are
-the ARU's actual addresses remain 🟡 pending the firmware-routine teardown — Track A of the validation plan.)*
+**✅ Where the offset values come from (settled, session 0022; superseding the 0x3F4D-era note):**
+the per-step offsets are the **stored lanes 0/1 of the 0x4000 WCS words, read DIRECTLY**
+(`addr = CPC − stored`; the OFST/ bus carries the complement and the adder's carry-in supplies
+the +1). The earlier confusion was the coordinate system, not the source: with the 0022 reversed
+word order + Multibus lane complement, all 13 factory programs decode to sensible delay maps
+(13/13 validation). The `0x3F4D` buffer is a firmware intermediate, not the ARU's source.
 
 ### 5.3 Control signal generation — two unrelated things
 - **DRAM control/timing:** the RAS/CAS/refresh strobes that run the dynamic RAM (a delay-line generator,
@@ -243,37 +269,41 @@ line — is a real design artifact baked into the program. Reconstructing the re
 (the offset table) and the coefficient table, **not** modeling abstract "comb filters." The offsets **are** the
 topology; the coefficients are the gains.
 
-> **🔵→correction (Session 11):** the *real* offset table (from `0x3F4D`) is short and sensibly laid out (the
-> recovered CONCERT map: ~362 ms predelay tap, 4–176 ms diffuser/tank delays, a 176 ms recirc loop reused 4×).
-> The "write heads cluster and **trample** each other" problem that dominated Sessions 3–11 was an **artifact of
-> decoding offsets from the wrong memory (`0x4000`)** — it does **not** describe the real program. The
-> survival/disjointness reasoning above is still the correct *mechanism*, but the real layout already satisfies
-> it; recovering the map is now a matter of reading `0x3F4D` correctly, not solving a trample puzzle.
+> **✅ Current state (0022→0027):** the real offset map comes straight from the WCS lanes 0/1 under
+> the 0022 coordinate system (the Session-3–11 "trample puzzle" and the interim 0x3F4D detour were
+> both artifacts of reading `0x4000` in the WRONG coordinates, not of the source being wrong). The
+> layout mechanism described above is how the real programs work, and the recovered maps produce
+> the documented reverbs end-to-end (see §6.7).
 
 ### 6.5 Wrap period bounds single delays; the tail comes from feedback
-The buffer wraps every 65 536 samples (~1.92 s). Any single delay line must be shorter than the
+The buffer wraps every 65 536 samples (~2.0 s at CONCERT's 32,508 Hz; ~1.9 s at the 34.13 kHz bank). Any single delay line must be shorter than the
 wrap period. A long reverb tail (seconds) is therefore **not** one long delay — it is produced by **feedback**:
 a line's read is scaled by a near-unity coefficient and **written back into the same line**, so energy
 recirculates with loop time `R − W` and per-loop gain set by the coefficient. **The reverb decay time is set by
 the loop gain, not by the raw delay length.**
 
-### 6.6 Modulation = time-varying offsets (inferred)
-The reverb applies always-on chorus modulation. The most likely mechanism is the SBC rewriting selected offsets
-by small ± deltas per frame, so those delay-line lengths wobble (a delay-modulation / chorus effect), making the
-address arithmetic time-varying — some offsets LFO-driven, animating the memory map over time. **This mechanism
-is inferred from reverse engineering; it is not stated in the manual or schematics.**
+### 6.6 Modulation = time-varying offsets (✅ MEASURED, sessions 0024–0027)
+The reverb applies always-on chorus modulation: the SBC's triangle LFO rewrites the modulated tap
+words per frame (CONCERT: exactly the 8 bytes of words 56/57/107/108 — offset + coefficient lanes,
+in anti-phase sum-preserving pairs; **no other WCS byte moves in steady state** — verified by
+full-image spot checks across 211k frames under the true interleaved co-sim). Measured under real
+62-CPU-ticks-per-frame pacing: **LFO period ≈ 325k instructions** (docs said ~345k); sweep depth
+tracks the parameter byte `0x3CD4` (tap-offset span 14/34/126 frames at depth 0x02/0x04/0xF0).
+The modulation is what closes the last ~10% gap between static-image renders and the documented
+decays (`tools/session0022_probes/e2_live_cosim.py`).
 
 ### 6.7 The recirculating loop (and the resolved "dead-tank")
 A recirculating loop is exactly: **read at offset `R` → multiply-accumulate by the feedback coefficient →
 write at offset `W` of the same line**, closing every `R − W` samples. If the value read at `R` does not get
 written back onto the line it tapped, the loop is **open** and the tank cannot ring.
 
-> **Resolution (Session 11):** the "dead tank" chased for ~9 sessions was **not** a real loop-closure failure
-> — it was the consequence of feeding the datapath the wrong (`0x4000`) offsets, which clustered the write
-> heads so feedback was trampled. With the **real short delays** (`0x3F4D`, 176 ms recirc loop), the structure
-> is sound: a 176 ms loop at the recovered feedback gain (~0.6) gives RT60 ≈ 2.6 s. ⚪ **What remains unproven**
-> is the end-to-end demonstration: rebuild the datapath on the real offsets + correctly-aligned control fields
-> and show a coherent, parameter-tracking decay. That is Track E of `docs/plans/224XL-validation-plan.md`.
+> **✅ RESOLVED end-to-end (sessions 0022–0027).** The dead tank was the pre-0022 coordinate system.
+> With the reversed execution order, the traced MAC pipeline alignment (0023), the PP-bus capture
+> (0024), the E83-anchored sign convention (0025), and live modulation (0027 co-sim), **the reverb
+> EMERGES from the recovered program**: CONCERT at factory defaults renders LF 3.27 s / mid 2.28 s /
+> broadband 2.68 s against the documented 3.0 / 2.0 / 2.6-average — zero parameters tuned — and the
+> parameter levers, preecho routing, variation presets, and per-band structure all track chapter 4/8
+> of the owner's manual. The end-to-end demonstration this note used to ask for is done.
 
 ---
 
@@ -286,18 +316,33 @@ The datapath that executes the math. Contents and the constraints that shape the
 - **Serial 16 × 6-bit two's-complement multiplier** with saturation logic — a **modified-Booth (radix-4)**
   shift-and-add multiply spread across AS0/AS1/AS2 (two partial products per state; the even/odd coefficient
   streams M0//M1/ are the Booth selects). (Service Manual §3.7 calls the same mechanism "modified shift and add.") The coefficient is **6 bits at a /32 scale** (value 32 = ×1.0,
-  range ≈ ±2.0). **Schematic-proven** (060-01318): the result register (74F374 U43/U44) latches partial-product
-  bits **PP3..PP18** (= product ≫3), while the operand enters the multiplier with its low 3 bits tied to 0 (=
-  operand ≪3, manual §3.7) → net ×C/32. Corroborated by the firmware multiplier self-test (a +42/32 = 1.3125
-  coefficient is only representable by a 6-bit field at /32, not /64). Every gain, filter coefficient, and
-  feedback gain is quantized to these 6 bits.
-- **20-bit saturating accumulator** — on overflow the **74F157 saturation muxes (U33–U37)** force the top two
-  bits equal to the sign and the low 18 bits to its complement, giving **+0x3FFFF (+2¹⁸−1) / −0x40000 (−2¹⁸)** —
-  a **schematic-proven** rail of **±2¹⁸** (060-01318; overflow detected by the U42 XOR of the top two sum bits).
-  A >1 coefficient on a large operand rails it — real hardware behavior, part of the sound and a real hazard.
-- **16-bit result register (RES)** — buffers the MAC output onto the DAB so the multiplier can start the next
-  product without waiting for the previous result to be consumed. RES is the **feedback node**: RES → DAB →
-  register file re-enters the math; RES → DAB → DMEM stores into a delay line.
+  range ≈ ±2.0), sign = **stored microword bit 7 of lane 2, 1 = positive** (E83-golden-anchored,
+  session 0025; carried to the datapath by the tc_U20 JK — see §4). Every gain, filter
+  coefficient, and feedback gain is quantized to these 6 bits.
+- **★ The arithmetic law (session 0027, per-pin locked):** the whole datapath computes on the
+  DAB's **complement-domain** values (§2). In that domain the traced wiring is exact with **no
+  rounding hardware anywhere**: each accumulate is `ACC + (PR XOR rail) + cin` with
+  `rail = inv(CSIGN/)` and `cin = inv(rail)` (the aru_U2 inverter pair), and the **result
+  register is a pure bit tap of PP3..PP18 (= value ≫3, truncation)**. The firmware's E83 golden
+  products reproduce 20/20 with zero corrections. (The CPU-domain descriptions used through
+  session 0026 — "round-half-up +4 at the ≫3", the "+3 per dual-Booth-rail phase", and the
+  "−M−1 negative law" — were all bookkeeping images of this one complement-domain truncation.)
+- **20-bit saturating accumulator** — on overflow (`Σ19 XOR Σ18`, the U42 gate) the **74F157
+  saturation muxes (U33–U37)** substitute the ±full-scale clamp pattern, giving **±2¹⁸ rails**
+  — and the clamp **feeds the accumulator's own D inputs** (the '163 loads the clamped bus, so
+  a saturating group converges to the rail; pinned by the diag-3 tail-saturation signatures).
+  A >1 coefficient on a large operand rails it — real hardware behavior, part of the sound.
+- **16-bit result register (RES)** — its D inputs sit on the **PP bus (the sat-mux/adder
+  output), not the accumulator register** (session 0024): the XFER capture therefore includes
+  the in-flight pairC term combinationally — the full group MAC. RES buffers the result onto
+  the DAB; it is the **feedback node**: RES → DAB → register file re-enters the math; RES →
+  DAB → DMEM stores into a delay line. (Chip attribution: **U43 = high byte, U44 = low byte**
+  — netlist §4.8, corrected 0027.)
+- **Per-pin verification:** the entire datapath above — Booth array, front-end adders, product
+  register, sub-XOR row + CSIGN timing, back-end adders, sat-mux/clamp, accumulator, result
+  register, register file, shifters — is verified against the Service Manual's §5.7 ARU
+  signature tables at **1467/1469 listed pins (the feedback configuration is 710/710)**,
+  `tools/session0022_probes/e1_aru_signatures.py`.
 
 The ARU does multiply-accumulate (gains and sums) and saturation — nothing else. It has **no filters in it**;
 the filters are emergent from the WCS micro-op sequence operating over the DMEM delays (§1, §6).
@@ -309,7 +354,7 @@ the filters are emergent from the WCS micro-op sequence operating over the DMEM 
 | Module | In the real-time signal path? | Effect on reconstruction |
 |---|---|---|
 | **FPC** (Float↔Fixed Converter) | **Yes — keep it.** | Input enters the DAB *only* via its **RD AD/** op (float→16-bit fixed); output leaves *only* via **WR DA/** (fixed→float). It also generates A/D and D/A timing. Its **16-bit fixed-point scaling** sets levels/headroom. Abstractable to "sample→16-bit on DAB; 16-bit→sample," but the RD-AD/WR-DA micro-ops must be modeled — that is how audio gets in and out. |
-| **AIN** (Audio Input) | At the analog boundary only. | Anti-alias filter + sample/hold + gain-ranger + ADC; sets the **34.13 kHz rate** and **input bandwidth (~15 kHz)**. Model as an ideal band-limited sampler; note the program's *HF Bandwidth* parameter interacts with it and shapes tone. |
+| **AIN** (Audio Input) | At the analog boundary only. | Anti-alias filter + sample/hold + gain-ranger + ADC and **input bandwidth (~15 kHz)**. The converters are **frame-slaved** (the FPC syncs to RESET/), so the sample rate follows the loaded program's L+1 frame (31.3–34.1 kHz across the bank; the fixed analog filters tolerate the spread). Model as an ideal band-limited sampler; note the program's *HF Bandwidth* parameter interacts with it and shapes tone. |
 | **AOUT** (Audio Output) | At the analog boundary only. | DAC + reconstruction filter + output gain switch. No effect on the delay/feedback structure. |
 | **NVS** (Nonvolatile Storage) | No (setup only). | Holds user register setups (param values) + ROM expansion. Determines *which* program/params load (e.g. CONCERT's 2.6 s defaults), i.e. which offsets/coefficients exist — not the per-sample math. |
 | **Control Head / Transition** | No. | UI (switches/pots/display); source of parameter values the SBC reads. |
@@ -319,14 +364,17 @@ the filters are emergent from the WCS micro-op sequence operating over the DMEM 
 
 ## 9. The one-line model, and where the reverb lives
 
-> A **microcoded DSP (T&C sequences, ARU computes, DMEM stores delays)** executes a **100-step-per-sample
+> A **microcoded DSP (T&C sequences, ARU computes, DMEM stores delays)** executes an **(L+1)-step-per-sample
 > signal-flow graph** — defined by the WCS microcode, with delays = DMEM offsets and gains = 6-bit ARU
-> coefficients — moving audio across the **DAB**, while the **SBC** authors and animates that microcode
-> (program + params + chorus modulation) and the **FPC** bridges fixed↔float to the **AIN/AOUT** analog ends.
+> coefficients, all carried in **complement-domain values on the DAB** — while the **SBC** authors and
+> animates that microcode (program + params + the measured per-frame chorus modulation) and the **FPC**
+> bridges fixed↔float to the **AIN/AOUT** analog ends at the program's own frame rate.
 
-The reverb behavior — and the open dead-tank question — lives in one corner of this model: the **per-sample
-DAB traffic that closes the comb/all-pass loops** (read a delay → MAC by a feedback coefficient → write it
-back), with the 4-register file and RES as the only scratch. The productive way to read that corner is to
-enumerate, for the loaded program's 100 steps, **the DAB driver, register read/write addresses, offset, and
-coefficient of every step**. That table *is* the signal-flow graph, and it shows exactly where each loop is
-meant to close.
+The reverb behavior lives in one corner of this model: the **per-sample DAB traffic that closes the
+recirculating loops** (read a delay → MAC by a feedback coefficient → write it back), with the
+4-register file and RES as the only scratch. The productive way to read that corner is to enumerate,
+for the loaded program's L+1 steps, **the DAB driver, register read/write addresses, offset, and
+coefficient of every step** — that table *is* the signal-flow graph. As of sessions 0022–0027 this
+model is **demonstrated, not aspirational**: the recovered CONCERT program renders the documented
+decays at factory defaults, the parameter surface tracks chapters 4/8 of the owner's manual, and the
+datapath arithmetic is pinned per-pin against the manufacturer's own signature tables.

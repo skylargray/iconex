@@ -1,10 +1,52 @@
 # Lexicon 224XL — Complete Technical Reference for Reconstruction
 
-> **⛔ STALE — DO NOT USE AS AUTHORITY (banner strengthened 2026-07-01):** this consolidation predates
-> both the verified-core era AND the session-0022 coordinate-system correction (reversed execution +
-> Multibus lane complement). Multiple claims in here were later formally refuted. Current authorities:
-> `docs/sessions/0022 …`, `docs/plans/021`, `224XL_interconnect_netlist.md` (updated 2026-07-01),
-> `224XL_timing_spec.md`, and `tools/aru_freerun22.py` (the working decode in code).
+> **★★★ THE CURRENT MODEL (sessions 0022–0027, 2026-07-02) — read THIS, then treat the body below as
+> the historical record it is.** The verified, oracle-locked model (engine of record:
+> `tools/aru_freerun22_rtl.py`; per-pin lock: `tools/session0022_probes/e1_aru_signatures.py`,
+> 1467/1469 ARU signature pins, feedback table 710/710):
+>
+> - **Coordinate system (0022):** CPU word k = physical row 127−k; execution runs CPU words
+>   **127 down to the reset word**; all four lanes read through the Multibus complement.
+>   Decode (in code: `aru_freerun22.decode22`): **type = stored `l2 & 3`** (0=MEMR, 1=MEMW, 2=IO,
+>   3=idle); IO command bits assert on stored-0 (bit3 RESET, bit6 WR-XREG, bit7 WR-DA, bits 8-11 =
+>   channels D/C/B/A, bits 12-13 → DAB source 0=none/1=RDRREG/2=XREG/3=RD-AD); **WA = `(l2>>2)&3`,
+>   RA = `(l2>>4)&3`, CSIGN = `l2` bit 7 (1 = positive, E83-golden-anchored 0025)**;
+>   **XFER/ZERO/cmag = `~l3`** (bit0/bit1/bits2-7); **offset/delay = stored `l1:l0` DIRECTLY**,
+>   `addr = (CPC − stored) & 0xFFFF`. 13/13 factory programs validate.
+> - **Frame (0023):** the hardware frame is **L+1 steps** (the row after the reset word executes;
+>   an idle in all 13 programs). **fs = 30.72 MHz / 9 / (L+1)** per program — 31.3–34.1 kHz across
+>   the bank; L=99 → the canonical 100 steps / 34.13 kHz; **CONCERT (L=104) = 32,508 Hz, measured
+>   from a real unit's IR (0024)**. The old "128 steps fixed" was the WCS *storage* size (words
+>   below the reset word are unexecuted staging).
+> - **MAC pipeline (0023):** write-through operand (the shifter loads R[RA(w)] after w's own MS7
+>   regfile write, at the next step's first ARUCK edge); the accumulator runs **one ARUCKE/ edge
+>   behind the product register** (fig-3.4); own-sign at every partial product
+>   (falsification-tested 0025); the ZERO clear is owned by w_{n−1} and lands after the capture.
+> - **Capture (0024):** the result register's D inputs are on the **PP bus** (sat-mux/adder
+>   output), so the XFER capture includes the in-flight pairC term combinationally — the full
+>   group MAC. Chip attribution U43 = high byte / U44 = low byte (0027).
+> - **★ The arithmetic law (0027):** the DAB is an **ACTIVE-LOW (complement-domain) bus** — the
+>   whole datapath computes on complemented values, every boundary (XREG, FPC) complements back.
+>   In that domain the traced wiring is EXACT with **no rounding hardware**: accumulate =
+>   `ACC + (PR ⊕ rail) + cin`, `rail = inv(CSIGN/)`, `cin = inv(rail)`; result = a pure bit tap
+>   of **PP3..18 (truncation)**; saturation = `Σ19⊕Σ18` selecting the ±2¹⁸ clamp, which also
+>   feeds the accumulator. The E83 goldens reproduce 20/20 with zero corrections — the doc-era
+>   "+4 round-half-up", "+3 dual-rail", and "−M−1 negative law" were CPU-domain bookkeeping of
+>   this one truncation. (The value-level engine still carries ±1-2 LSB of that bookkeeping —
+>   the plan-024 re-sync.)
+> - **Modulation (0024–0027, measured):** the SBC triangle LFO rewrites ONLY the modulated tap
+>   words per frame (CONCERT: words 56/57/107/108); period ≈ 325k instructions under true
+>   62-ticks-per-frame pacing; depth byte `0x3CD4`. The true live co-sim renders CONCERT at
+>   factory defaults to **LF 3.27 / mid 2.28 / broadband 2.68 s vs the documented 3.0/2.0/2.6-avg**.
+> - **Parameters (0026–0027):** all five LARC pages mapped; byte↔display calibration from the
+>   firmware's own formatter hits the documented endpoints exactly (decay 0.6–70 s, corners
+>   170 Hz–19 kHz, % = byte/2.56); sliders have **soft takeover** (ignored until they cross the
+>   recalled preset). Variations V1-V7 recalled via the real LARC keys; the w43/95 shelf sign
+>   law verified predictively.
+>
+> Authorities: `docs/sessions/0022 … 0027`, `224XL_interconnect_netlist.md`,
+> `224-signature-value-tables.md`, `224XL_timing_spec.md`, and the engine + probes in
+> `tools/`/`tools/session0022_probes/`. **Claims below that contradict the above are historical.**
 
 **Purpose.** Everything reverse-engineered about the 224XL reverb, organized to drive the two next
 steps: (1) the **emulator-diff harness** and (2) the **bit-exact header-only C++17 core** (see
@@ -104,23 +146,21 @@ The 224XL is two computers:
 Data flow: `program record → SBC build engine → WCS image (microcode) → ARU executes → audio`.
 Parameters and modulation are the SBC rewriting WCS coefficient/offset bytes over time.
 
-**Step count = 128, fixed (RESOLVED, verified).** The 224XL executes **all 128 WCS steps (0–127) every
-sample** — verified three ways: the build loop `0xB65A` (`LD C,0x80`) and the WCS hardware-copy `0xAB55`
-(`LD B,0x80`) both process 128 steps, and the last program-content step = **127** in every program
-booted (CONCERT/PLATE/BRIGHT/DARK/SMALL ROOM/CHAMBER). The earlier "~100/~110" was an undercount of
-non-NOP steps; NOPs are interspersed but still execute (as pure-delay/no-op cycles). **RESET has no
-*dedicated* microword bit** — verified: AND-ing step-127's 32-bit word across all programs and removing bits
-present in any other step yields `0x00000000` (no end-of-program marker bit). **M0b correction:** RESET is
-*not* a hardwired counter terminal-count wrap — per SM §3.5 ("reset … generated by the WCS itself") and netlist
-§3.11/§2T.5 it is a **WCS-decoded condition** (`tcWR·OFST3/` at tc_U34 → PC `/CLR`; registered to `RESET/` by
-tc_U25). SM §3.5 puts that reset at **count 99 (= 100 steps)**, in tension with the firmware's 128-entry build
-loop (§1 banner) — so treat the executed-step count as 🟡. For the C++ core, looping `S = 0..127` and resetting
-at the loop boundary remains the working model pending that reconciliation.
+**Step count — CORRECTED (0022/0023; supersedes the "128 fixed" claim).** The WCS *stores* 128 words,
+but execution runs **CPU words 127 down to the program's reset word** (reversed — the SBC address
+lines are active-low Multibus and the word-address mux is uncompensated), and the hardware frame is
+**L+1 steps** where `L = 128 − reset_word` (the row after the reset word executes too — an idle in
+all 13 factory programs; hardware-confirmed by the T&C signature reference FP54 = +5V @ N=30 for the
+30-step diag-3 frame). Words below the reset word are **unexecuted staging** — the 128-entry build
+loop (`0xB65A`) fills storage, not the frame. RESET is a WCS-decoded IO command (stored bit3 == 0 on
+an IO-typed word), one per program, riding the final WR-DA (session 0022, 13/13). The SM's
+"count 99 / 100 steps" and the 128-entry build are both right — they describe different things.
 
-**Sample rate.** 224X = 3.41 MHz ÷ 100 = 34.13 kHz (manual). The 224XL runs 128 steps; its published Fs
-is still ≈34.13 kHz, implying a proportionally faster T&C step clock ≈ **4.37 MHz** (≈229 ns/cycle).
-*Firmware-certain: 128 steps/sample.* The exact clock/Fs is an inference (the T&C clock is hardware,
-not firmware-visible) — confirm with a hardware Fs measurement or T&C schematic #060-02475.
+**Sample rate — MEASURED (0024).** **fs = 30.72 MHz / 9 / (L+1)**, per program: the 224XL is a
+variable-frame-rate machine (31.3–34.1 kHz across the bank). L=99 programs run the canonical
+100 steps → 34.13 kHz; **CONCERT (L=104, 105 steps) runs 32,508 Hz — measured from the benchmark
+IR of a real unit** (envelope-warp s=1.000; autocorrelation lags match to ~0.2%). The converters
+are frame-slaved (FPC syncs to RESET/), so they follow the loaded program's rate.
 
 ### SBC memory map (for driving the emulator)
 
@@ -163,15 +203,13 @@ Components:
   **current-position counter** (incremented once per sample) **minus** the microword offset. The DAB
   carries DMEM data, FPC audio, the result register, or the SBC XREG.
 
-  **Address/delay convention (authoritative — use this in C++):** the stored offset bytes are `OFST/`
-  (active-low). True offset = `~(lane1<<8 | lane0) & 0xFFFF`. The hardware does a 2's-complement subtract
-  (`address = position + OFST/ + 1`), i.e. **`address = (position − offset) & 0xFFFF`**. The "delay in
-  samples" a tap represents = `(position − address) mod 65536 = offset`. Absolute offsets in a live
-  firmware image are large (relative to an arbitrary position base that cancels across read/write pairs);
-  the human-readable per-tap lengths in `224XL_record_name_map.md` come from the standalone build with
-  base 0 and use the signed `delay = −offset` convention. For the C++ core only the address formula above
-  matters — the circular buffer makes the base irrelevant; the reverb topology is in the read/write
-  *relative* positions.
+  **Address/delay convention — CORRECTED (0022; supersedes the `~stored` reading):** the delay/offset
+  is the **stored `lane1:lane0` value DIRECTLY** — `addr = (CPC − stored) & 0xFFFF`. (The OFST/ bus
+  *lines* carry the complement and the adder's carry-in supplies the +1; reading the STORED bytes,
+  no inversion is applied. The old `offset = ~stored` rule was half of the coordinate-system error.)
+  The "delay in samples" a tap represents = the stored offset; the circular buffer makes the position
+  base irrelevant; the reverb topology is in the read/write relative offsets. In code:
+  `aru_freerun22.decode22` / `aru_freerun22_rtl.program_rows22`.
 
 ### The 20-bit multiplicand alignment (critical for bit-exact)
 
@@ -183,36 +221,26 @@ Per §3.7: forming the 20-bit operand from the 16-bit register value `x`:
 So `operand20 = sign_extend(x, 17) << 3`. Overflow detect = XOR of the top two bits (must match unless
 overflow). On overflow, saturate to most-positive / most-negative.
 
-### Per-step execution (one WCS step)
+### Per-step execution — SUPERSEDED (0022–0027): see `tools/aru_freerun22_rtl.py`
 
-```
-for S in 0..127:                                    # ALWAYS 128 steps/sample (verified, §1); no early stop
-  off14 = offset & 0x3FFF
-  if offset & 0x8000:                               # FPC select (bit15) -> analog I/O, not DMEM (§3 FPC)
-     ch = (offset & 0x4000) ? LEFT(A,D) : RIGHT(B,C)
-     if WA == 2:        dab = FPC_in[ch]            # RD AD/  : input read  (off14 == 0x3FFF)
-     elif WA == 3:      FPC_out[ch] = RES; dab = RES# WR DA/  : output write (off14 = strobe/tap)
-  else:
-     addr = (position - offset) & 0xFFFF            # ordinary DMEM tap
-     if b3:                                         # RDRREG/=A50: result register drives DAB (RESOLVED §3)
-         DMEM[addr] = RES                           # write-back to DMEM (comb/allpass feedback)
-         dab = RES
-     else:
-         dab = DMEM[addr]                           # DMEM (or FPC) drives DAB (read)
-  R[WA]  = dab                                       # register write every cycle (WA=3 = pass-through)
-  prod   = multiply20(R[RA], coeff, CSIGN)          # 16×6 saturating; operand = sign_extend(R[RA],17)<<3
-  if ZERO: ACC = 0
-  ACC    = saturate20(ACC + prod)                   # 20-bit accumulator; LS163 counters + LS157 sat mux
-  if XFER: RES = sat16(ACC >> 3)                   # XFER CK (A27) loads RES from ACC>>3; floor (arith >>)
-position += 1                                        # RESET is implicit at the loop boundary (no microword bit)
-```
+The pseudocode that used to sit here (128 fixed steps; FPC selected by offset bit15; a `b3` write-back
+bit; same-step MAC retire; `RES = sat16(ACC>>3)` with floor) is the pre-0022 model and is WRONG on
+every one of those points. The current per-step semantics, verified end-to-end, are (per executed row
+w_n, in traced edge order — `RTL22.step` is the code of record):
 
-**128 steps = one output sample** (fixed for all programs — see §1); `position += 1` per sample. The
-reverb's recirculating tank lives in the DMEM + register feedback; the `+0.976`-class coefficients on
-XFER steps close the loops. **b3 = `RDRREG/` (RESOLVED, §3/§4):** `b3=1` steps write RES back to DMEM
-(the comb/allpass feedback write-back path); `b3=0` steps read. XFER (clock) is independent — it loads
-RES from `ACC>>3` regardless of b3. On a step with both XFER and b3, RES is loaded (XFER) **before**
-the b3 write-back drives the DAB, so the closer writes the post-XFER (just-computed) RES into DMEM.
+- device phase by **type = stored `l2&3`**: MEMR (DMEM DOUT → DAB), MEMW (RDRREG drives the DAB and
+  the DAB is written to `DMEM[CPC − stored]`), IO (source per the sel field: RDRREG / XREG / RD-AD;
+  WR-DA emits the DAB to the selected channels; RESET fires here), idle (bus hold);
+- the regfile is written **every step** at MS7 (`R[WA(w_n)] ← DAB`);
+- the multiply of w_n executes physically during step n+1 (write-through operand), its partial
+  products retiring at the following ARUCKE/ edges (**the accumulator runs one edge behind the
+  product register**, fig-3.4);
+- an XFER on w_{n−1} captures at step n's slot-3 edge from the **PP bus** (ACC + the in-flight pairC
+  — the full group MAC); a ZERO on w_{n−1} clears the accumulator one edge after the capture;
+- **all values on the DAB / in the regfile / in DMEM are complement-domain** (session 0027); the
+  physical result register is a pure PP3..18 bit tap (truncation — no rounding hardware).
+
+`position` (CPC) increments once per frame on the RESET event; the frame is L+1 steps (§1).
 
 ---
 
@@ -295,15 +323,12 @@ The reverb character lives in the integer ARU arithmetic. All core details are n
 schematic + hardware IR confirmed). Use the diff harness (§9) and the manual's exact test vectors to
 verify the C++ implementation.
 
-- **Coefficient encoding (RESOLVED).** The multiplier is **6-bit** (C0/–C5/, confirmed at the T&C
-  coefficient serializer: 74195 shift registers U10/U11, clocked by ARUCKE/AS1, serialized as 2 bits/
-  state × 3 states into M0//M1/). **Effective coefficient = C = (lane3 7-bit magnitude) >> 1 (6 bits),
-  applied as `C/64` (= mag/128).** Sign = CSIGN (the stored sign bit; **M0b: the datapath `CSIGN/` is the
-  `tc_U20` (74S112) JK-FF output, not a directly-applied bit — netlist §3.10 / §3 note**). Magnitude
-  is stored **direct/linear** — firmware-confirmed: packer 0xB4FF complements only the sign bit;
-  magnitude comes direct from 0xB510 `AND 0x7F`). `mag & 0x3F` is REFUTED. A single 6-bit coefficient
-  is always < 1 (≤ 63/64). **The "2 extra LSBs"** (NVS4 packer 0xB4F0, `AND 3 / OR 3` at 0xAE72)
-  belong to the **modulation fractional-delay interpolation coefficient**, NOT the main multiply.
+- **Coefficient encoding — CORRECTED (0022–0025; supersedes the "C/64" reading).** The coefficient is
+  **6 bits at a /32 scale**: `cmag = ((~l3)>>2) & 0x3F`, value 32 = ×1.0, range ≈ ±2 (the E83
+  self-test's +42/32 = 1.3125 is only representable at /32). **Sign = stored `l2` bit 7, 1 = positive**
+  (E83-golden-anchored, 0025; delivered to the datapath through the tc_U20 JK with the traced one-step
+  window). XFER/ZERO are `~l3` bits 0/1. The old "7-bit magnitude >>1, applied /64" table was the
+  pre-0022 lane misread.
 - **`cmag=0` baseline (plan-016 active-low NAND array) — reconciled.** `cmag=0` is the plan-016
   active-low NAND-array baseline (the "+3 ACC units per `cmag=0` multiply" = the all-ones product
   register). For a **single** multiply it correctly rounds to 0 at the `>>3` round-half-up (matches every
@@ -318,18 +343,22 @@ verify the C++ implementation.
   `0xDD` (mag93) → **×−0.25**, `0x5D` (mag93) → **×−1.25**.
 - **20-bit accumulator (RESOLVED).** LS163 counters; LS157 saturation muxes; LS86 two-MSB overflow XOR.
   Saturates to ±524287. `ACC` is 20-bit; the multiplicand alignment is `sign_extend(x,17)<<3` (§2).
-- **Result register transfer (RESOLVED).** `RES = sat16(ACC >> 3)` — 20-bit accumulator, arithmetic
-  right-shift by 3 (floor toward −∞), saturate to 16-bit. PP3..PP18 bits of the product sum feed the
-  74F374 result register, loaded by XFER CK (A27).
+- **Result register transfer — REFINED (0024/0027).** The 74F374 D inputs are on the **PP bus**
+  (sat-mux/adder output), so the capture = the accumulator PLUS the in-flight pairC term. Physically
+  the transfer is a **pure PP3..18 bit tap — truncation of the complement-domain value; there is no
+  rounding hardware** (0027; the CPU-domain "sat16((ACC+4)>>3) round-half-up" was bookkeeping of the
+  same bits). Chip attribution: U43 = high byte, U44 = low byte.
 - **b3 read/write (RESOLVED — §3).** `b3=1` ⇒ RES drives the DAB and is written to `DMEM[addr]`
   (comb/allpass feedback write-back); `b3=0` ⇒ `DMEM[addr]` reads. Gated by `RDRREG/`=A50 — an
   independent stored bit (not derived from any field combo). DMEM write-back is gated by b3, not XFER.
 - **Register file — read-before-write (RESOLVED).** 4× LS670 with independent read/write addressing.
   Read port returns the value **before** this cycle's `R[WA]=dab` write. When WA==RA the multiplicand
   is the old (pre-write) value. `DAB WSTB/` writes every cycle; WA=3 = pass-through scratch.
-- **Comb-closer ordering (RESOLVED).** On a step with both XFER and b3, XFER loads RES first, then b3
-  drives the post-XFER RES onto the DAB and into DMEM. Modeling the stale pre-XFER value gives a
-  divergent loop gain ~2.78; post-XFER gives ~0.39 (genuine decay).
+- **Comb-closer ordering — SUPERSEDED by the traced pipeline (0023/0024).** There is no "b3
+  write-back bit"; MEMW-typed words write the DAB (driven by RDRREG) into DMEM, and the capture/
+  clear/retire ordering follows the fig-3.4 pipeline (capture at slot-3 from the PP bus; the ZERO
+  clear one edge later; each word's products retire one step behind). See §2 and
+  `aru_freerun22_rtl.py`'s header for the full edge schedule.
 - **Rounding.** Arithmetic floor (right-shift `>>3`) — toward −∞, not toward zero.
 - **Service-Manual multiplier test vectors** (Diagnostic "ARU TESTS" / "ADD'L MULT", use as C++ unit
   tests): coefficients **+21/32, +42/32, +63/64**, and **×1, ×1/2, ×−1, ×1/4, ×5/4**. Four multiplications
@@ -355,14 +384,14 @@ verify the C++ implementation.
   the U5–U9 XOR A-inputs (operand register + coefficient-gated/shifted partial-product). Needed for §3.2 of
   the faithful-reconstruction plan (per-state saturation). The sat constant `B-IN`/`SAT` source also untraced.
 
-**⚠️ APPROXIMATION REGISTER — the analysis model is NOT yet fully faithful (Session 4d).** The decay-deficit
-(+1100 ppm) is the eigenvalue of the **static** WCS image; the hardware never runs static. Open shortcuts to
-fix (full spec: `docs/plans/224XL-faithful-reconstruction-plan.md`): **(1) modulation omitted** from the
-audio/λ model (frozen WCS); **(2)** modulated taps read with **linear** interpolation, not the firmware's
-**all-pass** (`0xAE72`); **(3)** LFO is **guessed**, not the firmware's `0x3cd3`/`0x3cd4`/`0x3ccd`;
-**(4)** serial multiply **collapsed** (per-state saturation unmodeled); **(5)** saturation **value** unverified;
-**(6)** Fs=34130 is **nominal** (analog LC-tank oscillator, not crystal); **(7)** FPC I/O / 12-13-bit
-converter asymmetry unmodeled; **(8)** frozen WCS vs live param de-zipper. Fix modulation FIRST.
+**✅ APPROXIMATION REGISTER — CLOSED (0023–0027).** Every item on the Session-4d list is now either
+modeled or measured: (1)+(3)+(8) live modulation runs in the true interleaved co-sim
+(`e2_live_cosim.py`, real LFO at real pacing); (2) the modulated taps are replayed from the
+firmware's own byte writes (no interpolation model needed); (4)+(5) the serial multiply and the
+saturation path are bit-level and per-pin verified (1467/1469, incl. the clamp value and its feed
+into the accumulator); (6) fs is measured per program (CONCERT 32,508 Hz); (7) the FPC boundary is
+modeled at the fixed-point level (the codec table run — plan 024 F2b — will pin its pins too).
+Remaining known gap: the engine's ±1-2 LSB CPU-domain bookkeeping vs the physical law (plan 024 F1).
 
 ---
 
@@ -700,21 +729,16 @@ DMEM #060-02273, Block-Diagram-Memory + zoom crops.
   chips, `DAB WSTB/` (A41) writes every cycle, no special address-3 gating — R[3] stores normally.
   **CONFIRMED CORRECT.**
 
-**Open (FINAL remaining item) — REFRAMED (2026-06-23):**
-- **Missing frequency-dependent (band-split / mid-band HF) damping** — the CONCERT loop eigenvalue is
-  λ≈1.0008 (grows) vs the hardware 20-second target **λ=0.9999899** (IR `P85 - 20.0 Seconds A.wav`). A full
-  systematic-debugging investigation **REFUTED the earlier "sub-LSB rounding" hypothesis**: the instability
-  is present in *exact float arithmetic* (structural, not rounding), and proven on first principles —
-  arithmetic rounding can only add a fixed DC bias, never change a decay eigenvalue. The tank is a nested
-  all-pass network (lossless by construction, confirmed all-pass-flat) + a frequency-dependent band-split
-  decay (LOW/MID/XOV); the **mid-band is under-damped**, so its 3653 Hz resonance grows. Adding a one-pole
-  HF lowpass to the recirculation pulls λ to target and matches V7.2's HF<LF (3.79 s/5.25 s). Every
-  reconstructable element (microcode, arithmetic, sign, accumulator, crossover, timing) is verified faithful;
-  the damping deficit is not in any of them → likely a 480L-roadmap-§8 hazard ("a word that doesn't do what
-  its encoding implies", needs behavioral hardware validation) or a real per-delay HF damping below schematic
-  resolution. **Full record: `docs/plans/224XL-concert-decay-investigation.md`.**
-- **224XL step clock / exact Fs** — 128 steps × ~34.13 kHz ⇒ ~4.37 MHz step clock (inferred; confirm
-  via hardware Fs measurement). Delay lengths are Fs-relative; bit-exact only at the true native rate.
+**✅ The "final remaining item" — RESOLVED by the 0022 coordinate-system correction.** The λ≈1.0008
+instability, the "missing band-split damping," and the whole eigenvalue hunt were artifacts of
+decoding the WCS in the wrong coordinates (both pre-0022 pipelines). Under the corrected decode +
+traced pipeline + E83 sign convention + live modulation, **CONCERT at factory defaults renders the
+documented decays with zero tuning** (co-sim LF 3.27 / mid 2.28 / bb 2.68 vs documented 3.0/2.0/
+2.6-avg), the octave ladder is monotone like the real unit, and the parameter levers track ch.4/ch.8.
+The band-split damping exists and is exactly where the manual says (the crossover/shelf words —
+w45/46/97/98 pole, w43/95 ± injection, HFD words 40/41/92/93).
+**Fs — RESOLVED (0024):** fs = 30.72e6/9/(L+1) per program; CONCERT measured 32,508 Hz; there is no
+4.37 MHz step clock (the step clock is MC/9 ≈ 3.41 MHz always; the frame LENGTH varies instead).
 
 **Lower priority / corroboration:**
 - **RA→bit + field map — schematic-confirmed.** Both schematics in hand: ARU **#060-01318** (LS670
