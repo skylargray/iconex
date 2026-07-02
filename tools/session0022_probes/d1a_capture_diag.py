@@ -45,6 +45,10 @@ DIAGS = {
     "max":  (0x0EF4, 0x0F17),   # item 8: .5 s delay line through DMEM
     "zero": (0x0EFD, 0x0F17),   # item 7: zero delay (post-build 4-byte offset patch)
     "sig3": (0x0CF0, 0x0D10),   # item 3: ARU SIGNAT stimulus (D3c re-capture, verified core)
+    "sig6": (0x0E84, 0x0EC6),   # item 6: FPC SIGNAT (plan 024 F2b; 0x0330 menu table,
+                                #   anchors: item3=0x0CF0, item7=0x0EFD, item8=0x0EF4;
+                                #   handler: 0x03D5 init, 0x0D1E pump x2 (block 0x0EEC),
+                                #   builder writes, OUT 01/03 RUN, idle loop 0x0EC6)
 }
 
 

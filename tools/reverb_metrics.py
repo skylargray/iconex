@@ -341,6 +341,33 @@ def analyze(output_int16, excitation_int16, fs, name, out_dir=None, burst_end_s=
     return v
 
 
+def analyze_pair(burst_int16, silence_int16, excitation_int16, fs, name,
+                 out_dir=None, burst_end_s=0.0):
+    """First-class floor subtraction (plan 024 F5): measure a burst render MINUS its
+    silence twin (the same engine/WCS trajectory driven with zero input). The 224XL
+    engine idles on a DC-dominated sub-LSB limit cycle (session 0025; floor signature
+    re-measured after the 0028 complement-domain re-sync: DC ±5-13 LSB, AC-RMS 2-3 LSB),
+    so every decay metric on a raw render is floor-polluted; the probes have subtracted
+    manually since 0025 — this makes the pattern the metric's own.
+
+    Returns analyze() of the DIFFERENCE (verdict/rt60/density as usual; the WAV written
+    is the floor-subtracted signal, name suffixed '_floorsub'), plus v['floor'] = the
+    silence twin's signature: dict(dc, ac_rms, peak). The twins must be same-length
+    captures of the SAME trajectory (per-frame modulation identical) or the subtraction
+    is not valid — asserted by shape only; trajectory identity is the caller's contract."""
+    b = np.asarray(burst_int16, dtype=np.int32)
+    s = np.asarray(silence_int16, dtype=np.int32)
+    assert b.shape == s.shape, "burst/silence twins must share length (same trajectory)"
+    diff = np.clip(b - s, -32768, 32767).astype(np.int16)
+    v = analyze(diff, excitation_int16, fs, name + "_floorsub", out_dir=out_dir,
+                burst_end_s=burst_end_s)
+    sf = _to_float(silence_int16)
+    v["floor"] = dict(dc=float(sf.mean()) if len(sf) else 0.0,
+                      ac_rms=float(sf.std()) if len(sf) else 0.0,
+                      peak=int(np.max(np.abs(s))) if len(s) else 0)
+    return v
+
+
 def assert_calibrated():
     """P5 — refuse to judge real audio unless the control battery passes in this process."""
     import reverb_metrics_selftest as ST

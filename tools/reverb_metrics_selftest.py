@@ -172,6 +172,23 @@ def run_battery(out_dir=SCR, verbose=True):
     check("delayed dry passthrough -> DRY",
           v["verdict"] == "DRY", f"verdict={v['verdict']} wetness={v['wetness']:.4f}")
 
+    # 9. floor-subtraction pair (plan 024 F5): a reverb riding a DC-dominated idle
+    #    floor (the engine's measured signature: DC ~+12 LSB, slow small AC) must be
+    #    recovered by analyze_pair from its burst/silence twins, with the floor named.
+    rt = 2.6
+    out, exc = fixture_reverb(rt)
+    n = len(out)
+    wander = np.cumsum(_rng(41).normal(0.0, 0.02, n))
+    floor = np.round(12.0 + np.clip(wander - wander.mean(), -3, 3)).astype(np.int32)
+    burst_tw = np.clip(out.astype(np.int32) + floor, -32768, 32767).astype(np.int16)
+    sil_tw = floor.astype(np.int16)
+    v = RM.analyze_pair(burst_tw, sil_tw, exc, FS, "ctrl_floor_pair", out_dir=out_dir)
+    okp = (v["verdict"] == "WET-PASS" and v["density"] == "DENSE"
+           and v["rt60_s"] is not None and abs(v["rt60_s"] - rt) / rt <= 0.15
+           and 10.0 <= v["floor"]["dc"] <= 14.0)
+    check("floor pair -> WET-PASS recovered + floor reported", okp,
+          f"verdict={v['verdict']} rt60={v['rt60_s']} floor dc={v['floor']['dc']:.1f}")
+
     passed = sum(1 for _, ok, _ in results if ok)
     total = len(results)
     if verbose:
