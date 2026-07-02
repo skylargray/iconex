@@ -14,9 +14,12 @@ Now LOCK the model with absolute, frame-independent oracles and close the parame
   ROM and fully specified by the SM: *Left in → outputs A and D; Right in → outputs B and C*; program 8
   interposes ~0.5 s of DMEM delay, program 7 none. End-to-end: firmware builds the WCS, the engine runs
   it, the audio does exactly that. Tests build+decode+I/O+output with none of CONCERT's complexity.
-- **D2** — drive the real parameter system (LARC sliders → firmware apply chain → WCS bytes) and
-  re-measure: the param→RT60 transfer on the RTL engine, the setting that reproduces the 2.5-s benchmark
-  IR, and the D0 anomalies (ids 3/8/12/20). Replaces the void June-era transfer-function readings.
+- **D2** — the DOCUMENTED-DEFAULTS oracle. The owner's manual documents every variation's preset
+  parameter values AND expected decay times (`224X_chapter4_programs.md`, `224X_chapter8_variation_presets.md`);
+  CONCERT variation 1 must produce its documented numbers **with NO parameter tweaking** (LF 3.0 s /
+  Mid 2.0 s / avg running 2.6 s / predelay 24 ms). Verify the model's default-state render against them
+  per-band; any mismatch is a MODEL or capture-point finding to investigate — never a knob to turn.
+  Then diagnose the D0 anomalies (ids 3/8/12/20) against what the manual says those programs ARE.
 - **D3** — SM §5.7 signature analysis: compute HP-5004A signatures from the engine's free-running pin
   streams and compare against the digitized per-pin tables. Hardware-grade verification at named pins.
 
@@ -57,6 +60,15 @@ POST stays green via the untouched single-step path.
   2026-07-02 and byte-identical. D1a = the same recipe pointed at `0x0EFD`/`0x0EF4`.
 
 ### 1.3 D2 anchors
+- **★ THE DOCUMENTED ORACLE (owner directive 2026-07-02 — defaults are NOT to be tweaked):**
+  `docs/reference/224/224X_chapter4_programs.md` + `224X_chapter8_variation_presets.md` document, for
+  EVERY program variation, the preset parameter values and expected decay behavior. **Concert Hall
+  Variation 1** (the power-up preset; the benchmark IR is literally named "Concert Hall V1.1"):
+  LF Decay **3.0 s**, Mid Decay **2.0 s**, Crossover **720 Hz**, Treble Decay **6.30 kHz**, Depth 33,
+  Predelay **24.0 ms**; page 2: Stop Decays 3.0/3.0, Chorus 50, HF Bandwidth 9.00 kHz, Diffusion 25,
+  Definition 00; Preecho levels all 00; toggles DynDecay[0] ModeEnh[1] DecayOpt[0]; ch.4: "average
+  running reverb decay time is 2.6 seconds". Ch.4 also fixes the output convention (stereo = A left,
+  C right) and the slider RANGES (e.g. Mid Decay 0.6–70 s) — range endpoints are documented oracles too.
 - **The parameter system is disassembled** (`224XL_param_sweep.md`): sliders at `0x3C00-0x3C05`; main-loop
   scan `0x8185` diffs vs `0x3C16+`; handler `0x85F2`; type scaling via `0x3C33`; apply path `0xADxx`
   walks the `0x3CF4` group table (built by interpreter `0xAA9C`); de-zipper ramps the WCS bytes. CONCERT
@@ -66,9 +78,13 @@ POST stays green via the untouched single-step path.
   *interpretation* of those sweeps (coeff/delay transfer functions) is void; the raw byte captures and
   the modulation-target findings (pairs (56,57),(107,108) sweep ~±47 samples; ladder lane-3 pairs
   modulated sum-preserving) are data and stand.
-- The RUN-state CONCERT image (`wcs_run_concert.json`) renders RT60 1.4 s vs boot 1.9 s — parameter
-  state moves the tail, as required.
-- **Benchmark:** `IR/Lexicon 224XL/Concert Hall V1.1.L.wav`, RT60 ≈ 2.5 s (structural target).
+- Current model measurements to be explained (not tuned away): boot-image render RT60 ≈ 1.9 s broadband,
+  RUN-state image ≈ 1.4 s — vs documented Mid 2.0 / LF 3.0 / avg 2.6. Note a broadband block-RMS fit
+  underweights the slow LF band; the honest comparison is PER-BAND (split at the 720 Hz crossover).
+  Also unresolved: WHICH parameter state each captured image actually represents (mainloop snapshot may
+  predate de-zipper settle; the RUN capture is 40M ticks in — see D2a).
+- **Benchmark:** `IR/Lexicon 224XL/Concert Hall V1.1.L.wav` = variation 1.1 at its documented presets,
+  RT60 ≈ 2.5 s broadband (consistent with the documented 2.6 s average).
 
 ### 1.4 D3 anchors
 - **Digitized tables:** `docs/reference/224/224-signature-value-tables.md` — per-pin 4-char signatures
@@ -118,21 +134,40 @@ D1c. **Run the known answers** (through `program_rows22` + the engine, no byte i
      **Pass = the plan-021 D1 oracle is closed.** Fail = the failing stage (build vs decode vs engine
      vs FPC routing) is isolated by construction — fix before touching D2/D3.
 
-## 4. Phase D2 — parameter state (the RT60 gap + the D0 anomalies)
-D2a. **Re-sweep on the live firmware** (param_sweep harness): for CONCERT, sweep `LOW` and `MID`
-     (the decay sliders) over the grid, capture settled WCS images (de-zipper wait as before), and
-     **render each through the RTL engine** → the real param→RT60 transfer curves (c5 method,
-     floor-subtracted, burst). Locate the slider settings whose render matches the benchmark IR's
-     2.5 s; render that setting and compare early pattern + decay shape against the benchmark
-     (structural comparison — NED, block-RMS envelope — not bit-exact).
-D2b. **XOV/HFD sanity**: one sweep each; verify monotone spectral effects (HF decay ratio) — this is
-     the first time the transfer functions are measured through the true machine.
-D2c. **The D0 anomalies**: for ids 3 (FAIL), 8 (near-silent), 12/20 (indeterminate): capture their
-     RUN-state images (the e3j RUN-capture pattern: run N ticks past mainloop, snapshot 0x4000) and/or
-     sweep their first sliders; re-render. Classify each as (a) boot-state artifact (parked taps /
-     muted input — CONCERT's own boot image had parked taps), (b) needs-modulation (see D4), or
-     (c) genuine engine discrepancy (→ STOP and investigate before proceeding).
-D2d. Update `224XL_param_sweep.md` with the RTL-frame re-reading (band the old interpretation with a
+## 4. Phase D2 — the documented-defaults oracle (NO parameter tweaking)
+**Rule (owner directive): the defaults must reproduce the manual's numbers on their own. Sliders are
+never driven to hit a target; they are driven only to verify the documented RANGES after the defaults
+already check out. A default-state mismatch is a finding about the model or the capture point — stop
+and diagnose it; do not fit it away.**
+
+D2a. **Pin the capture point.** Establish which parameter state each WCS snapshot represents: capture
+     a fresh CONCERT image at power-up variation 1.1 AFTER the de-zipper fully settles with no input
+     and no key events (instrument the apply path 0xADxx / de-zipper activity to detect quiescence —
+     the mainloop-snapshot vs 40M-tick RUN images differ (1.9 vs 1.4 s), so at least one of them is
+     not the settled default; find out which, and why. LFO phase keeps 22 bytes moving forever — a
+     "settled" image = everything EXCEPT the modulation targets stable).
+D2b. **Render the settled default; compare per-band against the documented presets:**
+     - band-split RT60 at the documented 720 Hz crossover: LF band → **3.0 s**, mid band → **2.0 s**;
+       broadband average consistent with **2.6 s**; treble shaped per Treble Decay 6.30 kHz +
+       HF Bandwidth 9.00 kHz;
+     - predelay ≈ **24.0 ms** (first-arrival lag re the dry excitation);
+     - Depth 33 / Diffusion 25 / preechoes 00 as qualitative structure checks;
+     - the benchmark IR (= variation 1.1 at these same documented presets) as the independent
+       cross-check of the whole chain.
+     PASS = documented numbers reproduced with zero tweaking. FAIL = diagnose (capture point? engine?
+     band-measurement method?) before anything else in this plan proceeds.
+D2c. **Cross-program documented-decay check:** map factory ids → program names (LARC name table
+     @0xA002 / NVS3), pull each variation's documented decay times from ch.4/ch.8, and score the D0
+     render table against them program-by-program. Diagnose the D0 anomalies in this frame FIRST —
+     the manual says what each program IS (the Effects/Splits banks are not all reverbs; id 8's
+     near-silence or id 3's FAIL may be correct-for-the-program behavior or a boot-state artifact).
+     Classify each: (a) documented behavior, (b) capture-point artifact, (c) needs-modulation (D4),
+     (d) genuine engine discrepancy (→ STOP).
+D2d. **Only after D2b passes — verify the documented parameter RANGES** (not fit anything): sweep
+     `MID` to its documented endpoints (0.6 s and 70 s at slider extremes) and `XOV`/`HFD` for
+     monotone spectral effect; the measured transfer must hit the documented range ends. This
+     validates the apply chain against ch.4's tables and replaces the void June-era readings.
+D2e. Update `224XL_param_sweep.md` with the RTL-frame re-reading (band the old interpretation with a
      supersession note; keep the raw JSONs).
 
 ## 5. Phase D3 — §5.7 signature analysis (hardware-grade lock)
@@ -158,6 +193,10 @@ chorus; compare tap-sweep depth against `224XL_modulation_lfo.md` + the param-sw
 This also retires the run-state-snapshot approximation (one frozen LFO phase) used since 0022.
 
 ## 7. Verification rules (unchanged + additions)
+- **No parameter is ever driven to hit a target number.** Defaults first, documented values as the
+  oracle; sliders only to verify documented ranges afterward (owner directive).
+- Documented-decay comparisons are PER-BAND at the documented crossover (a broadband block-RMS fit
+  underweights the slow LF band and will "miss" a correct model).
 - No audio claim except as a `reverb_metrics` verdict (battery in-process) on an emitted stream with the
   WAV on disk. Burst stimulus or floor-subtraction for anything near the residue floor (registry #16).
 - POST green at every phase (untouched single-step path).
@@ -180,6 +219,9 @@ This also retires the run-state-snapshot approximation (one frozen LFO phase) us
   listening checks (it resamples, drives at −6 dBFS, floor-subtracts, normalizes; stereo A/C out).
 - The residue floor is a predicted physical signature (−82 dBFS deterministic idle pattern per program)
   — if a real unit is ever on the bench, it is a one-measurement model check.
+- Ch.4 fixes the stereo output convention (A = left, C = right) and carries the 224XL errata insert
+  (Concert/Bright max SIZE = 40 m, Plate/Chorus = 70 m). Ch.8 lists presets for EVERY variation —
+  when a program misbehaves, read what it is SUPPOSED to do before debugging the model.
 
 ## 9. Artifacts
 - Engine: `tools/aru_freerun22_rtl.py` (+ the D1b stereo-input extension, kept regression-clean).
