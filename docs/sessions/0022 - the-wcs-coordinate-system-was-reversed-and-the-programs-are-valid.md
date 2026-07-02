@@ -188,8 +188,26 @@ offset-42607 read — and then wet values repeatedly die in the register file 1�
 consumers (R3 clobbered by WA=3 dumps; RES overwritten one step before the next MEMW). The program's
 register lifetimes presuppose an operand/pipeline alignment the behavioral engine doesn't have yet.
 
+**E3 late additions (push-on round):**
+- **Energy-metric correction:** the "tank drains in 50 ms" reading was an RMS-dilution artifact (denominator
+  = touched cells, growing). True tank ENERGY (RMS²·N): **9.5e6 → 9.9e6, HELD for 0.65 s**, then a ×24 crash
+  at exactly 0.70 s = the offset-19678 write head lapping the offset-42606 input trail (Δ=22928 frames =
+  0.699 s). The csinv=1 machine SUSTAINS at ~unity; the input's parked energy is bulldozed by another write
+  head before long-delay readers arrive.
+- **WA/RA transpose** ({b4,b5}/{b2,b3}) and the **l2 full-complement** (inert for WA/RA by bijection):
+  tested — transpose reconnects the w40→w32 handoff but rails (csi=0) or over-damps (csi=1). Eliminated as
+  a standalone fix.
+- **Taint tracer (operand provenance logging):** the engine's ENTIRE amplitude path is
+  input → ×6/32 → DM[42606-trail] → (frame 1) both 42607 reads → one ×10/32 MAC → RES=961 → **dead end**
+  (nothing at frames 2+/610/1940/16990). Two severed handoffs: (1) w74's register load never MAC'd before
+  the w71 WA=3 clobber; (2) w40's RES never met a MEMW in its one-step lifetime. Cell algebra (baseline
+  fields): each 4-step ladder cell = a cross-coupled forward FIR (C ← a_prev − h·a_prevprev;
+  A ← g·b_prev + g'·b_this) — no in-cell feedback; the loop closes only around the full memory cycle, so
+  the tail depends entirely on the operand/XFER alignment.
+
 **Open (the one remaining layer):** the exact MAC/register alignment — POST provably cannot constrain it
-(three semantics all pass), and knob-sweeps are exhausted. Next arbiters, in order:
+(three semantics all pass), knob-sweeps are exhausted (7 families), and behavioral guessing is DONE.
+Next arbiters, in order:
 (a) **live-modulation co-sim** (8080 interleaved at ~62 ticks/frame — the real machine never runs
 statically) — **RUN, ELIMINATED:** modulation does not stabilize any cell (baseline sign still rails
 to ~17k plateau; near-unity vd2/xd1 cells still creep to ~1.4-2k over 2.5 s; stable-sign cell stays

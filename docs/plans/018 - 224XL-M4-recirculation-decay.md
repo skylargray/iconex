@@ -1,5 +1,12 @@
 # 224XL — M4: from a recirculating (over-unity) tank to a faithful decaying CONCERT reverb
 
+> **⛔ SUPERSEDED (2026-07-01, session 0022):** this plan's premises were reversed twice over — the
+> "0x3e4e live coeffs" was a z80emu phantom (plan 019), the static 0x4000 image is correct, AND the whole
+> step/lane coordinate system has since been corrected (reversed execution + Multibus complement; 13/13
+> programs valid). Do not use its step maps, dead-tank analyses, or `memw_live`. One durable nugget:
+> per-frame modulation ALSO rewrites lane-3 coefficients on 16 ladder words (session 0022 RUN capture)
+> — the old "l0/l1 only" claim here is wrong. Current plan: **`docs/plans/021`**.
+
 > **READ-FIRST / START-HERE.** This continues the holistic reconstruction (`docs/plans/013`) and the M3
 > free-run plan (`docs/plans/017`). **The recirculation loop now CLOSES** — two source-class bugs were found
 > and fixed (the DMEM *offset* source, then the MEMW *writeback*), so CONCERT went from a dead tank → a single

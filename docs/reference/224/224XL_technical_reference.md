@@ -1,5 +1,11 @@
 # Lexicon 224XL — Complete Technical Reference for Reconstruction
 
+> **⛔ STALE — DO NOT USE AS AUTHORITY (banner strengthened 2026-07-01):** this consolidation predates
+> both the verified-core era AND the session-0022 coordinate-system correction (reversed execution +
+> Multibus lane complement). Multiple claims in here were later formally refuted. Current authorities:
+> `docs/sessions/0022 …`, `docs/plans/021`, `224XL_interconnect_netlist.md` (updated 2026-07-01),
+> `224XL_timing_spec.md`, and `tools/aru_freerun22.py` (the working decode in code).
+
 **Purpose.** Everything reverse-engineered about the 224XL reverb, organized to drive the two next
 steps: (1) the **emulator-diff harness** and (2) the **bit-exact header-only C++17 core** (see
 `docs/plans/480L_rom_to_plugin_guide.md`). Every claim here was recovered from the real v8.2.1 firmware

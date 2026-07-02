@@ -1,5 +1,11 @@
 # 019 — 224XL CONCERT microword verification: are these the REAL microwords?
 
+> **✅ EXECUTED + STILL VALID (note added 2026-07-01):** the provenance result stands — the 0x4000 bytes
+> are the genuine firmware build (stub-invariant, dual-core, POST-pass≡bypass). One reframe from session
+> 0022: "the 100 CONCERT microwords / steps 0–99" here are **CPU-word indices**; the machine executes
+> CPU words **127 down to 24** (104 steps, reversed order). The bytes verified here are exactly the bytes
+> the corrected frame decodes. Current plan: **`docs/plans/021`**.
+
 **Goal.** Establish, to the highest certainty achievable *without a physical unit*, that the 100 CONCERT WCS
 microwords (`docs/reference/224/224XL_CONCERT_program_decode.md`, read from `m.memory[0x4000:0x4200]` after a
 verified-core boot) are the EXACT microwords the real 224XL executes for CONCERT — or find precisely where and

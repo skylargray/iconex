@@ -1,5 +1,14 @@
 # 020 — 224XL complete whole-machine emulation (free-running, phase-accurate)
 
+> **⛔ RESULTS VOID / PLAN SUPERSEDED (2026-07-01, session 0022):** Phases 0–3 + M3.X were executed —
+> but under the WRONG coordinate system (identity word order, pre-complement lanes). **Every audio
+> verdict in/derived from this plan (M3.X "nothing densifies", phase-0.5 "levers inert", the steps-4/99
+> output map, the modulus-128 cells) is void.** The corrected frame (reversed execution, Multibus lane
+> complement, 13/13 programs valid) is proven in `docs/sessions/0022 …`. The Phase-1/2 machinery
+> (ClockEngine, edge datapath, `FreeRunRTL`) survives and is the base for the current plan:
+> **`docs/plans/021 - 224XL-RTL-arbiter-and-first-tail.md`**. The Metric/stimulus discipline (§ Metric)
+> also survives unchanged — keep using it.
+
 **Goal.** Build the plan-013 holistic vision *for real*: ONE free-running, phase-accurate, clocked model of the
 whole 224XL DSP machine — **ARU + T&C + DMEM + FPC**, tied together by the real **DAB / strobes / clock** as the
 netlist traces them — where the CONCERT reverb tail **EMERGES** from the wiring + the timing, not from hand-coded

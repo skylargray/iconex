@@ -1,5 +1,11 @@
 # 224XL — nail down the cmag=63 multiplier residual via a cycle-accurate POST single-step co-simulation
 
+> **✅ DONE + ⛔ ITS OPEN CRUX DISSOLVED (2026-07-01, session 0022):** the cmag=63 (+3/dual-rail) result
+> stands and is in `aru_booth.py`. The plan's lingering "what does the cmag=0 block (steps 5–23) mean"
+> crux is **dissolved**: under the corrected coordinate system those words are **never-executed staging**,
+> and executed cmag=0 MEMR steps are **data moves** (DAB→regfile for a later MAC). Do not re-open.
+> Current plan: **`docs/plans/021`**.
+
 > **READ-FIRST / START-HERE for this task.** This is a focused continuation of Phase-1 (plan
 > `015`). Phase-1 is essentially done: the netlist-faithful ARU passes the firmware's POST
 > **latch (E32, 0x0A1D)**, **register (E40, 0x0C48)**, and **multiplier (E83, 0x0942)** self-tests

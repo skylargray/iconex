@@ -1,5 +1,13 @@
 # 224X / 224XL — System Architecture (reverb signal path)
 
+> **⚠ COORDINATE-SYSTEM CORRECTION (2026-07-01, session 0022) — read before trusting step-indexed
+> content:** the WCS executes CPU words **127 down to (128−L)** (reversed; L per program, CONCERT=104,
+> reset word 24) and all four lanes read through the **Multibus complement** (type `l2&3`: 0=MEMR 1=MEMW
+> 2=IO 3=idle; IO command bits assert on stored-0; **delay = stored l0/l1 directly**, addr=CPC−stored).
+> The hardware mechanism sections here (addr adder, MAC, clocks) remain sound; every step number, tap
+> list, offset table, and program-structure claim predating 0022 is stale. Authority:
+> `docs/sessions/0022 …` + `docs/plans/021`.
+
 > Purpose: a complete, aligned systems model of how the 224X/224XL produces reverb, so that the
 > reconstruction work targets the right subsystem. Scope is the **real-time audio signal path** and the
 > hardware that defines it. Grounded in the Service Manual §3.1–3.9 and the traced schematics (T&C

@@ -1,5 +1,11 @@
 # 224XL — holistic structural-model plan (the ARU+T&C+DMEM as ONE clocked machine)
 
+> **⛔ SUPERSEDED IN PART (2026-07-01, session 0022):** the WCS **coordinate system used throughout this
+> plan is wrong** — execution order is the REVERSE of the CPU image and the lanes read through the Multibus
+> complement (pin-proven; 13/13 programs valid under the corrected frame). Every step-indexed claim here
+> (offsets, "steps 0–99", tap lists, M3/M4 audio results) is stale. The holistic *vision* stands; the
+> current execution plan is **`docs/plans/021`** (read `docs/sessions/0022 …` first).
+
 > **Why this plan exists.** The bottom-up L1–L7 stack was right for the **8080 side** (L1–L3: CPU → boot →
 > program build — cleanly layered, now ✅ VERIFIED). It was **wrong for the ARU.** The ARU + T&C + DMEM are
 > not three composable blocks — they are **one machine where the interconnection and the timing ARE the

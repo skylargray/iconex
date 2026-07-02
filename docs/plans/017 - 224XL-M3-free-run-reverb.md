@@ -1,5 +1,11 @@
 # 224XL — M3: free-run the phase-accurate RTL model into a coherent reverb
 
+> **⛔ SUPERSEDED (2026-07-01, session 0022):** built and useful as engine scaffolding, but every decode,
+> step-index, offset-source, and audio conclusion in here predates the corrected coordinate system
+> (reversed execution + Multibus lane complement) and several were formally reversed (the 0x3F4D offset
+> source, "short tail emerges", `CPC+offset`). Facts here must not be trusted without re-checking against
+> `docs/sessions/0022 …`. Current plan: **`docs/plans/021`**.
+
 > **READ-FIRST / START-HERE for M3.** This is the next milestone of the holistic plan
 > (`docs/plans/013`). **M0a/M0 (netlist), M1 (clock/state engine), M2 (datapath, passes the
 > whole POST un-suppressed) are DONE.** The phase-accurate RTL model

@@ -1,5 +1,15 @@
 # 224XL Vocabulary Provenance Ledger
 
+> **⚠ RE-BASE REQUIRED (2026-07-01, session 0022):** this audit (2026-06-29) was performed inside the
+> pre-0022 coordinate system. The GATE-LEVEL entries (bit positions, strobe equations, Booth/cmag,
+> `addr = CPC + OFST/ + 1`) still stand — but every entry's *interpretation layer* (which stored value
+> means MEMR/MEMW/IO, step indices, "wet output steps 4/99", SDAA-D channel readings, the reset oracle)
+> is superseded by the corrected frame: type `l2&3` 0=MEMR/1=MEMW/2=IO/3=idle, IO bits assert on
+> stored-0, execution reversed (words 127→128−L). Notably: the old "sel==01→RDRREG wet-output WATCH item"
+> is now confirmed-in-frame (every WR-DA sources RDRREG, 13/13 programs), and the old E40-based
+> "transpose disproven" verdict was frame-poisoned (re-tested in 0022 — still not the answer, but the
+> POST anchor argument was invalid). Authority: `docs/sessions/0022 …` + `docs/plans/021`.
+
 **Purpose.** Every reverse-engineering error in this project traced back to *interpreting* firmware bytes or
 hardware nets and then presenting the interpretation as fact. This ledger classifies every term and field we use
 so we build only on grounded ones. Produced by an adversarial provenance audit (2026-06-29) against the gate trace
