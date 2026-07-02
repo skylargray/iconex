@@ -1,6 +1,21 @@
 # 021 — 224XL: the RTL arbiter and the first tail
 
-**Status:** READY TO EXECUTE (written 2026-07-01 at the close of session 0022).
+> ## ✅ EXECUTED 2026-07-02 — MISSION ACCOMPLISHED (session 0023)
+> **The alignment is ANSWERED and the first tail EXISTS.** Engine: `tools/aru_freerun22_rtl.py`.
+> CONCERT = **WET-PASS/DENSE on all 4 channels** (boot + run-state images), floor-subtracted
+> **RT60 1.83–1.91 s (boot) / 1.37–1.42 s (run)** vs the 2.5 s benchmark. Phases A/B/C complete;
+> D0 cross-program sweep run; D1 (diag LARC injection), D2 (parameter→cmag), D3 (§5.7 signatures),
+> C4 (modulation co-sim) remain. TWO corrections to this plan's own sketch, both proven in-session:
+> (1) §A3's "operand load ≈ MS6.3 BEFORE the MS7 write" is wrong — fig-3.4's LOAD mode lands at the
+> edge ENDING AS2 = slot-0.58 of the NEXT step, i.e. **write-through** (pre-write mispairs the Booth
+> serializer against the goldens); (2) the accumulator lags the product register by one full ARUCKE/
+> edge (fig-3.4 "one AS behind"), which moves the pps of word W to slots 7.43(W+1)/1.43(W+2)/4.43(W+2)
+> and makes the ZERO clear delete exactly the pre-XFER word's pairC. Also: **the hardware frame is
+> L+1 steps** (row-L idles in all 13 programs; L=99 ⇒ dale's 34.13 kHz; CONCERT fs = 32,508 Hz), and
+> E3b's CSIGN verdict + dead-ends #1/#2 were behavioral-frame artifacts (both polarities stable now).
+> Full record: `docs/sessions/0023 - the-rtl-arbiter-answered-the-accumulator-pipeline-and-the-first-tail.md`.
+
+**Status:** ~~READY TO EXECUTE~~ EXECUTED (written 2026-07-01 at the close of session 0022).
 **Read first:** `docs/sessions/0022 - the-wcs-coordinate-system-was-reversed-and-the-programs-are-valid.md`
 (the coordinate-system proof + the full E3 record). Then this plan. Trust these two documents over
 EVERYTHING older — most pre-0022 docs carry now-refuted framings (they are bannered, but don't rely on
