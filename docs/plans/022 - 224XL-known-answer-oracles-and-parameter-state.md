@@ -1,5 +1,24 @@
 # 022 — 224XL: known-answer oracles (D1/D3) and parameter state (D2)
 
+> **✅ EXECUTED 2026-07-02 (session 0024) —** see
+> `docs/sessions/0024 - the-known-answer-oracles-and-the-pp-bus-capture-correction.md`.
+> **D1 CLOSED** (16/16: L→A,D / R→B,C pins half-1=LEFT; ZERO=1 frame; MAX=16383 frames=0.4800 s;
+> gain +1.000). **D3 T&C CLOSED** (374/376 pins match; the manual's FP54=+5V@N=30 reference is a
+> hardware confirmation of the L+1 frame; 2 presumed single-glyph table errata). **D2a pinned** (boot
+> image = pre-apply; settled = run40M mod the 8 mover bytes; slider apply idempotent). **D2b:** the
+> oracle CAUGHT AN ENGINE BUG — the result reg captures the **PP bus** (ACC+ppC combinationally,
+> netlist §4.2), so every cmag acts at FULL weight ("effective coeff = cmag−(cmag&3)" DISSOLVED,
+> 0023 §1 corrected). Post-fix: **mid(>720) 1.90/1.85 s ≈ benchmark 1.92 (PASS)**, predelay 23.99 ms ≈
+> 24.0 documented; **LF(<720) still FAIL (1.5 vs 2.85)** + 8 kHz runs long — isolated to the
+> band-shaping corrective words (LOW/HFD paths); modulation (D4-lite replay), capture point, and band
+> method all ELIMINATED. **D2c** re-rendered from settled images (ids 3/4 = selector namespace findings).
+> **D2d gated** (D2b LF open). **Remaining → next plan:** ARU §5.7 datapath signature co-sim (pins the
+> capture arithmetic at hardware pins; needs the 0x0D10 XREG pump), **the crossover band-INVERSION
+> hypothesis** (d2b2: LOW moves words 43/95 but the LF band doesn't respond — the bytes double the MID
+> band instead; one shelf sign/group flip predicts LF+8k+lever fixes simultaneously — falsify via the
+> ARU tables / shelf transfer measurement, never sign-fitting), CHAMBER near-silence, PLATE 3.5-vs-1.8,
+> D3d DMEM/FPC tables, D4 true co-sim.
+
 **Status:** READY TO EXECUTE (written 2026-07-02 at the close of session 0023).
 **Read first:** `docs/sessions/0023 - the-rtl-arbiter-answered-the-accumulator-pipeline-and-the-first-tail.md`
 (the answered alignment + the engine), then plan 021's banner. The engine of record is

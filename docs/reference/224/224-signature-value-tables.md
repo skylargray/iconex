@@ -1,3 +1,10 @@
+> **Session-0024 verification note:** `tools/session0022_probes/d3_signatures.py` reproduces **374 of the
+> 376 listed T&C pin signatures** from the netlist + RTL frame model (diag-3 stimulus, window = one
+> 30-step frame — the manual's own `FP54` = +5V@N=30 confirms the L+1 frame). The two exceptions are
+> presumed single-glyph digitization errata of this transcription, each contradicted by sister pins of
+> the same net elsewhere in the table: **U3 pin 10** `00U0` (GND; U44/U30/U16 pin 10 all read `0000`)
+> and **U11 pin 6** `2PU6` (the C4/ net; U5.12, U11.7, U11.13 all read `29U6`).
+
 #### T&C Module — Version 8.2.1
 
 ```

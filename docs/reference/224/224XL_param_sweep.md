@@ -1,5 +1,25 @@
 # 224XL parameter sweep — param → coefficient/delay transfer functions
 
+> **⛔ SUPERSEDED INTERPRETATION LAYER (banner added session 0024, 2026-07-02).** This doc predates the
+> 0022 coordinate-system correction: its "step NN" numbers are **CPU word indices** (execution row =
+> 127−word, descending), its "coeff" columns are raw l3 bytes (not decoded cmag/CSIGN), and the June
+> transfer-function readings (delay=−offset era) are **VOID as readings**. The RAW captures — which WCS
+> bytes each slider rewrites, the per-program JSONs, the modulation-target sets — are DATA and stand.
+> **Session-0024 re-established facts (verified core, settled captures — `d2a_capture_settled.py` /
+> `d2a2_low_state.py` / `d4lite_mod_replay.py` in `tools/session0022_probes/`):**
+> - The **power-up apply transient** finishes ≈1M ticks past mainloop and touches ONLY the MID allpass
+>   words (62–68/113–119) + predelay words (42/94); a mainloop snapshot is **pre-apply** — capture
+>   settled images.
+> - The **always-on modulation** = exactly 8 bytes: words **{56,57,107,108}** lanes 0+3 (delay byte +
+>   coeff byte per tap pair) — never anything else after settle.
+> - At power-up the movers sit parked (delay bytes 1/254) and the LFO ramps them in; the trajectory is
+>   replayable from periodic WCS snapshots (`d4lite_snapshots.json`).
+> - The power-up 0x3C00-05 slider bytes are **0x00 "no position" sentinels** (no LARC positions sent);
+>   the variation-1 preset state is applied by the **NVS recall path at program load** — that recall IS
+>   the observed power-up transient. Slider writes are one-way (0 is ignored, no restore); injected
+>   positions apply through the documented word sets (live-confirmed: XOV → [45,46,97,98], DEP →
+>   [29–32,81–84]) — see `d2a2_low_state.py` / `d2b2_band_levers.py`.
+
 Recovered empirically by booting the real firmware (`tools/boot_xl`), reaching the main loop, then
 injecting LARC slider values per parameter and reading how the WCS microword image changes after the
 de-zipper settles. Tool: `tools/param_sweep.py` (`sweep(power_up_id)` → JSON). CONCERT HALL example:

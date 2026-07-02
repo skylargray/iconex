@@ -44,19 +44,26 @@ THE EMERGENT ALIGNMENT (discrete MS-slot convention, calibrated by tc_clock vs f
                       @1.43(n+1) += ppB(w_{n-1}).  The 20-bit chain WRAPS (mod 2^20) —
                    saturation lives in the sat-mux on the result path only.
   XFER CK          NAND(AS0, tc_U19.Q5, ARUCKE/): low slots 1-2 of step n iff w_{n-1}.XFER;
-                   the result reg (74F374) captures on its RISE at the slot-3 edge
-                   => RES <- sat16((ACC+4)>>3) of the MAC through ppB(w_{n-2}) — i.e. the
-                   group MAC with the pre-XFER word's pairC partial NOT yet in.
+                   the result reg (74F374) captures on its RISE at the slot-3 edge.
+                   ** THE RESULT REG D-INPUTS ARE ON THE PP BUS (netlist §4.2: PP3..PP18 ->
+                   aru_U43/U44 D pins) = the SAT-MUX / ADDER OUTPUT, not the accumulator
+                   register. ** At 3.06(n) the adder holds ACC_registered (through
+                   ppB(w_{n-2}), added @1.43) + PR (= ppC(w_{n-2}), latched @0.58):
+                   => RES <- sat16((ACC + ppC(w_{n-2}) + 4)>>3) — the FULL group MAC,
+                   pairC INCLUDED via the combinational path. (Session 0024 correction:
+                   0023 read the register instead of the PP bus — an assumption no prior
+                   oracle could see: POST/D1/comb tests all had cmag&3==0 at captures.)
   ZERO/            NAND(tc_U19.Q6, AS0), 163 sync clear landing at the 4.43 edge of step n
                    iff w_{n-1}.ZERO (same owner as the capture, one edge after it;
                    the no-lag owner w_n is EMPIRICALLY DEAD — c2 probe: zero output).
-                   The clear replaces the ppC(w_{n-2}) add: it deletes EXACTLY the pairC
-                   chunk the capture just missed — no leak, no further loss. fig-3.4
-                   verbatim: "ZERO/ clears it at i2.AS0 so it reads 0 at i2.AS1."
-                   => An XFER+ZERO word X (the dominant factory idiom, 473/486) captures the
-                   group MAC through w_{X-1} minus pairC(w_{X-1}), and pairC(w_{X-1}) is
-                   deleted. Everything else — including the cmag32 x1.0 data-moves and the
-                   full g>=16 ladder coefficients — survives intact.
+                   The clear replaces the ppC(w_{n-2}) REGISTER add — the value already
+                   reached RES through the PP bus; the clear just resets the accumulator
+                   for the next group. fig-3.4 verbatim: "ZERO/ clears it at i2.AS0 so it
+                   reads 0 at i2.AS1."
+                   => An XFER+ZERO word X (the dominant factory idiom, 473/486) captures
+                   the group MAC through w_{X-1} COMPLETE — every stored cmag acts at
+                   full weight (the mirrored cmag 13/10/6 pre-capture words in the factory
+                   programs are live values, not don't-care LSBs).
   DMEM             addr = CPC - stored offset; CAS falls at slot 4 (early-write DIN latch =
                    the JUST-captured RES on MEMW); DOUT lands ~slot 7 on MEMR (the MS7
                    regfile write captures it; nothing samples it earlier).
@@ -144,7 +151,12 @@ def fs22(L):
 
 class RTL22:
     """Free-running engine at the traced alignment. Same run_sample/run_free surface as
-    aru_freerun22.FreeRun22 (rows are pre-decoded dicts here)."""
+    aru_freerun22.FreeRun22 (rows are pre-decoded dicts here).
+
+    Stereo input (plan 022 D1b): audio_in may be an int (mono: both halves) or a
+    (in_h1, in_h2) pair — the FPC A/D mux alternates channel per half-frame (fig-3.5),
+    so RD-AD steps in EXECUTION ORDER alternate halves: first read -> half-1, second ->
+    half-2. Which half is LEFT is pinned by the D1 diag oracle (d1_diag_oracles.py)."""
 
     def __init__(self, fpc_enabled=False, taint=False, taint_th=40):
         self.R = [0, 0, 0, 0]
@@ -155,6 +167,7 @@ class RTL22:
         self.CPC = 0
         self.XREG_wr = 0                 # DSP->host latch (WR XREG captures the DAB; readback only)
         self.fpc_enabled = fpc_enabled
+        self._rdad_n = 0                 # per-frame RD-AD occurrence counter (stereo halves)
         # cross-step pipeline registers
         self.wp = None                   # w_{n-1}: gates this step's capture/clear; its operand
                                          # loads at this step's slot-0; its ppA lands @7.43 here
@@ -193,16 +206,17 @@ class RTL22:
         if self.taint and self.ppB_src:
             self.ACCsrc.append(self.ppB_src)
 
-        # slot-3.06: XFER CK rise — result reg captures the MAC through ppB(w_{n-2})
+        # slot-3.06: XFER CK rise — result reg D = PP bus (sat-mux/adder out, §4.2):
+        # ACC_registered + PR(= ppC(w_{n-2})) — the FULL group MAC via the comb path
         if wp is not None and wp["XFER"]:
-            self.RES = res_from_acc(self.ACC)
+            self.RES = res_from_acc(wrap20(self.ACC + self.ppC_pend))
             if self.taint:
                 self.RESsrc = "+".join(self.ACCsrc[-4:]) if self.ACCsrc else "acc0"
                 if abs(self.RES) > self.taint_th:
                     self.log.append((fidx, sidx, "XFER", self.RES, self.RESsrc))
 
-        # slot-4.43 edge: sync clear (owner = wp) replaces the ppC(w_{n-2}) add — deleting
-        # exactly the pairC chunk the capture missed; else ppC(w_{n-2}) accumulates
+        # slot-4.43 edge: sync clear (owner = wp) replaces the ppC(w_{n-2}) REGISTER add —
+        # the value already reached RES via the PP bus; else ppC(w_{n-2}) accumulates
         if wp is not None and wp["ZERO"]:
             self.ACC = 0
             if self.taint:
@@ -237,8 +251,12 @@ class RTL22:
                 if self.taint:
                     self.DABsrc = self.RESsrc
             elif sel == SRC_RDAD:
-                self.DAB = (fpc_input_float_to_fixed(audio_in) if self.fpc_enabled
-                            else (audio_in & 0xFFFF))
+                ain = audio_in
+                if isinstance(ain, (tuple, list)):       # stereo: A/D mux alternates halves
+                    ain = ain[self._rdad_n & 1]
+                self._rdad_n += 1
+                self.DAB = (fpc_input_float_to_fixed(ain) if self.fpc_enabled
+                            else (ain & 0xFFFF))
                 if self.taint:
                     self.DABsrc = f"INPUT@f{fidx}"
             elif sel == SRC_XREG:
@@ -282,6 +300,7 @@ class RTL22:
     def run_sample(self, rows, audio_in, probe=None):
         outs = []
         fidx = self.sample_count
+        self._rdad_n = 0                                 # new frame: A/D mux back to half-1
         for i, d in enumerate(rows):
             outs.extend(self.step(d, audio_in, probe=probe, fidx=fidx, sidx=i))
         self.CPC = (self.CPC + 1) & 0xFFFF               # RESET/ event -> CPC +1 per frame
@@ -289,12 +308,18 @@ class RTL22:
         return outs
 
     def run_free(self, rows, input_signal, n_samples):
-        """Returns dict chan -> list of int (per-frame last write wins; unwritten -> 0)."""
+        """Returns dict chan -> list of int (per-frame last write wins; unwritten -> 0).
+        input_signal elements: int (mono) or (in_h1, in_h2) stereo pairs."""
         chans = {c: [0] * n_samples for c in "ABCD"}
         get = (input_signal if callable(input_signal)
                else (lambda n: input_signal[n] if n < len(input_signal) else 0))
         for n in range(n_samples):
-            for c, v in self.run_sample(rows, int(get(n)) & 0xFFFF):
+            x = get(n)
+            if isinstance(x, (tuple, list)):
+                x = (int(x[0]) & 0xFFFF, int(x[1]) & 0xFFFF)
+            else:
+                x = int(x) & 0xFFFF
+            for c, v in self.run_sample(rows, x):
                 chans[c][n] = v
         return chans
 
@@ -325,7 +350,7 @@ def _rows(words):
 def _test_passthrough():
     # RTL-authored: the MAC word's product lands one step later than behavioral, so XFER sits
     # one word AFTER the MAC word. In-window residues: w0's three cmag-0 phases at cs_eff=0
-    # (-3) against the MAC's ppA/ppB residues (+2); with the +4 rounding: (8x-1+4)>>3 = x.
+    # (-3) plus the MAC's FULL product via the PP-bus capture: (8x-3+4)>>3 = x.
     rows = _rows([
         enc_io(sel=SRC_RDAD, wa=1, cmag=0, zero=1, csign=1),   # DAB=in; R1<-in; ZERO clears @step1
         enc_idle(ra=1, cmag=32, csign=0),                      # MAC: in x 1.0 (cs_eff=1)
@@ -352,10 +377,10 @@ def _comb_rows(D, g):
 
 def _test_feedback_comb(D=40, g=16, n=200):
     """Exact vs the closed-form recurrence under the traced alignment. The capture (gated by
-    w3.XFER, landing at step 4) contains: w0's three cs0 residues (-3), w1's full product
-    (ppA+ppB+ppC), and w2's ppA+ppB — w2's pairC partial is OUTSIDE the capture (it lands at
-    the 4.43 edge after it). So the effective feedback coefficient = g minus its pairC part:
-    y[n] = sat16((-3 + P20(x,32,1) + P20(y',g,1) - ppC(y',g,1) + 4) >> 3)."""
+    w3.XFER, landing at step 4) reads the PP bus = ACC + PR: w0's three cs0 residues (-3),
+    w1's full product, and w2's FULL product — pairC included via the combinational adder
+    path (§4.2: the result reg D pins sit on PP3..18). The feedback coefficient acts at
+    full stored weight: y[n] = sat16((-3 + P20(x,32,1) + P20(y',g,1) + 4) >> 3)."""
     rows = _comb_rows(D, g)
     eng = RTL22()
     out, exp, ym = [], [], {}
@@ -363,17 +388,16 @@ def _test_feedback_comb(D=40, g=16, n=200):
         x = 16000 if i == 0 else 0
         out.append(dict(eng.run_sample(rows, x & 0xFFFF)).get("A", 0))
         yd = ym.get(i - D, 0)
-        e = sat16((-3 + product20(x, 32, 1) + product20(yd, g, 1) - booth3(yd, g, 1)[2] + 4) >> 3)
+        e = sat16((-3 + product20(x, 32, 1) + product20(yd, g, 1) + 4) >> 3)
         ym[i] = e
         exp.append(e)
     assert out == exp, ("comb closed-form mismatch",
                         [(i, a, b) for i, (a, b) in enumerate(zip(out, exp)) if a != b][:5])
     peaks = [(i, v) for i, v in enumerate(out) if abs(v) > 50]
-    g_eff = (g >> 4) * 16 + (((g >> 2) & 3) and 0)   # pairA weight only used for the sanity bound
-    ideal = [(k * D, int(16000 * ((g - (g & 3)) / 32) ** k)) for k in range(5)]
+    ideal = [(k * D, int(16000 * (g / 32) ** k)) for k in range(5)]
     for (pi, pv), (ei, ev) in zip(peaks, ideal):
-        assert pi == ei and abs(pv - ev) <= 6, f"comb peak {(pi, pv)} vs ideal-eff {(ei, ev)}"
-    print(f"  RTL feedback comb g={g}/32     OK (closed-form EXACT; g_eff=(g - pairC)={g - (g & 3)}/32; "
+        assert pi == ei and abs(pv - ev) <= 6, f"comb peak {(pi, pv)} vs ideal {(ei, ev)}"
+    print(f"  RTL feedback comb g={g}/32     OK (closed-form EXACT; FULL g={g}/32 via PP-bus capture; "
           f"peaks {peaks[:5]})")
 
 

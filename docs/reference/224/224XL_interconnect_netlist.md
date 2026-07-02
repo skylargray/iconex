@@ -1134,6 +1134,10 @@ OFST9/→**SDAC** (pin11), OFST10/→**SDAB** (pin6), OFST11/→**SDAA** (pin8).
 | | (inv3 n/c; inv1/2/5/6 on sheet 1) | |
 > `tcWR` = inv(tc_U47.pin5 = dec-1 1Y1) — active when MEMAC=0 & MI16=1. `CSIGN/` JK (tc_U20) is driven from
 > tc_U34 g3/g4 (AS0-gated). `DP` = tc_U19.Q0 latched from tc_U34 g1 (tcWR·OFST4/).
+> **Erratum (signature-table adjudicated, session 0024):** g3's input PINS are swapped vs this table —
+> the SM §5.7 T&C signatures give tc_U34.pin10 = the tc_U33.pin8 net (inv Q4) and pin9 = AS0 (unlisted).
+> Electrically identical for an AND gate; the net list itself is unchanged. (374/376 T&C table pins match
+> the model — `tools/session0022_probes/d3_signatures.py`.)
 
 ---
 
