@@ -80,70 +80,74 @@ Net summary: the **accumulate loop** is AC (accumulator Q) → adder A; the **ad
 ---
 
 ## 4.1 AC bus — accumulator output (AC0..AC19)
-Driver = accumulator reg Q output; load = adder A input (the feedback). 20 nets, all ✅ (owner trace).
+Driver = accumulator reg Q output; load = adder A input (the feedback). 20 nets, all ✅ (owner trace;
+**driver pins CORRECTED 2026-07-02** — see note).
 
-> **⚠ Session-0027 pin-role correction (ARU signature tables, 1467/1469):** the '163 **Q pin roles are
-> within-nibble REVERSED** relative to this table's labels — physically **pin14 = the nibble's bit 3 …
-> pin11 = bit 0** (and the adder-A pin roles reverse identically, so the net PAIRING below and the
-> arithmetic are unchanged; only the pin↔bit-weight map flips). Measured per-pin by
-> `tools/session0022_probes/e1_aru_signatures.py`.
+> **⚠ Session-0027 correction (ARU signature tables, 1467/1469 — CORRECTED INLINE below):** the
+> original transcription paired the '163 Q pins by descending-pin convention (QA=bit0), contradicting
+> its own §4.2 D-pin rows through the '163's A↔QA load pairing (A=pin3 loads QA=pin14). The signature
+> tables measure the truth per-pin: **pin14 (QA) = the nibble's bit 3 … pin11 (QD) = bit 0** — i.e.
+> AC0's driver is U4x.pin11, AC3's is U4x.pin14. The adder-A load column was measured correct as
+> transcribed. Measured by `tools/session0022_probes/e1_aru_signatures.py`; the raw pinout txt still
+> carries the old Q labels (pending owner update).
 
 | Net | Driver | Load |
 |---|---|---|
-| AC0 | aru_U45.pin14 (QA) | aru_U19.pin5 (A0) |
-| AC1 | aru_U45.pin13 (QB) | aru_U19.pin3 (A1) |
-| AC2 | aru_U45.pin12 (QC) | aru_U19.pin14 (A2) |
-| AC3 | aru_U45.pin11 (QD) | aru_U19.pin12 (A3) |
-| AC4 | aru_U46.pin14 (QA) | aru_U20.pin5 (A0) |
-| AC5 | aru_U46.pin13 (QB) | aru_U20.pin3 (A1) |
-| AC6 | aru_U46.pin12 (QC) | aru_U20.pin14 (A2) |
-| AC7 | aru_U46.pin11 (QD) | aru_U20.pin12 (A3) |
-| AC8 | aru_U47.pin14 (QA) | aru_U21.pin5 (A0) |
-| AC9 | aru_U47.pin13 (QB) | aru_U21.pin3 (A1) |
-| AC10 | aru_U47.pin12 (QC) | aru_U21.pin14 (A2) |
-| AC11 | aru_U47.pin11 (QD) | aru_U21.pin12 (A3) |
-| AC12 | aru_U48.pin14 (QA) | aru_U22.pin5 (A0) |
-| AC13 | aru_U48.pin13 (QB) | aru_U22.pin3 (A1) |
-| AC14 | aru_U48.pin12 (QC) | aru_U22.pin14 (A2) |
-| AC15 | aru_U48.pin11 (QD) | aru_U22.pin12 (A3) |
-| AC16 | aru_U49.pin14 (QA) | aru_U23.pin5 (A0) |
-| AC17 | aru_U49.pin13 (QB) | aru_U23.pin3 (A1) |
-| AC18 | aru_U49.pin12 (QC) | aru_U23.pin14 (A2) |
-| AC19 | aru_U49.pin11 (QD) | aru_U23.pin12 (A3) |
+| AC0 | aru_U45.pin11 (QD) | aru_U19.pin5 (A0) |
+| AC1 | aru_U45.pin12 (QC) | aru_U19.pin3 (A1) |
+| AC2 | aru_U45.pin13 (QB) | aru_U19.pin14 (A2) |
+| AC3 | aru_U45.pin14 (QA) | aru_U19.pin12 (A3) |
+| AC4 | aru_U46.pin11 (QD) | aru_U20.pin5 (A0) |
+| AC5 | aru_U46.pin12 (QC) | aru_U20.pin3 (A1) |
+| AC6 | aru_U46.pin13 (QB) | aru_U20.pin14 (A2) |
+| AC7 | aru_U46.pin14 (QA) | aru_U20.pin12 (A3) |
+| AC8 | aru_U47.pin11 (QD) | aru_U21.pin5 (A0) |
+| AC9 | aru_U47.pin12 (QC) | aru_U21.pin3 (A1) |
+| AC10 | aru_U47.pin13 (QB) | aru_U21.pin14 (A2) |
+| AC11 | aru_U47.pin14 (QA) | aru_U21.pin12 (A3) |
+| AC12 | aru_U48.pin11 (QD) | aru_U22.pin5 (A0) |
+| AC13 | aru_U48.pin12 (QC) | aru_U22.pin3 (A1) |
+| AC14 | aru_U48.pin13 (QB) | aru_U22.pin14 (A2) |
+| AC15 | aru_U48.pin14 (QA) | aru_U22.pin12 (A3) |
+| AC16 | aru_U49.pin11 (QD) | aru_U23.pin5 (A0) |
+| AC17 | aru_U49.pin12 (QC) | aru_U23.pin3 (A1) |
+| AC18 | aru_U49.pin13 (QB) | aru_U23.pin14 (A2) |
+| AC19 | aru_U49.pin14 (QA) | aru_U23.pin12 (A3) |
 
 ## 4.2 PP bus — sat-mux output (PP0..PP19)
 Driver = sat-mux Y output; loads = accumulator reg D input, **and** (PP3..PP18 only) result reg D input.
 20 nets, all ✅. (PP0,PP1,PP2,PP19 do **not** reach the result register — see §4.8.)
 
-> **⚠ Session-0027 chip-swap correction (ARU signature tables):** in the result-register column below
-> (and in §4.8), **aru_U43 ↔ aru_U44 are swapped** — physically **U43 carries the HIGH byte (PP11-18)
-> and U44 the LOW byte (PP3-10)**. Electrically inert relabeling; measured per-pin by
-> `tools/session0022_probes/e1_aru_signatures.py`.
+> **⚠ Session-0027 chip-swap correction (ARU signature tables — CORRECTED INLINE below and in §4.8):**
+> the owner transcription had aru_U43 ↔ aru_U44 exchanged. Physically **U43 carries the HIGH byte
+> (PP11-18 → DAB8-15) and U44 the LOW byte (PP3-10 → DAB0-7)**. Electrically inert relabeling
+> (per-pin nets unchanged otherwise); measured by `tools/session0022_probes/e1_aru_signatures.py`.
+> The raw pinout txt still carries the swapped blocks (pending owner update).
 
 | Net | Driver | Load (accumulator) | Load (result reg) |
 |---|---|---|---|
 | PP0 | aru_U33.pin4 (Y1) | aru_U45.pin6 (D) | — |
 | PP1 | aru_U33.pin7 (Y2) | aru_U45.pin5 (C) | — |
 | PP2 | aru_U33.pin9 (Y4) | aru_U45.pin4 (B) | — |
-| PP3 | aru_U33.pin12 (Y3) | aru_U45.pin3 (A) | aru_U43.pin14 (D5) |
-| PP4 | aru_U34.pin4 (Y1) | aru_U46.pin6 (D) | aru_U43.pin13 (D4) |
-| PP5 | aru_U34.pin7 (Y2) | aru_U46.pin5 (C) | aru_U43.pin18 (D7) |
-| PP6 | aru_U34.pin9 (Y4) | aru_U46.pin4 (B) | aru_U43.pin17 (D6) |
-| PP7 | aru_U34.pin12 (Y3) | aru_U46.pin3 (A) | aru_U43.pin4 (D1) |
-| PP8 | aru_U35.pin4 (Y1) | aru_U47.pin6 (D) | aru_U43.pin3 (D0) |
-| PP9 | aru_U35.pin7 (Y2) | aru_U47.pin5 (C) | aru_U43.pin8 (D3) |
-| PP10 | aru_U35.pin9 (Y4) | aru_U47.pin4 (B) | aru_U43.pin7 (D2) |
-| PP11 | aru_U35.pin12 (Y3) | aru_U47.pin3 (A) | aru_U44.pin14 (D5) |
-| PP12 | aru_U36.pin4 (Y1) | aru_U48.pin6 (D) | aru_U44.pin13 (D4) |
-| PP13 | aru_U36.pin7 (Y2) | aru_U48.pin5 (C) | aru_U44.pin18 (D7) |
-| PP14 | aru_U36.pin9 (Y4) | aru_U48.pin4 (B) | aru_U44.pin17 (D6) |
-| PP15 | aru_U36.pin12 (Y3) | aru_U48.pin3 (A) | aru_U44.pin4 (D1) |
-| PP16 | aru_U37.pin4 (Y1) | aru_U49.pin6 (D) | aru_U44.pin3 (D0) |
-| PP17 | aru_U37.pin7 (Y2) | aru_U49.pin5 (C) | aru_U44.pin8 (D3) |
-| PP18 | aru_U37.pin9 (Y4) | aru_U49.pin4 (B) | aru_U44.pin7 (D2) |
+| PP3 | aru_U33.pin12 (Y3) | aru_U45.pin3 (A) | aru_U44.pin14 (D5) |
+| PP4 | aru_U34.pin4 (Y1) | aru_U46.pin6 (D) | aru_U44.pin13 (D4) |
+| PP5 | aru_U34.pin7 (Y2) | aru_U46.pin5 (C) | aru_U44.pin18 (D7) |
+| PP6 | aru_U34.pin9 (Y4) | aru_U46.pin4 (B) | aru_U44.pin17 (D6) |
+| PP7 | aru_U34.pin12 (Y3) | aru_U46.pin3 (A) | aru_U44.pin4 (D1) |
+| PP8 | aru_U35.pin4 (Y1) | aru_U47.pin6 (D) | aru_U44.pin3 (D0) |
+| PP9 | aru_U35.pin7 (Y2) | aru_U47.pin5 (C) | aru_U44.pin8 (D3) |
+| PP10 | aru_U35.pin9 (Y4) | aru_U47.pin4 (B) | aru_U44.pin7 (D2) |
+| PP11 | aru_U35.pin12 (Y3) | aru_U47.pin3 (A) | aru_U43.pin14 (D5) |
+| PP12 | aru_U36.pin4 (Y1) | aru_U48.pin6 (D) | aru_U43.pin13 (D4) |
+| PP13 | aru_U36.pin7 (Y2) | aru_U48.pin5 (C) | aru_U43.pin18 (D7) |
+| PP14 | aru_U36.pin9 (Y4) | aru_U48.pin4 (B) | aru_U43.pin17 (D6) |
+| PP15 | aru_U36.pin12 (Y3) | aru_U48.pin3 (A) | aru_U43.pin4 (D1) |
+| PP16 | aru_U37.pin4 (Y1) | aru_U49.pin6 (D) | aru_U43.pin3 (D0) |
+| PP17 | aru_U37.pin7 (Y2) | aru_U49.pin5 (C) | aru_U43.pin8 (D3) |
+| PP18 | aru_U37.pin9 (Y4) | aru_U49.pin4 (B) | aru_U43.pin7 (D2) |
 | PP19 | aru_U37.pin12 (Y3) | aru_U49.pin3 (A) | — |
 
-> Note PP18 → aru_U44.pin7: the owner trace lists U44.pin7 as `D2`. (74F374 pin7 = D2 per the verified pinout.)
+> Note PP18 → aru_U43.pin7 (`D2` per the verified 74F374 pinout).
 > Result reg captures exactly **PP3..PP18 = 16 bits** → consistent with `result = sat16(ACC ≫ 3)` (low 3 and
 > top 1 of the 20-bit saturated value dropped). The PP→result-reg bit assignment is tabulated in §4.8.
 
@@ -226,6 +230,13 @@ Per-channel: I0 = adder Σ (normal path), I1 = `B-IN` (saturation clamp), Y = PP
 > sign bit: `B-IN = NOT(_aru_topB)` on most bits, but the **top** PP bits (U37 I1c/I1d) get `_aru_topB`
 > un-inverted — together producing a proper ±full-scale saturated word. Transcribed faithfully; the
 > overflow/clamp *interpretation* is not asserted as fact (Ground Rule 3) — it follows from the model.
+>
+> **✅ Session-0027 measurements (ARU signature tables):** the SAT/clamp reading is CONFIRMED at pins —
+> diag-3 deliberately saturates at its frame tail and the feedback table shows it (U42.pin3 = `000P`;
+> the no-feedback window's STOP placement excludes those samples, pin3 = `0000`) — **and the clamp
+> output (PP) feeds the ACCUMULATOR D inputs as wired** (the tail samples register the ±rail).
+> Also measured: the two spare U42 gate inputs (pins 9, 10) are **tied +5V** (both read the +5V
+> reference signature) and the spare output pin 8 reads constant-0 (XOR of two highs) — ties, not n/c.
 > `aru_U2.pin6` (inv-3 Y) drives the adder chain carry-in (`_aru_cin`, §4.3); inv-3's input (aru_U2.pin5)
 > is the **CSIGN/subtract carry path** and is **not in the owner trace → ⚪ GAP §G2.**
 
@@ -310,7 +321,10 @@ listed; the upstream adders are a gap.
 **Q-outputs → §4.6 (PR source column).** ✅
 
 ## 4.8 Result register — aru_U43/U44 (74F374)
-D = PP3..PP18 (§4.2); Q → **DAB0..DAB15**; OE\ = **RDRREG/**; CP = **XFER CK**. ✅ (owner trace).
+D = PP3..PP18 (§4.2); Q → **DAB0..DAB15**; OE\ = **RDRREG/**; CP = **XFER CK**. ✅ (owner trace;
+**chip attribution CORRECTED 2026-07-02**: the transcription had U43↔U44 exchanged — physically
+**U43 = the HIGH byte (PP11-18 → DAB8-15), U44 = the LOW byte (PP3-10 → DAB0-7)**; measured per-pin
+by the ARU signature tables, `tools/session0022_probes/e1_aru_signatures.py`).
 
 **Control:**
 | Net | Pins | Origin |
@@ -322,24 +336,25 @@ D = PP3..PP18 (§4.2); Q → **DAB0..DAB15**; OE\ = **RDRREG/**; CP = **XFER CK*
 — full bus summary in net-group 1, pending):**
 | DAB net | Driver |
 |---|---|
-| DAB0 | aru_U43.pin15 (Q5) |
-| DAB1 | aru_U43.pin12 (Q4) |
-| DAB2 | aru_U43.pin19 (Q7) |
-| DAB3 | aru_U43.pin16 (Q6) |
-| DAB4 | aru_U43.pin5 (Q1) |
-| DAB5 | aru_U43.pin2 (Q0) |
-| DAB6 | aru_U43.pin9 (Q3) |
-| DAB7 | aru_U43.pin6 (Q2) |
-| DAB8 | aru_U44.pin15 (Q5) |
-| DAB9 | aru_U44.pin12 (Q4) |
-| DAB10 | aru_U44.pin19 (Q7) |
-| DAB11 | aru_U44.pin16 (Q6) |
-| DAB12 | aru_U44.pin5 (Q1) |
-| DAB13 | aru_U44.pin2 (Q0) |
-| DAB14 | aru_U44.pin9 (Q3) |
-| DAB15 | aru_U44.pin6 (Q2) |
+| DAB0 | aru_U44.pin15 (Q5) |
+| DAB1 | aru_U44.pin12 (Q4) |
+| DAB2 | aru_U44.pin19 (Q7) |
+| DAB3 | aru_U44.pin16 (Q6) |
+| DAB4 | aru_U44.pin5 (Q1) |
+| DAB5 | aru_U44.pin2 (Q0) |
+| DAB6 | aru_U44.pin9 (Q3) |
+| DAB7 | aru_U44.pin6 (Q2) |
+| DAB8 | aru_U43.pin15 (Q5) |
+| DAB9 | aru_U43.pin12 (Q4) |
+| DAB10 | aru_U43.pin19 (Q7) |
+| DAB11 | aru_U43.pin16 (Q6) |
+| DAB12 | aru_U43.pin5 (Q1) |
+| DAB13 | aru_U43.pin2 (Q0) |
+| DAB14 | aru_U43.pin9 (Q3) |
+| DAB15 | aru_U43.pin6 (Q2) |
 
-**PP → result-reg → DAB assignment** (faithful map; bit-weights NOT asserted, §4.10):
+**PP → result-reg → DAB assignment** (faithful map; bit-weights NOT asserted, §4.10; rows 1-8 =
+aru_U44 (low byte), rows 9-16 = aru_U43 (high byte)):
 | DAB | ← Q | ← D | ← PP |
 |---|---|---|---|
 | DAB5 | Q0 p2 | D0 p3 | PP8 |
