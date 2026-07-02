@@ -1,138 +1,138 @@
 #pragma once
 // =============================================================================
-// sgdsp - Lexicon224XL - bit-exact 224XL ARU reverb reconstruction (integer)
+// sgdsp - Lexicon224XL - bit-exact 224XL ARU/T&C/DMEM core (integer, phys domain)
 // =============================================================================
-// Reproduces the discrete-ARU datapath of the Lexicon 224XL: a 128-step WCS
-// microprogram executed once per output sample over a 64K-word circular delay
-// memory (DMEM), a 4x16-bit register file, a saturating multiply-accumulate, and
-// a 16-bit result register. The reverb tank lives in DMEM + register feedback.
+// C++ port of the pin-locked RTL engine tools/aru_freerun22_rtl.py (class RTL22,
+// plan 021 Phase A / plan 024 F1 re-sync; sessions 0027/0028): the free-running
+// ARU under the session-0022 coordinate system, the traced control-pipeline
+// alignment (netlist 3.5-3.11, 2T, 4.7-4.9, 4F, 6D + fig-3.3/3.4), and the
+// COMPLEMENT-DOMAIN physical MAC law locked per-pin by the 5.7 ARU signature
+// tables (1467/1469 pins; feedback table 710/710).
 //
-// The bit-exact reference is the Python model tools/aru_datapath.py (the 224XL's
-// Z80 SBC builds/modulates microcode but does not compute audio). This core is
-// authored to match that reference integer-exact; the firmware/schematic-resolved
-// arithmetic constants are isolated in ArithProfile so tuning is one line.
+// INTERNAL STATE IS PHYS (active-low DAB domain): the regfile R, delay memory
+// DMEM, result register RES, DAB, and 20-bit accumulator ACC all carry the
+// complemented patterns the hardware carries (CPU value = s16(~pattern) for the
+// 16-bit buses; ACC has no CPU-domain value reading). CPU-domain boundaries:
+//   RD-AD injects ~x;  WR-DA emits s16(~DAB);  WR XREG readback = ~DAB;  the
+//   host->DSP latch XREG_host (CPU value) drives ~XREG_host onto the DAB;
+//   unwritten DMEM reads phys 0xFFFF (= CPU 0).
 //
-// Float appears ONLY at the I/O boundary. Everything between floatToAru and
-// aruToFloat is integer. See docs/reference/224/224XL_technical_reference.md and
-// docs/superpowers/specs/2026-06-22-224xl-aru-core-and-diff-harness-design.md.
+// One frame = rows 0..L inclusive (L+1 steps; row r = CPU word 127-r; L = 128 -
+// reset word); CPC += 1 per frame (16-bit wrap). Per step, in traced slot order:
+//   slot-0 edge   operand SR loads regfile[RA(w_{n-1})] POST-write (write-
+//                 through); the three RAW comb-array partial products of
+//                 w_{n-1} are determined here (raw3, pairs A/B/C).
+//   slot-1.43     ACC <- BE(ACC + ppB(w_{n-2}))       (sat-mux output loads, #35)
+//   slot-3.06     XFER CK rise (owner w_{n-1}): RES <- (BE(. + ppC(w_{n-2})) >> 3)
+//                 & 0xFFFF - the PP-bus tap, pairC included combinationally,
+//                 PURE bit tap (no rounding hardware).
+//   slot-4.43     ZERO/ (owner w_{n-1}) sync-clears ACC to phys 0, else the '163
+//                 loads the SAME sat-mux output the capture read (own-sign
+//                 schedule; the live-sign register variant is FALSIFIED, #23).
+//   device phase  addr = CPC - stored offset; MEMR DOUT -> DAB; MEMW drives RES
+//                 and latches DIN; IO drives per sel (RDRREG/XREG/RD-AD) else
+//                 bus hold; WR-DA emits s16(~DAB) on the selected channels.
+//   slot-7.43     ACC <- BE(. + ppA(w_{n-1})); regfile write R[WA(w_n)] <- DAB
+//                 (every step); WR XREG readback captures ~DAB.
+//   carry         pipe <- (rawB, rawC, cs) of w_{n-1} (pairs B/C retire next
+//                 step under their OWN word's sign).
+// BE = backend20: rail = cs_eff (= stored l2 bit7, 1 = positive), B = raw ^
+// railmask, cin = 1-rail, 20-bit sum, SAT = s19^s18, clamp = topB ? 0xC0000 :
+// 0x3FFFF; the clamp feeds BOTH the result path and the accumulator (#35).
+//
+// The decode is the session-0022 stored-word decode (tools/aru_freerun22.py
+// decode22): 4 lanes through the Multibus data complement (lane 3 = ~l3 for
+// XFER/ZERO/cmag), IO command bits assert when the STORED bit == 0, channels
+// A..D = stored offset bits 11..8, sel = (~bits13..12) & 3, delay offset =
+// stored value directly.
+//
+// This header is comment-mechanical by design: MEMR/MEMW taps and address
+// regions are described as wired, with no speculative role labels. The law
+// source is tools/aru_freerun22_rtl.py + docs/sessions/0027 (and the plan-024
+// F1 re-sync); bit-exact parity vs that engine is proven by
+// tools/harness/224xl (diff_harness + booth_vectors_test on RTL22-exported
+// goldens). Everything below the process call is integer.
 
-#include "../core/types.hpp"       // Sample, SampleRate
-#include "../core/platform.hpp"    // SGDSP_INLINE, SGDSP_NOINLINE, SGDSP_ASSERT
+#include "../core/types.hpp"       // SampleRate
+#include "../core/platform.hpp"    // SGDSP_INLINE, SGDSP_NOINLINE
+#include "224xl_booth.hpp"         // gate-level comb array: raw3/loadSR/shiftRight2
 #include <cstdint>
 
 namespace sgdsp::reverb
 {
 using namespace core;
 
-// 16-bit signed ARU word carried in int32 for headroom; accumulator carried in
-// int64. DMEM is a hardware-fixed 64K ring (mask 0xFFFF).
-using AruWord  = int32_t;
-using AruAccum = int64_t;
+// 16-bit PHYS (active-low DAB-domain) pattern. DMEM is the hardware-fixed 64K
+// ring of these; unwritten cells read phys 0xFFFF (= CPU 0).
+using AruWord = uint16_t;
 
-// ---- ARU arithmetic profile (firmware/schematic-resolved; authority is
-// tools/aru_datapath.py run()/run_trace()). The hardware datapath is:
-//   * 6-bit coefficient C = (abs(coeff7) >> 1), sign applied via CSIGN (so the
-//     effective signed coefficient Cs = +/-(mag>>1)).
-//   * operand = x << 3 (the 17->20 bit operand alignment into the multiplier).
-//   * product = (operand * Cs) >> 6   (arithmetic right shift; floors toward -inf).
-//   * saturating accumulator, rails +/-2^18 (+262143/-262144; sat-mux B-IN, item 5).
-//   * result register RES = sat16(ACC >> 3), rails [-32768, +32767].
-// These supersede the old (x*coeff)>>7 / 16-bit-acc first cut. Move toward any
-// further hardware nuance by editing the constants here. ----
-struct ArithProfile
+namespace aru224 {
+
+inline constexpr uint32_t kMask20 = 0xFFFFFu;
+
+// One traced back-end adder + sat-mux evaluation (phys domain; port of
+// aru_freerun22_rtl.backend20, e1c champion convention):
+//   rail = cs, B = raw ^ rail-mask (the sub-XOR row), cin = inv(rail),
+//   20-bit sum (no wrap-out), SAT = sum19 ^ sum18,
+//   clamp = topB ? 0xC0000 : 0x3FFFF (aru_U33-37 + U2; topB = B bit19).
+// The RETURN VALUE feeds both the result path and the '163 accumulator D
+// inputs (registry #35 - the clamp loads into ACC).
+SGDSP_INLINE uint32_t backend20(uint32_t acc, uint32_t raw, uint32_t cs) noexcept
 {
-    static constexpr int      kOperandShift = 3;        // operand = x << 3 (multiplier input align)
-    static constexpr int      kCoeffShift   = 1;        // 6-bit coeff = (abs(coeff7) >> 1)
-    static constexpr int      kProdShift    = 6;        // product = (operand * Cs) >> 6
-    static constexpr int      kResultShift  = 3;        // RES = sat16(ACC >> 3)
-    // Accumulator/PP saturation rails (item 5, schematic-exact, pinouts 060-01318): the
-    // 74F157 sat-muxes substitute B-IN on overflow; U37 ties PP18/PP19 to the sign net and
-    // PP0..PP17 to its complement (U2 74S04), so the clamp pattern is +0x3FFFF / -0x40000 =
-    // +/-2^18, NOT +/-(2^19-1). RES = PP[3..18] = PP>>3 then fits 16 bits with no extra clamp.
-    static constexpr AruAccum kAccMax       = 262143;   // +2^18 - 1  (PP = 0x3FFFF)
-    static constexpr AruAccum kAccMin       = -262144;  // -2^18      (PP = 0xC0000)
-    static constexpr AruAccum kResMax       = 32767;    // 16-bit result register high rail
-    static constexpr AruAccum kResMin       = -32768;   // 16-bit result register low rail
+    const uint32_t xorb = raw ^ (cs ? kMask20 : 0u);
+    const uint32_t ssum = (acc + xorb + (1u - cs)) & kMask20;
+    if (((ssum >> 19) ^ (ssum >> 18)) & 1u)
+        return ((xorb >> 19) & 1u) ? 0xC0000u : 0x3FFFFu;
+    return ssum;
+}
+
+} // namespace aru224
+
+// One decoded stored WCS word (session-0022 decode, tools/aru_freerun22.py
+// decode22 + the precomputed effective sign of aru_freerun22_rtl.decode_word).
+struct AruRow
+{
+    uint8_t  typ;       // stored l2 & 3: 0=MEMR 1=MEMW 2=IO 3=idle
+    uint8_t  WA;        // (l2 >> 2) & 3, stored-direct
+    uint8_t  RA;        // (l2 >> 4) & 3, stored-direct
+    uint8_t  cs;        // effective coefficient sign = stored l2 bit 7 (1 = positive; E83 anchor)
+    uint8_t  XFER;      // ~l3 bit 0
+    uint8_t  ZERO;      // ~l3 bit 1
+    uint8_t  cmag;      // (~l3 >> 2) & 0x3F
+    uint16_t ofst;      // stored offset value DIRECTLY; addr = CPC - ofst
+    // IO command fields (typ == 2 only; each asserts when the STORED bit == 0)
+    uint8_t  RESET;     // stored ofst bit 3
+    uint8_t  DP;        // bit 4
+    uint8_t  TEST;      // bit 5
+    uint8_t  WRX;       // bit 6 (WR XREG)
+    uint8_t  WRDA;      // bit 7 (WR DA)
+    uint8_t  chanMask;  // D/A channels, bit0=A..bit3=D = stored ofst bits 11..8
+    uint8_t  sel;       // DAB source = (~bits13..12) & 3: 0=none 1=RDRREG 2=XREG 3=RD-AD
 };
 
-// Saturate to the accumulator/PP rails (reference sat20, +262143/-262144 = +/-2^18).
-SGDSP_INLINE AruAccum aruSat20(AruAccum x) noexcept
+// Per-step probe for the traced twin: the phys state AFTER the step completes.
+struct StepProbe
 {
-    if (x > ArithProfile::kAccMax) return ArithProfile::kAccMax;
-    if (x < ArithProfile::kAccMin) return ArithProfile::kAccMin;
-    return x;
-}
-
-// Saturate to the 16-bit result-register rails (reference sat16, [-32768, +32767]).
-SGDSP_INLINE AruAccum aruSat16(AruAccum x) noexcept
-{
-    if (x > ArithProfile::kResMax) return ArithProfile::kResMax;
-    if (x < ArithProfile::kResMin) return ArithProfile::kResMin;
-    return x;
-}
-
-// The 6-bit signed coefficient Cs = +/-(abs(coeff7) >> 1) carried by CSIGN.
-// coeff7 is the decoded signed 7-bit-magnitude microword field (-127..127).
-SGDSP_INLINE int aruCoeff6(int coeff7) noexcept
-{
-    SGDSP_ASSERT(coeff7 >= -127 && coeff7 <= 127);
-    const int mag = coeff7 < 0 ? -coeff7 : coeff7;
-    const int c   = mag >> ArithProfile::kCoeffShift;   // (mag >> 1), 6-bit magnitude
-    return coeff7 < 0 ? -c : c;
-}
-
-// The ARU product term: operand = x<<3, prod = (operand * Cs) >> 6. Arithmetic
-// right shift floors toward -inf to match Python `(operand*Cs) >> 6`. Cs is the
-// already-resolved 6-bit signed coefficient (see aruCoeff6). NOTE: C++20 guarantees
-// arithmetic shift on signed; on MSVC/GCC/Clang it already holds in C++17. Do NOT
-// use `/ 64` (truncates toward zero on negatives). This is the SINGLE source of the
-// product term, shared by aruMac and the datapath so the unit test (via aruMac) and
-// executeSample cannot drift.
-SGDSP_INLINE AruAccum aruProd(AruWord x, int cs6) noexcept
-{
-    SGDSP_ASSERT(cs6 >= -63 && cs6 <= 63);             // 6-bit signed coefficient
-    const AruAccum operand = static_cast<AruAccum>(x) << ArithProfile::kOperandShift;
-    return (operand * cs6) >> ArithProfile::kProdShift;
-}
-
-// One multiply-accumulate step: acc + product, 20-bit-saturated. `cs6` is the
-// resolved 6-bit signed coefficient (apply aruCoeff6 to the raw 7-bit field first).
-SGDSP_INLINE AruAccum aruMac(AruAccum acc, AruWord x, int cs6) noexcept
-{
-    return aruSat20(acc + aruProd(x, cs6));
-}
-
-// Per-step probe record (mirrors aru_datapath.run_trace tuple field order).
-struct Probe
-{
-    int64_t n, s, addr, dab, racc_in, prod, acc, res;
-};
-static constexpr int64_t kProbeResSentinel = (int64_t)0x8000000000000000ULL; // INT64_MIN
-
-// A decoded active microword step (NOP steps are dropped at load time).
-struct AruStep
-{
-    int      s;        // original step index 0..127
-    uint32_t offset;   // DMEM offset; addr = (pos - offset) & 0xFFFF
-    int      coeff;    // signed 7-bit magnitude (-127..127); kept for L1 decode parity
-    int      cs6;      // resolved 6-bit signed coefficient Cs = +/-(abs(coeff)>>1)
-    uint8_t  zero;     // clear accumulator before MAC
-    uint8_t  xfer;     // XFER: load result register (RES = sat16(ACC>>3)) / write tank
-    uint8_t  wa;       // write-register address (3 = pass-through)
-    uint8_t  ra;       // read-register address (b5<<1 | b4)
-    uint8_t  b3;       // DAB source / DMEM read-write select: b3 -> dab=RES & post-XFER DM write
+    int32_t  step;      // row index 0..L within the frame
+    uint32_t acc;       // 20-bit phys accumulator pattern
+    uint16_t res;       // phys result-register pattern
+    uint16_t dab;       // phys DAB pattern
+    uint16_t r[4];      // phys regfile patterns R0..R3
 };
 
-template <uint32_t DmemWords = 65536, uint32_t Channels = 2>
 class Lexicon224XLCore
 {
-    static_assert(DmemWords >= 65536, "224XL DMEM is a 64K ring; size must be >= 65536");
-    static_assert(Channels == 1 || Channels == 2, "Channels must be 1 or 2");
-
 public:
-    static constexpr uint32_t kDmemMask = 0xFFFFu;  // hardware 64K ring mask
+    static constexpr uint32_t kDmemWords = 65536;   // hardware 64K ring
+    static constexpr uint32_t kDmemMask  = 0xFFFFu;
+    static constexpr int      kMaxRows   = 129;     // L <= 128 -> at most 129 rows
+    // DAB source selects (decoded sel values)
+    static constexpr uint8_t  kSrcNone = 0, kSrcRdRReg = 1, kSrcXreg = 2, kSrcRdAd = 3;
 
-    // ---- Lifecycle ----
+    // ---- lifecycle ----
+    // dmem must point at kDmemWords AruWords; prepare() fills it with the phys
+    // default 0xFFFF (CPU 0). sampleRate is informational (the hardware frame
+    // rate is program-defined; see sampleRateHz()).
     SGDSP_NOINLINE void prepare(SampleRate sampleRate, AruWord* dmem) noexcept
     {
         sampleRate_ = sampleRate;
@@ -140,194 +140,256 @@ public:
         reset();
     }
 
-    // Decode a 128-step WCS image (4 active-low bytes/step) into the active-step
-    // list, skipping NOPs (lane2==lane3==0xFF). Matches aru_datapath.load_microcode.
-    SGDSP_NOINLINE void loadProgram(const uint8_t wcs[512]) noexcept
+    // Decode a 128-word WCS image (4 stored bytes/word, CPU word order) and
+    // extract the executed program (aru_freerun22_rtl.program_rows22): the
+    // reset word = IO-typed with stored l0 bit3 == 0, w_reset = MAX such CPU
+    // index; L = 128 - w_reset; physical row r = CPU word 127-r; the frame is
+    // rows 0..L INCLUSIVE (L+1 steps - the pipeline's extra word executes).
+    // Returns false (and disables the engine) if no reset word exists.
+    // Ends in reset(): a program load is a fresh engine, like constructing a
+    // fresh RTL22 in the Python reference.
+    SGDSP_NOINLINE bool loadProgram(const uint8_t wcs[512]) noexcept
     {
-        nActive_ = 0;
-        for (int s = 0; s < 128; ++s) {
-            const uint8_t l0 = wcs[s*4+0], l1 = wcs[s*4+1];
-            const uint8_t l2 = wcs[s*4+2], l3 = wcs[s*4+3];
-            if (l2 == 0xFF && l3 == 0xFF) continue;          // NOP / pure-delay fill
-            const uint8_t ctl = static_cast<uint8_t>(~l2);
-            AruStep st;
-            st.s      = s;
-            st.offset = static_cast<uint32_t>(~(l0 | (l1 << 8))) & 0xFFFFu;
-            st.coeff  = (l3 & 0x80) ? -static_cast<int>(l3 & 0x7F) : static_cast<int>(l3 & 0x7F);
-            st.cs6    = aruCoeff6(st.coeff);   // 6-bit signed coeff Cs = +/-(abs(coeff)>>1)
-            st.zero   = (ctl >> 7) & 1;
-            st.xfer   = (ctl >> 2) & 1;
-            st.wa     = ctl & 3;
-            st.ra     = (ctl >> 4) & 3;     // datapath-validated RA = b5<<1 | b4
-            st.b3     = (ctl >> 3) & 1;
-            steps_[nActive_++] = st;
+        int wReset = -1;
+        for (int k = 0; k < 128; ++k) {
+            const uint8_t l0 = wcs[4 * k + 0];
+            const uint8_t l2 = wcs[4 * k + 2];
+            if ((l2 & 3) == 2 && ((l0 >> 3) & 1) == 0) wReset = k;   // keep the max
         }
-        firstActive_ = (nActive_ > 0) ? 0 : -1;
-        // FPC analog-input read step (item 7): offset bit15 set (FPC device), WA != 3, and
-        // low14 == 0x3FFF (base-invariant ADC fingerprint, tech ref 12). External A/D sample
-        // drives the DAB here (NOT a DMEM tap); silent input => 0. Inert on the recirculation
-        // eigenvalue but required for the faithful audio-in path. -1 => legacy firstActive inject.
-        inputStepIdx_ = -1;
-        for (int i = 0; i < nActive_; ++i) {
-            const AruStep& s = steps_[i];
-            if ((s.offset & 0x8000u) && s.wa != 3 && (s.offset & 0x3FFFu) == 0x3FFFu) {
-                inputStepIdx_ = i; break;
-            }
+        if (wReset < 0) { nRows_ = 0; wReset_ = -1; reset(); return false; }
+        wReset_ = wReset;
+        const int L = 128 - wReset;
+        nRows_ = L + 1;
+        for (int r = 0; r <= L; ++r) {
+            const int k = (127 - r) & 0x7F;   // row r = CPU word 127-r (r=128 wraps to
+                                              // word 127, mirroring Python wcs[-1])
+            rows_[r] = decodeWord(&wcs[4 * k]);
         }
+        reset();
+        return true;
     }
 
+    // Full engine reset to the RTL22 power-on state. Does NOT clear the
+    // host->DSP latch XREG_host (it lives on the SBC side of the bridge; the
+    // Python reference only zeroes it at construction - set it explicitly via
+    // setXregHost() when needed).
     SGDSP_NOINLINE void reset() noexcept
     {
-        for (auto& r : R_) r = 0;
-        acc_ = 0;
-        res_ = 0;
-        if (dmem_) for (uint32_t i = 0; i <= kDmemMask; ++i) dmem_[i] = 0;
-        pos_ = 0;
-        sampleIndex_ = 0;
+        for (auto& r : R_) r = 0xFFFF;              // phys ~0 (CPU 0 each)
+        acc_ = 0;                                   // phys pattern (value -1 = cleared state)
+        res_ = 0xFFFF;                              // phys ~0 (CPU 0)
+        dab_ = 0xFFFF;                              // phys ~0 (CPU 0)
+        cpc_ = 0;
+        xregWr_ = 0;
+        rdadN_ = 0;
+        wp_ = nullptr;                              // no previous word yet
+        pipeB_ = pipeC_ = aru224::kRawIdle;         // zero-rail baseline phases
+        pipeCs_ = 1;
+        stepCount_ = 0;
+        frameCount_ = 0;
+        if (dmem_)
+            for (uint32_t i = 0; i < kDmemWords; ++i) dmem_[i] = 0xFFFF;
     }
 
-    int activeStepCount() const noexcept { return nActive_; }
-    const AruStep& step(int i) const noexcept { return steps_[i]; }
-
-    // ---- Integer surface (harness) ----
-    SGDSP_INLINE void processFixed(AruWord in, AruWord& outL, AruWord& outR) noexcept
+    // ---- program facts ----
+    int frameSteps() const noexcept { return nRows_; }              // = L + 1
+    int resetWord() const noexcept { return wReset_; }
+    double sampleRateHz() const noexcept                            // 30.72e6/9/(L+1)
     {
-        const AruWord o = executeSample<false>(in, nullptr, nullptr);
-        outL = o; outR = o;   // first cut: mono datapath duplicated; FPC L/R split deferred
+        return nRows_ > 0 ? 30.72e6 / 9.0 / static_cast<double>(nRows_) : 0.0;
     }
+    const AruRow& row(int r) const noexcept { return rows_[r]; }
 
-    // Instrumented twin for the diff harness. Records one probe per active step into
-    // `probes` (caller MUST size it >= activeStepCount()); writes the probe count to
-    // *nProbesOut and the per-sample energy to *esumOut.
-    SGDSP_NOINLINE AruWord processFixedTraced(AruWord in, Probe* probes, int* nProbesOut,
-                                              int64_t* esumOut) noexcept
+    // ---- host bridge ----
+    // Host->DSP latch, CPU-domain value; drives ~XREG_host onto the DAB on
+    // SRC_XREG reads (static 0 in free-run; the diag bench parks 0x607F).
+    void setXregHost(uint16_t cpuValue) noexcept { xregHost_ = cpuValue; }
+    uint16_t xregHost() const noexcept { return xregHost_; }
+    // DSP->host latch readback, CPU-domain value (WR XREG complements back).
+    uint16_t xregReadback() const noexcept { return xregWr_; }
+
+    // ---- one frame = rows 0..L, then CPC += 1 ----
+    // Stereo input (in_h1, in_h2): the FPC A/D mux alternates channel per
+    // half-frame, so RD-AD steps in EXECUTION ORDER alternate halves - first
+    // read -> half-1, second -> half-2; the counter resets each frame. Mono =
+    // pass the same value for both halves. Only the low 16 bits are used.
+    // out[0..3] = CPU-domain outputs for channels A..D this frame: last WR-DA
+    // write wins; 0 if the channel was unwritten this frame (not held).
+    SGDSP_INLINE void processFrame(int32_t in_h1, int32_t in_h2, int32_t out[4]) noexcept
     {
-        int n = 0;
-        int64_t esum = 0;
-        const AruWord o = executeSample<true>(in, probes, &n, &esum);
-        if (nProbesOut) *nProbesOut = n;
-        if (esumOut) *esumOut = esum;
-        return o;
+        frameImpl(in_h1, in_h2, out, nullptr);
     }
 
-    // ---- Float boundary (DPF/sgdsp); only float in the signal path ----
-    SGDSP_INLINE void process(Sample in, Sample& outL, Sample& outR) noexcept
+    // Traced twin: identical walk; additionally records probes[r] (r = 0..
+    // frameSteps()-1) with the phys state after each step completes. `probes`
+    // must have room for frameSteps() records.
+    SGDSP_NOINLINE void processFrameTraced(int32_t in_h1, int32_t in_h2, int32_t out[4],
+                                           StepProbe* probes) noexcept
     {
-        AruWord l, r;
-        processFixed(floatToAru(in), l, r);
-        outL = aruToFloat(l);
-        outR = aruToFloat(r);
+        frameImpl(in_h1, in_h2, out, probes);
     }
 
-    // ---- Parameters (scaffolded; static CONCERT is the bring-up target) ----
-    void setParameter(int index, float value01) noexcept { (void)index; (void)value01; }
+    // ---- decode (exposed for tests) ----
+    static AruRow decodeWord(const uint8_t l[4]) noexcept
+    {
+        AruRow d{};
+        const uint16_t ofst = static_cast<uint16_t>((l[1] << 8) | l[0]);
+        const uint8_t  inv3 = static_cast<uint8_t>(~l[3]);
+        d.typ  = l[2] & 3;
+        d.WA   = (l[2] >> 2) & 3;
+        d.RA   = (l[2] >> 4) & 3;
+        d.cs   = (l[2] >> 7) & 1;                   // cs_eff = stored l2 bit 7 (1 = positive)
+        d.XFER = inv3 & 1;
+        d.ZERO = (inv3 >> 1) & 1;
+        d.cmag = (inv3 >> 2) & 0x3F;
+        d.ofst = ofst;
+        if (d.typ == 2) {                           // IO command bits assert on stored == 0
+            const auto bit = [ofst](int n) -> uint8_t {
+                return static_cast<uint8_t>(((ofst >> n) & 1) == 0);
+            };
+            d.RESET = bit(3);
+            d.DP    = bit(4);
+            d.TEST  = bit(5);
+            d.WRX   = bit(6);
+            d.WRDA  = bit(7);
+            d.chanMask = static_cast<uint8_t>((bit(11) << 0) |   // A = stored bit 11
+                                              (bit(10) << 1) |   // B = bit 10
+                                              (bit(9)  << 2) |   // C = bit 9
+                                              (bit(8)  << 3));   // D = bit 8
+            d.sel = static_cast<uint8_t>(((((~ofst) >> 13) & 1) << 1) | (((~ofst) >> 12) & 1));
+        }
+        return d;
+    }
 
 private:
-    // FPC analog converters (item 7, schematic-confirmed from the FPC sheet, 2026-06-24).
-    //  * Input  A/D = AM25L04, 12-bit. The result lands bottom-aligned on the DAB: AD0->DAB0 ..
-    //    AD11->DAB11, with the sign bit AD11 fanned to DAB11..DAB15 (sign-extend to 16-bit). So a
-    //    full-scale input is +/-2048 on the DAB -- 24 dB below the 16-bit internal full-scale; the
-    //    program's input-diffusion coefficients provide the makeup gain.
-    //  * Output D/A = DAC80-CBI-V, 12-bit, fed from DAB4..DAB15 (the TOP 12 bits of RES) = RES>>4.
-    //    ("CBI" = complementary/active-low inputs + bipolar offset; the inversion nets out to the
-    //    correct analog level, so it does not change the float value here.)
-    // This affects ONLY the float audio boundary (process()); the integer diff-harness path
-    // (processFixed/Traced with an integer impulse) is unchanged, so the §5 gate is unaffected.
-    // The L/R channel split still awaits the WR DA/ output decode (residual), so out is duplicated.
-    static constexpr float kAdcScale = 2048.0f;        // 12-bit ADC full-scale (DAB0..DAB11)
-    static constexpr float kDacScale = 2048.0f;        // 12-bit DAC full-scale (DAB4..DAB15)
-    SGDSP_INLINE static AruWord floatToAru(Sample x) noexcept
+    static SGDSP_INLINE int32_t s16(uint32_t v) noexcept    // signed 16-bit read of a pattern
     {
-        float s = x * kAdcScale;                       // AM25L04: 12-bit, bottom-aligned on the DAB
-        if (s >  2047.0f) s =  2047.0f;
-        if (s < -2048.0f) s = -2048.0f;
-        return static_cast<AruWord>(s >= 0.0f ? s + 0.5f : s - 0.5f);
-    }
-    SGDSP_INLINE static Sample aruToFloat(AruWord v) noexcept
-    {
-        const AruWord dac12 = v >> 4;                  // DAC80 reads DAB4..DAB15 = top 12 bits of RES
-        return static_cast<Sample>(dac12) * (1.0f / kDacScale);
+        return static_cast<int32_t>(static_cast<int16_t>(static_cast<uint16_t>(v)));
     }
 
-    // The 128-step microprogram for one output sample. Trace==true records probes
-    // and the energy sum, exactly mirroring aru_datapath.run_trace. The two
-    // instantiations share ONE datapath (DRY); tracing compiles out of the hot path.
-    template <bool Trace>
-    SGDSP_INLINE AruWord executeSample(AruWord in, Probe* probes, int* nProbes,
-                                       int64_t* esumOut = nullptr) noexcept
+    SGDSP_INLINE void frameImpl(int32_t in_h1, int32_t in_h2, int32_t out[4],
+                                StepProbe* probes) noexcept
     {
-        SGDSP_ASSERT(dmem_ != nullptr);   // prepare() must connect external DMEM before processing
-        pos_ = (pos_ + 1) & kDmemMask;
-        int np = 0;
-        int64_t esum = 0;
-        AruWord lastRes = res_;
-        for (int i = 0; i < nActive_; ++i) {
-            const AruStep& st = steps_[i];
-            // 1. delay address
-            const uint32_t addr = (pos_ - st.offset) & kDmemMask;
-            // 2. DAB source: the FPC input-read step takes the external A/D sample (item 7,
-            //    silent => 0, REPLACING the DMEM read); else b3 -> the CURRENT (pre-XFER) result
-            //    register drives DAB, else read DMEM.
-            AruWord dab;
-            if (i == inputStepIdx_) {
-                dab = in;                          // FPC analog input (ADC) onto the DAB
-            } else {
-                dab = st.b3 ? res_ : dmem_[addr];
-                if (inputStepIdx_ < 0 && i == firstActive_)
-                    dab += in;                     // legacy fallback (no FPC input step decoded)
-            }
-            // 3. (coefficient Cs is precomputed as st.cs6 = +/-(abs(coeff)>>1))
-            // 4. LS670 read-before-write: read the multiplicand FIRST, then write the bus.
-            const AruWord raccIn = R_[st.ra];
-            R_[st.wa] = dab;
-            // 5. ZERO clears the accumulator before this step's product.
-            if (st.zero) acc_ = 0;
-            // 6. MAC: operand = raccIn<<3, prod = (operand*Cs)>>6, 20-bit saturating acc.
-            const AruAccum prod = aruProd(raccIn, st.cs6);
-            acc_ = aruSat20(acc_ + prod);
-            // 7. XFER then b3 write-back: RES loads from sat16(ACC>>3) FIRST, then the
-            //    b3 write-back stores the POST-XFER RES into DMEM (ordering is load-bearing:
-            //    a b3+XFER comb closer writes the just-computed RES while step-3's R[WA]
-            //    captured the OLD RES via dab earlier this sample).
-            int64_t resVal = kProbeResSentinel;
-            if (st.xfer) {
-                res_ = static_cast<AruWord>(aruSat16(acc_ >> ArithProfile::kResultShift));
-                resVal = res_;
-            }
-            if (st.b3) dmem_[addr] = res_;
-            // 8. energy probe (sum |RES| over XFER steps)
-            if (st.xfer) {
-                esum += (res_ < 0) ? -res_ : res_;
-                lastRes = res_;
-            }
-            if (Trace && probes) {
-                probes[np++] = Probe{ (int64_t)sampleIndex_, (int64_t)st.s, (int64_t)addr,
-                                      (int64_t)dab, (int64_t)raccIn, (int64_t)prod,
-                                      (int64_t)acc_, resVal };
-            }
+        out[0] = out[1] = out[2] = out[3] = 0;      // unwritten channel -> 0 this frame
+        if (nRows_ <= 0 || dmem_ == nullptr) return;
+        const uint32_t h1 = static_cast<uint32_t>(in_h1) & 0xFFFFu;
+        const uint32_t h2 = static_cast<uint32_t>(in_h2) & 0xFFFFu;
+        rdadN_ = 0;                                 // new frame: A/D mux back to half-1
+        for (int r = 0; r < nRows_; ++r) {
+            stepRow(rows_[r], h1, h2, out);
+            if (probes)
+                probes[r] = StepProbe{ r, acc_, res_, dab_,
+                                       { R_[0], R_[1], R_[2], R_[3] } };
         }
-        if (Trace) { if (nProbes) *nProbes = np; if (esumOut) *esumOut = esum; }
-        ++sampleIndex_;
-        return lastRes;   // audio proxy = last RES of the sample
+        cpc_ = (cpc_ + 1u) & 0xFFFFu;               // RESET/ event -> CPC +1 per frame
+        ++frameCount_;
     }
 
-    // Group 1: hot per-sample state
-    AruWord  R_[4] = {0, 0, 0, 0};
-    AruAccum acc_ = 0;
-    AruWord  res_ = 0;
-    uint32_t pos_ = 0;
-    int64_t  sampleIndex_ = 0;
-    // Group 2: program
-    AruStep  steps_[128];
-    int      nActive_ = 0;
-    int      firstActive_ = -1;
-    int      inputStepIdx_ = -1;   // FPC analog-input read step (item 7); -1 => legacy inject
-    // Group 3: external DMEM + rate
+    // One microinstruction (one WCS row), events in traced slot order - the
+    // line-for-line port of RTL22.step (own-sign schedule; the falsified
+    // csign_lag variant, dead-end #23, is intentionally not ported).
+    SGDSP_INLINE void stepRow(const AruRow& d, uint32_t h1, uint32_t h2,
+                              int32_t out[4]) noexcept
+    {
+        // slot-0 edge: operand SR loads regfile[RA(wp)] POST-write (write-
+        // through); the three raw partial products of w_{n-1} are determined
+        // here (pairs live AS0/1/2 this step).
+        uint32_t rawA, rawB, rawC, csw;
+        if (wp_ != nullptr) {
+            aru224::raw3(R_[wp_->RA], wp_->cmag, rawA, rawB, rawC);
+            csw = wp_->cs;
+        } else {
+            rawA = rawB = rawC = aru224::kRawIdle;  // power-on: zero-rail comb baseline
+            csw = 1;
+        }
+        const uint32_t rawB2 = pipeB_, rawC2 = pipeC_;  // w_{n-2}'s pairs B/C retire
+        const uint32_t cs2 = pipeCs_;                   // this step, OWN sign
+
+        // slot-1.43 edge: ACC <- BE(ACC + ppB(w_{n-2})) - the sat-mux output loads (#35)
+        const uint32_t sum0 = aru224::backend20(acc_, rawB2, cs2);
+
+        // slot-3.06: XFER CK rise - result reg D = PP bus = BE(sum0 + ppC(w_{n-2})),
+        // own sign; RES = PP3..18 pure bit tap (no rounding hardware; the rails
+        // keep the tap wrap-free)
+        const uint32_t sum1 = aru224::backend20(sum0, rawC2, cs2);
+        if (wp_ != nullptr && wp_->XFER)
+            res_ = static_cast<uint16_t>((sum1 >> 3) & 0xFFFFu);
+
+        // slot-4.43 edge: sync clear (owner = wp) replaces the ppC(w_{n-2})
+        // register load - the value already reached RES via the PP bus; else
+        // the '163 loads the SAME sat-mux output the capture read.
+        const uint32_t acc4 = (wp_ != nullptr && wp_->ZERO) ? 0u : sum1;
+
+        // device phase for word w_n (stage-1 fields live all step); the DAB carries phys
+        const uint16_t addr = static_cast<uint16_t>((cpc_ - d.ofst) & 0xFFFFu);
+        switch (d.typ) {
+        case 0:                                     // MEMR: DOUT -> DAB (~slot 7)
+            dab_ = dmem_[addr];
+            break;
+        case 1:                                     // MEMW: RDRREG drives; DIN latches @slot4
+            dab_ = res_;                            // (post-capture RES: capture was slot 3)
+            dmem_[addr] = dab_;
+            break;
+        case 2: {                                   // IO: one driver per sel, else hold
+            if (d.sel == kSrcRdRReg) {
+                dab_ = res_;
+            } else if (d.sel == kSrcRdAd) {
+                const uint32_t ain = (rdadN_ & 1u) ? h2 : h1;   // A/D mux alternates halves
+                ++rdadN_;
+                dab_ = static_cast<uint16_t>(~ain & 0xFFFFu);   // the A/D drives the complement
+            } else if (d.sel == kSrcXreg) {
+                dab_ = static_cast<uint16_t>(~static_cast<uint32_t>(xregHost_) & 0xFFFFu);
+            }
+            if (d.WRDA) {                           // FPC captures the DAB at slot 5,
+                const int32_t ov = s16(~static_cast<uint32_t>(dab_));  // complementing back
+                for (int c = 0; c < 4; ++c)
+                    if ((d.chanMask >> c) & 1) out[c] = ov;     // last write wins
+            }
+            break;
+        }
+        default:                                    // idle: bus hold
+            break;
+        }
+
+        // slot-7.43 edge: ACC <- BE(acc4 + ppA(w_{n-1})); regfile write @MS7
+        // (unconditional); WR XREG captures the DAB (readback complements back)
+        acc_ = aru224::backend20(acc4, rawA, csw);
+        R_[d.WA] = dab_;
+        if (d.typ == 2 && d.WRX)
+            xregWr_ = static_cast<uint16_t>(~static_cast<uint32_t>(dab_) & 0xFFFFu);
+
+        // carry the pipeline: w_{n-1}'s pairs B/C retire next step under its own sign
+        pipeB_ = rawB;
+        pipeC_ = rawC;
+        pipeCs_ = csw;
+        wp_ = &d;                                   // d lives in rows_, stable across frames
+        ++stepCount_;
+    }
+
+    // ---- state (phys patterns unless noted) ----
+    uint16_t R_[4] = {0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF};
+    uint32_t acc_ = 0;                  // 20-bit phys accumulator pattern
+    uint16_t res_ = 0xFFFF;
+    uint16_t dab_ = 0xFFFF;
+    uint32_t cpc_ = 0;                  // 16-bit frame counter
+    uint16_t xregHost_ = 0;             // host->DSP latch (CPU-domain value)
+    uint16_t xregWr_ = 0;               // DSP->host readback (CPU-domain value)
+    uint32_t rdadN_ = 0;                // per-frame RD-AD occurrence counter
+    const AruRow* wp_ = nullptr;        // w_{n-1}: gates this step's capture/clear
+    uint32_t pipeB_ = aru224::kRawIdle; // (rawB, rawC, cs) of w_{n-2}
+    uint32_t pipeC_ = aru224::kRawIdle;
+    uint32_t pipeCs_ = 1;
+    uint64_t stepCount_ = 0;
+    uint64_t frameCount_ = 0;
+    // program
+    AruRow rows_[kMaxRows] = {};
+    int    nRows_ = 0;                  // = L + 1 after a successful loadProgram
+    int    wReset_ = -1;
+    // external DMEM + rate
     AruWord*   dmem_ = nullptr;
     SampleRate sampleRate_ = 0;
 };
 
-template <uint32_t N = 65536> using Lexicon224XL     = Lexicon224XLCore<N, 2>;
-template <uint32_t N = 65536> using Lexicon224XLMono = Lexicon224XLCore<N, 1>;
+using Lexicon224XL = Lexicon224XLCore;
 
 } // namespace sgdsp::reverb

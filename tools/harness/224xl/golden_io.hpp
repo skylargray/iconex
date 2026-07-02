@@ -1,7 +1,7 @@
 #pragma once
-// Minimal readers for the golden artifacts written by tools/export_golden_224.py.
-// Binary files are little-endian int64 arrays; JSON is parsed with a tiny scanner
-// sufficient for the flat, generator-produced shapes (no general JSON needed).
+// Minimal readers for the golden artifacts written by tools/export_golden_224xl_rtl.py
+// (the RTL22-parity flow, plan 024 F1d). Binary files are little-endian; meta.json is
+// scanned with a tiny flat-key reader sufficient for the generator-produced shape.
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -22,71 +22,45 @@ inline std::vector<uint8_t> readBytes(const std::string& path)
     return v;
 }
 
+// --- little-endian field readers (all golden binaries are packed LE) ---
+inline uint16_t leU16(const uint8_t* p) { return (uint16_t)(p[0] | (p[1] << 8)); }
+inline uint32_t leU32(const uint8_t* p)
+{
+    return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+}
+inline int64_t leI64(const uint8_t* p)
+{
+    uint64_t v = 0;
+    for (int k = 0; k < 8; ++k) v |= (uint64_t)p[k] << (8 * k);
+    return (int64_t)v;
+}
+
+inline std::vector<int16_t> readI16(const std::string& path)
+{
+    std::vector<uint8_t> b = readBytes(path);
+    std::vector<int16_t> out(b.size() / 2);
+    for (size_t i = 0; i < out.size(); ++i) out[i] = (int16_t)leU16(&b[i * 2]);
+    return out;
+}
+
 inline std::vector<int64_t> readI64(const std::string& path)
 {
     std::vector<uint8_t> b = readBytes(path);
     std::vector<int64_t> out(b.size() / 8);
-    for (size_t i = 0; i < out.size(); ++i) {
-        int64_t v = 0;
-        for (int k = 0; k < 8; ++k) v |= (int64_t)b[i*8+k] << (8*k);
-        out[i] = v;
-    }
+    for (size_t i = 0; i < out.size(); ++i) out[i] = leI64(&b[i * 8]);
     return out;
 }
 
-// One decoded field record from <id>_fields.json (flat objects, integer values).
-struct Field { int s, offset, coeff, ZERO, b3, XFER, WA, RA; };
-
-// PRECONDITION: each object has all 8 keys present in order (s,offset,coeff,ZERO,b3,XFER,WA,RA).
-// The exporter (tools/export_golden_224.py) guarantees this fixed shape; a missing/reordered
-// key would shift values silently rather than error. Safe only against that generator's output.
-// Scan flat JSON like [{"s":0,"offset":123,"coeff":-7,"ZERO":0,"b3":0,"XFER":1,"WA":0,"RA":1}, ...].
-inline std::vector<Field> readFields(const std::string& path)
-{
-    std::vector<uint8_t> bytes = readBytes(path);
-    std::string j(bytes.begin(), bytes.end());
-    std::vector<Field> out;
-    size_t i = 0;
-    auto readKeyVal = [&](const char* key, int& dst) {
-        // assumes keys appear in object order; find next "key": then parse int
-        std::string pat = std::string("\"") + key + "\":";
-        size_t p = j.find(pat, i);
-        if (p == std::string::npos) return false;
-        p += pat.size();
-        dst = std::strtol(j.c_str() + p, nullptr, 10);
-        i = p;
-        return true;
-    };
-    while (true) {
-        size_t obj = j.find('{', i);
-        if (obj == std::string::npos) break;
-        i = obj;
-        Field f{};
-        if (!readKeyVal("s", f.s)) break;
-        readKeyVal("offset", f.offset);
-        readKeyVal("coeff", f.coeff);
-        readKeyVal("ZERO", f.ZERO);
-        readKeyVal("b3", f.b3);
-        readKeyVal("XFER", f.XFER);
-        readKeyVal("WA", f.WA);
-        readKeyVal("RA", f.RA);
-        out.push_back(f);
-        size_t end = j.find('}', i);
-        if (end == std::string::npos) break;
-        i = end + 1;
-    }
-    return out;
-}
-
-// Pull a single integer value for `key` out of a flat meta.json.
-inline int readMetaInt(const std::string& path, const char* key, int dflt)
+// Pull a single integer value for `key` out of a flat meta.json ("key":value).
+// strtol skips any whitespace after the colon.
+inline long readMetaInt(const std::string& path, const char* key, long dflt)
 {
     std::vector<uint8_t> bytes = readBytes(path);
     std::string j(bytes.begin(), bytes.end());
     std::string pat = std::string("\"") + key + "\":";
     size_t p = j.find(pat);
     if (p == std::string::npos) return dflt;
-    return (int)std::strtol(j.c_str() + p + pat.size(), nullptr, 10);
+    return std::strtol(j.c_str() + p + pat.size(), nullptr, 10);
 }
 
 } // namespace golden

@@ -18,17 +18,20 @@ endif()
 get_filename_component(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
 set(SGDSP_INCLUDE "${REPO_ROOT}/libs/sgdsp/include")
 
-# Desktop build: portable headers only, no platform config, no CMSIS/STM.
-add_executable(mult_vectors_test mult_vectors_test.cpp)
-target_include_directories(mult_vectors_test PRIVATE "${SGDSP_INCLUDE}")
+# RTL-parity flow (plan 024 F1d): goldens come from tools/export_golden_224xl_rtl.py
+# (the Python RTL22 reference) into golden_rtl/.
+#
+# booth_vectors_test replaces the obsolete mult_vectors_test (pre-0022 value-domain
+# primitives; the source stays on disk for the record but no longer builds).
+add_executable(booth_vectors_test booth_vectors_test.cpp)
+target_include_directories(booth_vectors_test PRIVATE "${SGDSP_INCLUDE}" "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# --- Re-enabled in Task 6 (diff_harness) and Task 7 (wav_ir_tool) ---
 add_executable(diff_harness diff_harness.cpp)
 target_include_directories(diff_harness PRIVATE "${SGDSP_INCLUDE}" "${CMAKE_CURRENT_SOURCE_DIR}")
-#
+
 add_executable(wav_ir_tool wav_ir_tool.cpp)
 target_include_directories(wav_ir_tool PRIVATE "${SGDSP_INCLUDE}" "${CMAKE_CURRENT_SOURCE_DIR}")
 
 enable_testing()
-add_test(NAME mult_vectors COMMAND mult_vectors_test)
-add_test(NAME diff_concert COMMAND diff_harness "${CMAKE_CURRENT_SOURCE_DIR}/golden" 01)
+add_test(NAME booth_vectors COMMAND booth_vectors_test "${CMAKE_CURRENT_SOURCE_DIR}/golden_rtl/booth_vectors.bin")
+add_test(NAME diff_rtl COMMAND diff_harness "${CMAKE_CURRENT_SOURCE_DIR}/golden_rtl")

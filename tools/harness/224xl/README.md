@@ -1,31 +1,72 @@
-# 224XL ARU core — desktop diff harness
+# 224XL ARU core — desktop diff harness (RTL-parity flow, plan 024 F1d)
 
-Proves `libs/sgdsp/include/sgdsp/reverb/224xl.hpp` reproduces the Python
-`tools/aru_datapath.py` reference integer-exact for CONCERT (static microcode).
+Proves `libs/sgdsp/include/sgdsp/reverb/224xl.hpp` (+ `224xl_booth.hpp`)
+reproduces the Python pin-locked RTL engine `tools/aru_freerun22_rtl.py`
+(class RTL22 — session-0022 coordinate system, traced fig-3.3/3.4 pipeline
+alignment, complement-domain physical MAC law of sessions 0027/0028)
+**bit-exactly**: per-frame CPU-domain outputs on all four channels over every
+frame, plus the per-step phys trace {step, ACC, RES, DAB, R0..R3} on the first
+3 frames of each case.
 
-## Regenerate goldens (Python 3 + numpy)
+## Regenerate goldens (Python 3 + numpy; run from the repo root)
 
-    python tools/gen_224xl_programs.py 0x01     # -> libs/.../reverb/224xl_programs.hpp
-    python tools/export_golden_224.py 0x01      # -> tools/harness/224xl/golden/01_*
+    python tools/export_golden_224xl_rtl.py     # -> tools/harness/224xl/golden_rtl/
 
-## Build + test (CMake)
+Cases (stimulus is exported to `<case>_in.bin` and READ by the C++ harness —
+never regenerated — so both sides consume identical bits):
+
+- `d1zero` / `d1max` — the two D1 diagnostic images
+  (`tools/session0022_probes/wcs_diag.json`), h1-only impulse amp 16000 at
+  frame 50; nsamp = 50 + lag + 600 with lag 1 / 0x3FFF.
+- `concert` — the settled CONCERT image
+  (`tools/session0022_probes/wcs_settled_concert.json`), mono 0.30 s noise
+  burst (default_rng(224), ±8000) then silence, nsamp = 66000 — deliberately
+  crossing the 65536-frame CPC wrap.
+- `booth_vectors.bin` — 4000 `raw3` gate-array vectors + 200 `backend20`
+  sat-mux vectors (both clamp rails covered).
+
+## Build + test (CMake; MSVC — see toolchain note)
 
     cd tools/harness/224xl
-    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-    cmake --build build --config Release
-    ctest --test-dir build -C Release --output-on-failure
+    cmake -S . -B build-rtl -G "Visual Studio 18 2026"
+    cmake --build build-rtl --config Release
+    ctest --test-dir build-rtl -C Release --output-on-failure
 
-- `mult_vectors_test` — multiplier/saturation primitives (Service-Manual coeff set).
-- `diff_harness golden 01` — layer-1 decode parity + layer-2 arithmetic parity.
-- `wav_ir_tool ir out.wav` — float-boundary impulse response for listening.
+Toolchain note: the DaisyToolchain `g++` is an `arm-none-eabi` cross-compiler
+(bare-metal ARM); its binaries cannot run on the Windows host, so the desktop
+harness builds with MSVC (any host C++17 compiler works).
 
-Note: under the first-cut arithmetic the CONCERT tank **sustains** rather than decays
-(faithfully matching the Python reference). A cleanly decaying IR follows the deferred
-`ArithProfile` tuning (result-register shift / coeff denominator) — see the design spec.
+- `booth_vectors_test golden_rtl/booth_vectors.bin` — the gate-level comb
+  array (NAND taps + 5-adder carry chain + 74194 shifter, owner-corrected
+  tables) and the back-end adder + sat-mux, vector-exact vs the reference.
+- `diff_harness golden_rtl [case ...]` — layer 1: program extraction parity
+  (frameSteps()-1 == golden L); layer 2: all-frame 4-channel output equality +
+  first-3-frame per-step trace equality. Nonzero exit on any mismatch.
+- `wav_ir_tool ir|wav <wcs.bin> ...` — listening tool on the same core
+  (mono-duplicated input h1=h2; WAV L = channel A, R = channel C). For ears,
+  not for the gate.
 
 ## Scope
 
-Validated: C++ == Python reference (CONCERT static), multiplier vectors, builds.
-Deferred (knobs/interfaces in place): hardware-anchored arithmetic (ArithProfile, governs
-loop gain/decay), per-program FPC position base + true stereo L/R split, params/modulation
-dynamic parity, all 20 programs, DPF/Seed2 wrappers. See the design spec for the full list.
+**Validated:** C++ == the pin-locked RTL engine, integer/bit-exact, on
+D1 zero/max (impulse, both diag delay taps) and settled CONCERT (noise burst +
+34 s tail including the 65536-frame CPC wrap) — outputs every frame, phys
+state every step of the traced frames; plus 4200 primitive vectors. The C++
+walk includes the complement-domain datapath (phys R/DM/RES/DAB/ACC), raw3
+product-register loads, backend20 sat-mux with clamp-into-ACC (#35), own-sign
+retirement, XFER PP-bus capture `(sum>>3)&0xFFFF`, ZERO sync-clear, write-
+through operand read, stereo RD-AD half alternation, WR-DA channel decode,
+and CPC-offset DMEM addressing.
+
+**Not exercised by these goldens:** the XREG host-latch path (`setXregHost`,
+WR-XREG readback) is ported 1:1 from the reference but no golden case drives
+it (free-run XREG_host = 0); FPC float codec is not ported (the diff gate is
+the fixed-point path). Params/modulation remain CPU-side (out of ARU scope).
+
+**History:** everything this harness proved before 2026-07-02 (the
+`golden/` directory, `aru_datapath.py` parity, `mult_vectors_test`,
+`export_golden_224.py`, `gen_224xl_programs.py`, `224xl_programs.hpp`) is
+pre-0022-era and OBSOLETE — decode, execution order, and arithmetic were all
+superseded (sessions 0022/0025/0027). Those files stay on disk for the record
+but are out of the build; `golden_rtl/` + `export_golden_224xl_rtl.py` is the
+live flow.
