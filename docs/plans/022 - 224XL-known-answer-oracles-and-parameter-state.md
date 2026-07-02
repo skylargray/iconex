@@ -48,9 +48,13 @@ POST stays green via the untouched single-step path.
 - **LARC key injection** is a solved harness problem: keys are serial bytes on the 8251 (ports
   0xEE/0xEF); PGM-2 = 0x30 press / 0x10 release (`boot8080.py`); `param_sweep.py`/`boot_xl.py` already
   inject slider values into the running firmware.
-- `tools/_diag3_wcs.bin` (2026-06-24) = a captured **diag WCS image** — decoded structure (25 IO words,
-  XREG traffic) identifies it as the **diag-3 ARU-SIGNATURE stimulus program**, proving diag WCS capture
-  worked before; the same capture route serves D1 (and D3).
+- **`tools/diag3.py` (session 9) already implements the direct-call capture** for diag menu item 3:
+  boot to mainloop (`boot_xl`), patch the frame-sync wait at `0x0627` → RET (it spins on an ISR flag
+  that never fires under a direct jump — REUSE THIS PATCH for items 7/8), jump to the handler (item 3 =
+  `0x0CF0` via the same `0x0330` table), run to the build-done PC, and take the two-prefill (0xFF/0x00)
+  agreement mask to isolate handler-written bytes. Its cached output `tools/_diag3_wcs.bin` = the
+  firmware-built **diag-3 ARU-SIGNAT stimulus** (30 steps, CPU words 98–127, XREG-heavy), re-captured
+  2026-07-02 and byte-identical. D1a = the same recipe pointed at `0x0EFD`/`0x0EF4`.
 
 ### 1.3 D2 anchors
 - **The parameter system is disassembled** (`224XL_param_sweep.md`): sliders at `0x3C00-0x3C05`; main-loop
@@ -73,9 +77,11 @@ POST stays green via the untouched single-step path.
   ARU: START=RESET/ (ext-16), STOP=XFERCK (U43.11), CLOCK=ARUCK (U10.11); second setup START=STOP=RESET/.
   DMEM: START=STOP=CPC MSB (U65.8), CLOCK=RESET/ (U58A.1). Stimulus = the signature diag programs
   (3 = ARU/T&C-side, 6 = FPC) — diag 3's WCS is already captured (`_diag3_wcs.bin`).
-- **The analyzer:** HP 5004A — 16-bit LFSR with the standard HP polynomial (feedback taps at stages
-  7, 9, 12, 16), data XORed in at CLOCK edges between START and STOP, displayed 4 hex-ish chars from
-  the alphabet `0123456789ACFHPU`. Implement + self-test against a published known vector first.
+- **The analyzer ALREADY EXISTS AND IS CALIBRATED:** `tools/sig224.py` (session 9) — 16-bit LFSR,
+  polynomial X¹⁶+X¹²+X⁹+X⁷+1, fb = d⊕S15⊕S11⊕S8⊕S6, alphabet `0123456789ACFHPU`, with a self-test
+  confirmed against the manual's own §5.7 reference signatures. Decode-independent — reuse as-is.
+  (Session 9's signature attempt failed on the *datapath model* — `aru_sig.py`'s pre-Booth serial
+  multiply + the pre-0022 frame — not on the analyzer. The oracle infra was right; the machine wasn't.)
 
 ## 2. Dead-end / discipline registry (additions from 0023)
 Everything in plan 021's registry stands EXCEPT #1/#2 (CSIGN bimodality — dissolved; both polarities
@@ -130,9 +136,8 @@ D2d. Update `224XL_param_sweep.md` with the RTL-frame re-reading (band the old i
      supersession note; keep the raw JSONs).
 
 ## 5. Phase D3 — §5.7 signature analysis (hardware-grade lock)
-D3a. **Implement the analyzer**: 16-bit HP-5004A LFSR (taps 7/9/12/16), gate on START/STOP, sample the
-     probed net at each CLOCK edge, display map `0123456789ACFHPU`. Self-test on a known vector
-     (construct one by hand or use a documented HP example) before use.
+D3a. **Analyzer: reuse `tools/sig224.py`** (already calibrated vs the manual's §5.7 references —
+     session 9). Just re-run its self-test in-process before every scoring pass.
 D3b. **Emit pin streams from the engine.** Add a probe layer that exposes, per step (and per slot where
      needed), the modeled nets: PC0-6, MI0-31, OFST0-15/, stage-1/stage-2 outputs, CSIGN/, M0//M1/,
      DAB0-15, MS/AS/strobes, CPC bits, RESET//RESETD/. The T&C setup (CLOCK = DAB RSTB/ = once per
