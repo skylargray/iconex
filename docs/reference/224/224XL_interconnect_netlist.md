@@ -82,6 +82,12 @@ Net summary: the **accumulate loop** is AC (accumulator Q) → adder A; the **ad
 ## 4.1 AC bus — accumulator output (AC0..AC19)
 Driver = accumulator reg Q output; load = adder A input (the feedback). 20 nets, all ✅ (owner trace).
 
+> **⚠ Session-0027 pin-role correction (ARU signature tables, 1467/1469):** the '163 **Q pin roles are
+> within-nibble REVERSED** relative to this table's labels — physically **pin14 = the nibble's bit 3 …
+> pin11 = bit 0** (and the adder-A pin roles reverse identically, so the net PAIRING below and the
+> arithmetic are unchanged; only the pin↔bit-weight map flips). Measured per-pin by
+> `tools/session0022_probes/e1_aru_signatures.py`.
+
 | Net | Driver | Load |
 |---|---|---|
 | AC0 | aru_U45.pin14 (QA) | aru_U19.pin5 (A0) |
@@ -108,6 +114,11 @@ Driver = accumulator reg Q output; load = adder A input (the feedback). 20 nets,
 ## 4.2 PP bus — sat-mux output (PP0..PP19)
 Driver = sat-mux Y output; loads = accumulator reg D input, **and** (PP3..PP18 only) result reg D input.
 20 nets, all ✅. (PP0,PP1,PP2,PP19 do **not** reach the result register — see §4.8.)
+
+> **⚠ Session-0027 chip-swap correction (ARU signature tables):** in the result-register column below
+> (and in §4.8), **aru_U43 ↔ aru_U44 are swapped** — physically **U43 carries the HIGH byte (PP11-18)
+> and U44 the LOW byte (PP3-10)**. Electrically inert relabeling; measured per-pin by
+> `tools/session0022_probes/e1_aru_signatures.py`.
 
 | Net | Driver | Load (accumulator) | Load (result reg) |
 |---|---|---|---|

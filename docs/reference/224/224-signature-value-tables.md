@@ -4,6 +4,15 @@
 > presumed single-glyph digitization errata of this transcription, each contradicted by sister pins of
 > the same net elsewhere in the table: **U3 pin 10** `00U0` (GND; U44/U30/U16 pin 10 all read `0000`)
 > and **U11 pin 6** `2PU6` (the C4/ net; U5.12, U11.7, U11.13 all read `29U6`).
+>
+> **Session-0027 verification note (the ARU datapath lock):** `tools/session0022_probes/
+> e1_aru_signatures.py` reproduces **1467 of the 1469 listed ARU pin signatures** (BOTH configurations;
+> the feedback table is **710/710 perfect**) from the netlist + the complement-domain bit-level datapath,
+> diag-3 stimulus with XREG=0x607F, analyzer CLOCK = ARUCK falls, window anchored at the RESET/ rise
+> (no-feedback N=62 / feedback N=90 — both +5V references confirmed jointly). The two exceptions are
+> single-glyph digitization errata, each contradicted by a same-net sister pin: **ARU-no-feedback
+> U51 pin 12** `33FC` (SR16 net; sister U52.12 matches the model's `35FC` stream) and **U39 pin 14**
+> `F1CU` (the NAND U41 gate-1 output net; sister U41.3 matches the model's `F1C0`).
 
 #### T&C Module — Version 8.2.1
 

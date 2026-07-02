@@ -1,0 +1,43 @@
+### sig224 self-test ###
+module             +5V   numeric       N  period  +5Vrepro  ground=0000
+------------------------------------------------------------------------
+ARU no-feedback    29F3  0x29C3      62   65535  True      True
+ARU feedback       3696  0x3696      90   65535  True      True
+T&C                FP54  0xCE54      30   65535  True      True
+DMEM               826P  0x826E    4096   65535  True      True
+FPC                96F6  0x96C6      98   65535  True      True
+------------------------------------------------------------------------
+GROUND (all-0) -> 0000 for all tested N: True
+
+PASS
+
+diag-3: L=29, F=30 steps, XREG=0x607F
+parsed: no-feedback 759 pins, feedback 710 pins
+pin map: 794 pins built; 759/759 listed pins mapped
+  variant PRLOAD=raw RAIL=cs DUAL3=0 CAPB=0: 1467/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=raw RAIL=cs DUAL3=0 CAPB=4: 1467/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=raw RAIL=cs DUAL3=3 CAPB=0: 1233/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=raw RAIL=cs DUAL3=3 CAPB=4: 1233/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=raw RAIL=inv_cs DUAL3=0 CAPB=0: 1051/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=raw RAIL=inv_cs DUAL3=0 CAPB=4: 1051/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=raw RAIL=inv_cs DUAL3=3 CAPB=0: 1051/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=raw RAIL=inv_cs DUAL3=3 CAPB=4: 1051/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=inv RAIL=cs DUAL3=0 CAPB=0: 891/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=inv RAIL=cs DUAL3=0 CAPB=4: 891/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=inv RAIL=cs DUAL3=3 CAPB=0: 891/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=inv RAIL=cs DUAL3=3 CAPB=4: 891/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=inv RAIL=inv_cs DUAL3=0 CAPB=0: 1015/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=inv RAIL=inv_cs DUAL3=0 CAPB=4: 1015/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=inv RAIL=inv_cs DUAL3=3 CAPB=0: 1015/1469 @rot=89 (steady in 33 frames)
+  variant PRLOAD=inv RAIL=inv_cs DUAL3=3 CAPB=4: 1015/1469 @rot=89 (steady in 33 frames)
+
+### CHAMPION: PRLOAD=raw RAIL=cs DUAL3=0 CAPB=0 @rot 89 ###
+
+[no-feedback(62)] MATCH 757  MISMATCH 2  not-modeled 0
+  mismatches (pin: table vs model [stream]):
+    U39.14: F1CU vs F1C0  [FEA_U39_A2]
+    U51.12: 33FC vs 35FC  [SR16]
+
+[feedback(90)] MATCH 710  MISMATCH 0  not-modeled 0
+
+scores -> e1c_scores.json
