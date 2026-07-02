@@ -1,0 +1,354 @@
+{
+ "V1-boot": {
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "block": "01845f20b65500848480d0400202020202000005091119025200c08000f010000000000000000000000000c0fe000020",
+  "w": {
+   "43": {
+    "cmag": 5,
+    "cs": 1,
+    "ofst": 256,
+    "typ": 1
+   },
+   "95": {
+    "cmag": 5,
+    "cs": 1,
+    "ofst": 258,
+    "typ": 1
+   },
+   "44": {
+    "cmag": 11,
+    "cs": 0,
+    "ofst": 61055,
+    "typ": 2
+   },
+   "96": {
+    "cmag": 11,
+    "cs": 1,
+    "ofst": 60287,
+    "typ": 2
+   },
+   "45": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 257,
+    "typ": 0
+   },
+   "97": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 259,
+    "typ": 0
+   }
+  },
+  "wcs": "8951bb8b8984bb8b895077178988a7058954510fb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31abfff77edbeffe31bfc7c272bbdff3250bcffbca7bcffd34cbcefaf153cc7982dbc87bb3cbcc45d040dd75c049d88a60594d75d04807c8f030dcf060191905c0494ceffefbea70701bcd470a6bcbf0001bdeb7fee0ed00101948f272b00ecdf44bdffd74cbcff8b15bc84333e0ddf8f479f84ffef96dfb31abfff333e807c8f47fdff3000bcc73100bcb4873d0ddfcb4c9d848f4794df873d807cdb3c0dcbe73a9d90cb4c94cbdb3c807cdb300dcb77399d90e73a94cbdb30807c87310ddf6ea69d84773994df8731807c6fa6bce7ffcfbe940000bdff7fe7befedf43bc7cc3a8bcff8a4dbcff2727bcefa73b3cc7b405bd879f14bcc406020dd704029d888e0394d70602807c15010dcf04019190040294ceffefbea70501bcd4e04cbcbf0201bdeb7feb8ed00301948fdb4c80ece31cbdff2725bcc3ff3abc8427170ddf13209f84ffef96df2717807c1320bdffcd00bc93cc00bce87b160ddf03259d84132094df7b16807ccf150dcb77149d90032594cbcf15807cd3090dcb13129d90771494cbd309807c7b0a0ddfde4c9d84131294df7b0a807cdf4cbce78000bdffbfcfbe94",
+  "toggles": 192
+ },
+ "V2": {
+  "display": "CONCERT HALLB1 P1 V2    LOW MID XOV HFD DEP PDL",
+  "block": "014c4c20b65506808080d02b023334262e000005091119025200c08000f010000000000000000000000000c0fe000020",
+  "w": {
+   "43": {
+    "cmag": 0,
+    "cs": 1,
+    "ofst": 256,
+    "typ": 1
+   },
+   "95": {
+    "cmag": 0,
+    "cs": 1,
+    "ofst": 258,
+    "typ": 1
+   },
+   "44": {
+    "cmag": 9,
+    "cs": 0,
+    "ofst": 61055,
+    "typ": 2
+   },
+   "96": {
+    "cmag": 9,
+    "cs": 1,
+    "ofst": 60287,
+    "typ": 2
+   },
+   "45": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 257,
+    "typ": 0
+   },
+   "97": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 259,
+    "typ": 0
+   }
+  },
+  "wcs": "8951bb8b8984bb8b895077178988a7058954510fb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31abfff77edbeffe31bfc7c272bbdff3250bcd3bca7bccbd34cbcefaf153cc7982dbc87bb3cbcc45d040de75c049d80a60594e75d04807c8f030de3060191845c0494e2ffefbea70701bcd43ca7bcbf0001bdff7fee0ed80101948f272b00ecdf44bdffd74cbcff8b15bc84333e0ddf8f479f84ffef96dfb31abfff333e807c8f47fdff4200bce34300bc98873d0ddfcb4c9d848f4794df873d807cdb3c0dd3e73a9d8ccb4c94d3db3c807cdb300dd377399d8ce73a94d3db30807c87310ddf6ea69d84773994df8731807c6fa6bce7ffcfbe940000bdff7fe7befedf43bc7cc3a8bcdb8a4dbccf2727bcefa73b3cc7b405bd879f14bcc406020de704029d808e0394e70602807c15010de304019184040294e2ffefbea70501bcd4ac4dbcbf0201bdff7feb8ed80301948fdb4c80ece31cbdff2725bcc3ff3abc8427170ddf13209f84ffef96df2717807c1320bdffbb00bcabba00bcd07b160ddf03259d84132094df7b16807ccf150dd377149d8c032594d3cf15807cd3090dd313129d8c771494d3d309807c7b0a0ddfde4c9d84131294df7b0a807cdf4cbce78000bdffbfcfbe94",
+  "toggles": 192
+ },
+ "V3": {
+  "display": "CONCERT HALLB1 P1 V3    LOW MID XOV HFD DEP PDL",
+  "block": "01906820b65500848480d0040202020202000005091119025200c08000f010000000000000000000000000c0fe000020",
+  "w": {
+   "43": {
+    "cmag": 5,
+    "cs": 1,
+    "ofst": 256,
+    "typ": 1
+   },
+   "95": {
+    "cmag": 5,
+    "cs": 1,
+    "ofst": 258,
+    "typ": 1
+   },
+   "44": {
+    "cmag": 13,
+    "cs": 0,
+    "ofst": 61055,
+    "typ": 2
+   },
+   "96": {
+    "cmag": 13,
+    "cs": 1,
+    "ofst": 60287,
+    "typ": 2
+   },
+   "45": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 257,
+    "typ": 0
+   },
+   "97": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 259,
+    "typ": 0
+   }
+  },
+  "wcs": "8951bb8b8984bb8b895077178988a7058954510fb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31abfff77edbeffe31bfc7c272bbdff3250bcffbca7bcffd34cbcefaf153cc7982dbc87bb3cbcc45d040dff5c049d7ca60594ff5d04807c8f030dff0601917c5c0494feffefbea70701bcd470a6bcbf0001bdeb7fee0ec80101948f272b00ecdf44bdffd74cbcff8b15bc84333e0ddf8f479f84ffef96dfb31abfff333e807c8f47fdff4a00bcf74900bc84873d0ddfcb4c9d848f4794df873d807cdb3c0dbfe73a9d9ccb4c94bfdb3c807cdb300dbf77399d9ce73a94bfdb30807c87310ddf6ea69d84773994df8731807c6fa6bce7ffcfbe940000bdff7fe7befedf43bc7cc3a8bcff8a4dbcff2727bcefa73b3cc7b405bd879f14bcc406020dff04029d7c8e0394ff0602807c15010dff0401917c040294feffefbea70501bcd4e04cbcbf0201bdeb7feb8ec80301948fdb4c80ece31cbdff2725bcc3ff3abc8427170ddf13209f84ffef96df2717807c1320bdffb500bccfb400bcac7b160ddf03259d84132094df7b16807ccf150dbf77149d9c032594bfcf15807cd3090dbf13129d9c771494bfd309807c7b0a0ddfde4c9d84131294df7b0a807cdf4cbce78000bdffbfcfbe94",
+  "toggles": 192
+ },
+ "V4": {
+  "display": "CONCERT HALLB1 P1 V4    LOW MID XOV HFD DEP PDL",
+  "block": "01808020b65512808080c0040275624132000007081222025200c08000f010000000000000000000000000c0fe000020",
+  "w": {
+   "43": {
+    "cmag": 0,
+    "cs": 1,
+    "ofst": 256,
+    "typ": 1
+   },
+   "95": {
+    "cmag": 0,
+    "cs": 1,
+    "ofst": 258,
+    "typ": 1
+   },
+   "44": {
+    "cmag": 16,
+    "cs": 0,
+    "ofst": 61055,
+    "typ": 2
+   },
+   "96": {
+    "cmag": 16,
+    "cs": 1,
+    "ofst": 60287,
+    "typ": 2
+   },
+   "45": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 257,
+    "typ": 0
+   },
+   "97": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 259,
+    "typ": 0
+   }
+  },
+  "wcs": "8951bb8b8984bb8b895077178988a7058954510fb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31abfff77edbeffe31bfc7c272bbdff6451bccf9aa7bc9fd34cbcefaf153cc7982dbc87bb3cbcc45d040dff5c049d7ca60594ff5d04807c8f030dff0601917c5c0494feffefbea70701bcd4d4a8bcbf0001bdff7fee0ebc0101948f272b00ecdf44bdffd74cbcff8b15bc84333e0ddf8f479f84ffef96dfb31abfff333e807c8f47fdff6a00bcd36b00bca8873d0ddfcb4c9d848f4794df873d807cdb3c0dbfe73a9d9ccb4c94bfdb3c807cdb300dbf77399d9ce73a94bfdb30807c87310ddf6ea69d84773994df8731807c6fa6bcdfffcfbe9c0000bdff7fe7befedf43bc7ce5a8bcbfce4dbc8b2727bcefa73b3cc7b405bd879f14bcc406020dff04029d7c8e0394ff0602807c15010dff0401917c040294feffefbea70501bcd4444fbcbf0201bdff7feb8ebc0301948fdb4c80ece31cbdff2725bcc3ff3abc8427170ddf13209f84ffef96df2717807c1320bdff9300bc9b9200bce07b160ddf03259d84132094df7b16807ccf150dbf77149d9c032594bfcf15807cd3090dbf13129d9c771494bfd309807c7b0a0ddfde4c9d84131294df7b0a807cdf4cbcdf8000bdffbfcfbe9c",
+  "toggles": 192
+ },
+ "V5": {
+  "display": "CONCERT HALLB1 P1 V5    LOW MID XOV HFD DEP PDL",
+  "block": "01c0b020b65500848480d0400202020202000005091119025200c08000f010000000000000000000000000c0fe000020",
+  "w": {
+   "43": {
+    "cmag": 2,
+    "cs": 1,
+    "ofst": 256,
+    "typ": 1
+   },
+   "95": {
+    "cmag": 2,
+    "cs": 1,
+    "ofst": 258,
+    "typ": 1
+   },
+   "44": {
+    "cmag": 22,
+    "cs": 0,
+    "ofst": 61055,
+    "typ": 2
+   },
+   "96": {
+    "cmag": 22,
+    "cs": 1,
+    "ofst": 60287,
+    "typ": 2
+   },
+   "45": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 257,
+    "typ": 0
+   },
+   "97": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 259,
+    "typ": 0
+   }
+  },
+  "wcs": "8951bb8b8984bb8b895077178988a7058954510fb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31abfff77edbeffe31bfc7c272bbdff3250bcffbca7bcffd34cbcefaf153cc7982dbc87bb3cbcc45d040dd75c049d88a60594d75d04807c8f030dcf060191905c0494ceffefbea70701bcd470a6bcbf0001bdf77fee0ea40101948f272b00ecdf44bdffd74cbcff8b15bc84333e0ddf8f479f84ffef96dfb31abfff333e807c8f47fdff7a00bcb37b00bcc8873d0ddfcb4c9d848f4794df873d807cdb3c0dbfe73a9d9ccb4c94bfdb3c807cdb300dbf77399d9ce73a94bfdb30807c87310ddf6ea69d84773994df8731807c6fa6bce7ffcfbe940000bdff7fe7befedf43bc7cc3a8bcff8a4dbcff2727bcefa73b3cc7b405bd879f14bcc406020dd704029d888e0394d70602807c15010dcf04019190040294ceffefbea70501bcd4e04cbcbf0201bdf77feb8ea40301948fdb4c80ece31cbdff2725bcc3ff3abc8427170ddf13209f84ffef96df2717807c1320bdff8300bcbf8400bcbc7b160ddf03259d84132094df7b16807ccf150dbf77149d9c032594bfcf15807cd3090dbf13129d9c771494bfd309807c7b0a0ddfde4c9d84131294df7b0a807cdf4cbce78000bdffbfcfbe94",
+  "toggles": 192
+ },
+ "V6": {
+  "display": "CONCERT HALLB1 P1 V6    LOW MID XOV HFD DEP PDL",
+  "block": "014c4c20b65506b0b080d02b023334262e000005091119025200c08000f010000000000000000000000000c1fe000020",
+  "w": {
+   "43": {
+    "cmag": 0,
+    "cs": 1,
+    "ofst": 256,
+    "typ": 1
+   },
+   "95": {
+    "cmag": 0,
+    "cs": 1,
+    "ofst": 258,
+    "typ": 1
+   },
+   "44": {
+    "cmag": 9,
+    "cs": 0,
+    "ofst": 61055,
+    "typ": 2
+   },
+   "96": {
+    "cmag": 9,
+    "cs": 1,
+    "ofst": 60287,
+    "typ": 2
+   },
+   "45": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 257,
+    "typ": 0
+   },
+   "97": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 259,
+    "typ": 0
+   }
+  },
+  "wcs": "8951bb8b8984bb8b895077178988a7058954510fb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31abfff77edbeffe31bfc7c272bbdff3250bcd3bca7bccbd34cbcefaf153cc7982dbc87bb3cbcc45d040de75c049d80a60594e75d04807c8f030de3060191845c0494e2ffefbea70701bcd43ca7bcbf0001bdff7fee0ed80101948f272b00ecdf44bdffd74cbcff8b15bc84333e0ddf8f479f84ffef96dfb31abfff333e807c8f47fdff0e00bcf30f00bc88873d0ddfcb4c9d848f4794df873d807cdb3c0dd3e73a9d8ccb4c94d3db3c807cdb300dd377399d8ce73a94d3db30807c87310ddf6ea69d84773994df8731807c6fa6bce7ffcfbe940000bdff7fe7befedf43bc7cc3a8bcdb8a4dbccf2727bcefa73b3cc7b405bd879f14bcc406020de704029d808e0394e70602807c15010de304019184040294e2ffefbea70501bcd4ac4dbcbf0201bdff7feb8ed80301948fdb4c80ece31cbdff2725bcc3ff3abc8427170ddf13209f84ffef96df2717807c1320bdffef00bc9bf000bce07b160ddf03259d84132094df7b16807ccf150dd377149d8c032594d3cf15807cd3090dd313129d8c771494d3d309807c7b0a0ddfde4c9d84131294df7b0a807cdf4cbce78000bdffbfcfbe94",
+  "toggles": 193
+ },
+ "V7": {
+  "display": "CONCERT HALLB1 P1 V7    LOW MID XOV HFD DEP PDL",
+  "block": "01b0b020b655004c4c80d0400202020202000005091119025200c08000f010000000000000000000000000c1fe000020",
+  "w": {
+   "43": {
+    "cmag": 0,
+    "cs": 1,
+    "ofst": 256,
+    "typ": 1
+   },
+   "95": {
+    "cmag": 0,
+    "cs": 1,
+    "ofst": 258,
+    "typ": 1
+   },
+   "44": {
+    "cmag": 22,
+    "cs": 0,
+    "ofst": 61055,
+    "typ": 2
+   },
+   "96": {
+    "cmag": 22,
+    "cs": 1,
+    "ofst": 60287,
+    "typ": 2
+   },
+   "45": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 257,
+    "typ": 0
+   },
+   "97": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 259,
+    "typ": 0
+   }
+  },
+  "wcs": "8951bb8b8984bb8b895077178988a7058954510fb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31abfff77edbeffe31bfc7c272bbdff3250bcffbca7bcffd34cbcefaf153cc7982dbc87bb3cbcc45d040dd75c049d88a60594d75d04807c8f030dcf060191905c0494ceffefbea70701bcd470a6bcbf0001bdff7fee0ea40101948f272b00ecdf44bdffd74cbcff8b15bc84333e0ddf8f479f84ffef96dfb31abfff333e807c8f47fdff0400bc8b0500bcf0873d0ddfcb4c9d848f4794df873d807cdb3c0dbfe73a9d9ccb4c94bfdb3c807cdb300dbf77399d9ce73a94bfdb30807c87310ddf6ea69d84773994df8731807c6fa6bce7ffcfbe940000bdff7fe7befedf43bc7cc3a8bcff8a4dbcff2727bcefa73b3cc7b405bd879f14bcc406020dd704029d888e0394d70602807c15010dcf04019190040294ceffefbea70501bcd4e04cbcbf0201bdff7feb8ea40301948fdb4c80ece31cbdff2725bcc3ff3abc8427170ddf13209f84ffef96df2717807c1320bdfffb00bc8bfa00bcf07b160ddf03259d84132094df7b16807ccf150dbf77149d9c032594bfcf15807cd3090dbf13129d9c771494bfd309807c7b0a0ddfde4c9d84131294df7b0a807cdf4cbce78000bdffbfcfbe94",
+  "toggles": 193
+ },
+ "V1": {
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "block": "01845f20b65500848480d0400202020202000005091119025200c08000f010000000000000000000000000c0fe000020",
+  "w": {
+   "43": {
+    "cmag": 5,
+    "cs": 1,
+    "ofst": 256,
+    "typ": 1
+   },
+   "95": {
+    "cmag": 5,
+    "cs": 1,
+    "ofst": 258,
+    "typ": 1
+   },
+   "44": {
+    "cmag": 11,
+    "cs": 0,
+    "ofst": 61055,
+    "typ": 2
+   },
+   "96": {
+    "cmag": 11,
+    "cs": 1,
+    "ofst": 60287,
+    "typ": 2
+   },
+   "45": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 257,
+    "typ": 0
+   },
+   "97": {
+    "cmag": 28,
+    "cs": 1,
+    "ofst": 259,
+    "typ": 0
+   }
+  },
+  "wcs": "8951bb8b8984bb8b895077178988a7058954510fb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31affffb31abfff77edbeffe31bfc7c272bbdff3250bcffbca7bcffd34cbcefaf153cc7982dbc87bb3cbcc45d040dd75c049d88a60594d75d04807c8f030dcf060191905c0494ceffefbea70701bcd470a6bcbf0001bdeb7fee0ed00101948f272b00ecdf44bdffd74cbcff8b15bc84333e0ddf8f479f84ffef96dfb31abfff333e807c8f47fdff1800bc8b1900bcf0873d0ddfcb4c9d848f4794df873d807cdb3c0dcbe73a9d90cb4c94cbdb3c807cdb300dcb77399d90e73a94cbdb30807c87310ddf6ea69d84773994df8731807c6fa6bce7ffcfbe940000bdff7fe7befedf43bc7cc3a8bcff8a4dbcff2727bcefa73b3cc7b405bd879f14bcc406020dd704029d888e0394d70602807c15010dcf04019190040294ceffefbea70501bcd4e04cbcbf0201bdeb7feb8ed00301948fdb4c80ece31cbdff2725bcc3ff3abc8427170ddf13209f84ffef96df2717807c1320bdffe700bc8fe600bcec7b160ddf03259d84132094df7b16807ccf150dcb77149d90032594cbcf15807cd3090dcb13129d90771494cbd309807c7b0a0ddfde4c9d84131294df7b0a807cdf4cbce78000bdffbfcfbe94",
+  "toggles": 192
+ }
+}

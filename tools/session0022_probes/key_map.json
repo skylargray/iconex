@@ -1,0 +1,290 @@
+{
+ "0x20": {
+  "bit": 0,
+  "col": 0,
+  "press": "0x20",
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "changed": false,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x21": {
+  "bit": 0,
+  "col": 1,
+  "press": "0x21",
+  "display": "CONCERT HALLB1 PROGRAM 1 OW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x22": {
+  "bit": 0,
+  "col": 2,
+  "press": "0x22",
+  "display": "HALLS       BANK 1       OW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x23": {
+  "bit": 0,
+  "col": 3,
+  "press": "0x23",
+  "display": "LF DECAY     3.0  SEC         D XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x24": {
+  "bit": 1,
+  "col": 0,
+  "press": "0x24",
+  "display": "LF DECAY     3.0  SEC         D XOV HFD DEP PDL",
+  "changed": false,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x25": {
+  "bit": 1,
+  "col": 1,
+  "press": "0x25",
+  "display": "RECALL FROM B1 R1 EMPTY       D XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x26": {
+  "bit": 1,
+  "col": 2,
+  "press": "0x26",
+  "display": "CONCERT HALLB1 P1 V1          D XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x27": {
+  "bit": 1,
+  "col": 3,
+  "press": "0x27",
+  "display": "MID DECAY    2.0  SEC         D XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x28": {
+  "bit": 2,
+  "col": 0,
+  "press": "0x28",
+  "display": "MID DECAY    2.0  SEC         D XOV HFD DEP PDL",
+  "changed": false,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x29": {
+  "bit": 2,
+  "col": 1,
+  "press": "0x29",
+  "display": "MID DECAY    2.0  SEC         D XOV HFD DEP PDL",
+  "changed": false,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x2a": {
+  "bit": 2,
+  "col": 2,
+  "press": "0x2a",
+  "display": "CONCERT HALLB1 P1 V1          D XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x2b": {
+  "bit": 2,
+  "col": 3,
+  "press": "0x2b",
+  "display": "CROSSOVER   720   HZ          D XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x2c": {
+  "bit": 3,
+  "col": 0,
+  "press": "0x2c",
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x2d": {
+  "bit": 3,
+  "col": 1,
+  "press": "0x2d",
+  "display": "CONCERT HALLB1 P1 V6    LOW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x2e": {
+  "bit": 3,
+  "col": 2,
+  "press": "0x2e",
+  "display": "DYN DECAY[1]1=ON 0=OFF   OW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x2f": {
+  "bit": 3,
+  "col": 3,
+  "press": "0x2f",
+  "display": "TREBLE DECAY6.30 KHZ          D XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x30": {
+  "bit": 4,
+  "col": 0,
+  "press": "0x30",
+  "display": "CONCERT HALLB1 P1 V2    LOW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x31": {
+  "bit": 4,
+  "col": 1,
+  "press": "0x31",
+  "display": "CONCERT HALLB1 P1 V7    LOW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x32": {
+  "bit": 4,
+  "col": 2,
+  "press": "0x32",
+  "display": "VERIFY BANKSAGAINST TAPE OW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x33": {
+  "bit": 4,
+  "col": 3,
+  "press": "0x33",
+  "display": "DEPTH        33               D XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x34": {
+  "bit": 5,
+  "col": 0,
+  "press": "0x34",
+  "display": "CONCERT HALLB1 P1 V3    LOW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x35": {
+  "bit": 5,
+  "col": 1,
+  "press": "0x35",
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x36": {
+  "bit": 5,
+  "col": 2,
+  "press": "0x36",
+  "display": "CONCERT HALLB1 P1 V1     OW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x37": {
+  "bit": 5,
+  "col": 3,
+  "press": "0x37",
+  "display": "PREDELAY    024  MSEC         D XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x38": {
+  "bit": 6,
+  "col": 0,
+  "press": "0x38",
+  "display": "CONCERT HALLB1 P1 V4    LOW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x39": {
+  "bit": 6,
+  "col": 1,
+  "press": "0x39",
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x3a": {
+  "bit": 6,
+  "col": 2,
+  "press": "0x3a",
+  "display": "ENTER SECONDFUNCTION     OW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x3b": {
+  "bit": 6,
+  "col": 3,
+  "press": "0x3b",
+  "display": "ENTER SECONDFUNCTION     OW MID XOV HFD DEP PDL",
+  "changed": false,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x3c": {
+  "bit": 7,
+  "col": 0,
+  "press": "0x3c",
+  "display": "CONCERT HALLB1 P1 V1     OW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x3d": {
+  "bit": 7,
+  "col": 1,
+  "press": "0x3d",
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "changed": true,
+  "hdr": 1,
+  "page34": 0
+ },
+ "0x3e": {
+  "bit": 7,
+  "col": 2,
+  "press": "0x3e",
+  "display": "CONCERT HALLPAGE 2      LOW MID CHO HFB DIF DEF",
+  "changed": true,
+  "hdr": 1,
+  "page34": 1
+ },
+ "0x3f": {
+  "bit": 7,
+  "col": 3,
+  "press": "0x3f",
+  "display": "CONCERT HALLPAGE 2      LOW MID CHO HFB DIF DEF",
+  "changed": false,
+  "hdr": 1,
+  "page34": 1
+ }
+}

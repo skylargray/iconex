@@ -1,0 +1,130 @@
+{
+ "B1P1": {
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "id": 1
+ },
+ "B1P2": {
+  "display": "BRIGHT HALL B1 P2 V1    LOW MID XOV HFD DEP PDL",
+  "id": 32
+ },
+ "B1P3": {
+  "display": "DARK HALL   B1 P3 V1    LOW MID XOV HFD DEP PDL",
+  "id": 5
+ },
+ "B1P4": {
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "id": 1
+ },
+ "B1P5": {
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "id": 1
+ },
+ "B1P6": {
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "id": 1
+ },
+ "B1P7": {
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "id": 1
+ },
+ "B1P8": {
+  "display": "CONCERT HALLB1 P1 V1    LOW MID XOV HFD DEP PDL",
+  "id": 1
+ },
+ "B2P1": {
+  "display": "ROOM        B2 P1 V1    LOW MID XOV HFD DEP PDL",
+  "id": 4
+ },
+ "B2P2": {
+  "display": "SMALL ROOM  B2 P2 V1    LOW MID XOV HFD DEP PDL",
+  "id": 64
+ },
+ "B2P3": {
+  "display": "CHAMBER     B2 P3 V1    LOW MID XOV HFD ATT PDL",
+  "id": 8
+ },
+ "B2P4": {
+  "display": "RICH CHAMBERB2 P4 V1    LOW MID XOV HFD ATT PDL",
+  "id": 128
+ },
+ "B2P5": {
+  "display": "DARK CHAMBERB2 P5 V1    LOW MID XOV HFD ATT PDL",
+  "id": 65
+ },
+ "B2P6": {
+  "display": "INVERSE ROOMB2 P6 V1    LOW MID XOV HFD ATT PDL",
+  "id": 129
+ },
+ "B2P7": {
+  "display": "ROOM        B2 P1 V1    LOW MID XOV HFD DEP PDL",
+  "id": 4
+ },
+ "B2P8": {
+  "display": "ROOM        B2 P1 V1    LOW MID XOV HFD DEP PDL",
+  "id": 4
+ },
+ "B3P1": {
+  "display": "PLATE       B3 P1 V1    LOW MID XOV HFD ATT PDL",
+  "id": 2
+ },
+ "B3P2": {
+  "display": "SMALL PLATE B3 P2 V1    LOW MID XOV HFD ATT PDL",
+  "id": 3
+ },
+ "B3P3": {
+  "display": "CD PLATE A  B3 P3 V1    LOW MID XOV HFD ATT PDL",
+  "id": 33
+ },
+ "B3P4": {
+  "display": "CD PLATE B  B3 P4 V1    LOW MID XOV HFD ATT PDL",
+  "id": 16
+ },
+ "B3P5": {
+  "display": "RICH PLATE  B3 P5 V1    LOW MID XOV HFD ATT PDL",
+  "id": 17
+ },
+ "B3P6": {
+  "display": "PLATE       B3 P1 V1    LOW MID XOV HFD ATT PDL",
+  "id": 2
+ },
+ "B3P7": {
+  "display": "PLATE       B3 P1 V1    LOW MID XOV HFD ATT PDL",
+  "id": 2
+ },
+ "B3P8": {
+  "display": "PLATE       B3 P1 V1    LOW MID XOV HFD ATT PDL",
+  "id": 2
+ },
+ "B4P1": {
+  "display": "CHORUS&ECHO B4 P1 V1            CHO HFB DIF",
+  "id": 12
+ },
+ "B4P2": {
+  "display": "RES CHORDS  B4 P2 V1    [     NOTE LEVELS      ]",
+  "id": 20
+ },
+ "B4P3": {
+  "display": "M BAND DELAYB4 P3 V1    [     BAND LEVELS      ]",
+  "id": 36
+ },
+ "B4P4": {
+  "display": "CHORUS&ECHO B4 P1 V1            CHO HFB DIF",
+  "id": 12
+ },
+ "B4P5": {
+  "display": "CHORUS&ECHO B4 P1 V1            CHO HFB DIF",
+  "id": 12
+ },
+ "B4P6": {
+  "display": "CHORUS&ECHO B4 P1 V1            CHO HFB DIF",
+  "id": 12
+ },
+ "B4P7": {
+  "display": "CHORUS&ECHO B4 P1 V1            CHO HFB DIF",
+  "id": 12
+ },
+ "B4P8": {
+  "display": "CHORUS&ECHO B4 P1 V1            CHO HFB DIF",
+  "id": 12
+ }
+}

@@ -11,8 +11,9 @@
 > diag-3 stimulus with XREG=0x607F, analyzer CLOCK = ARUCK falls, window anchored at the RESET/ rise
 > (no-feedback N=62 / feedback N=90 — both +5V references confirmed jointly). The two exceptions are
 > single-glyph digitization errata, each contradicted by a same-net sister pin: **ARU-no-feedback
-> U51 pin 12** `33FC` (SR16 net; sister U52.12 matches the model's `35FC` stream) and **U39 pin 14**
-> `F1CU` (the NAND U41 gate-1 output net; sister U41.3 matches the model's `F1C0`).
+> U51 pin 12** `33FC` (SR16 net; sister U52.12 matches the model's `35FC` stream; this was a real typo in
+> the service manual) and **U39 pin 14** `F1CU` (the NAND U41 gate-1 output net; sister U41.3 matches
+> the model's `F1C0`; this was an OCR error). Both exceptions fixed below.
 
 #### T&C Module — Version 8.2.1
 
@@ -341,7 +342,7 @@ U36  1  0000   16  29F3        U37  1  0000   16  29F3
 
 U38  1  HH7P   16  29F3        U39  1  F20A   16  29F3
      2  968C   15  2H9U             2  3PH5   15  F772
-     3  2A87   14  3P2C             3  95C9   14  F1CU
+     3  2A87   14  3P2C             3  95C9   14  F1C0
      4  4P6P   13  72F6             4  590F   13  6UA4
      5  45PP   12  1789             5  U2F4   12  1789
      6  2U7H   11  8160             6  8721   11  7P86
@@ -398,7 +399,7 @@ U48  1  3108   16  29F3        U49  1  3108   16  29F3
 
 U50  1  UF7F   14  29F3        U51  1  6U15   14  29F3
      2  4471   13  4471             2  90U2   13  90U2
-     3  2U7H   12  57U8             3  45PP   12  33FC
+     3  2U7H   12  57U8             3  45PP   12  35FC
      4  6U15   11  8160             4  75F4   11  1789
      5  4471   10  4471             5  90U2   10  90U2
      6  968C    9  75F4             6  2A87    9  57U8

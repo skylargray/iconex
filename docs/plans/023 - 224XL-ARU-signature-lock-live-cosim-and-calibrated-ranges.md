@@ -1,7 +1,17 @@
 # 023 — 224XL: the ARU datapath signature lock, the live co-sim, and calibrated ranges
 
-**Status:** READY TO EXECUTE (written 2026-07-02 at the close of sessions 0024/0025/0026 — all
-three the same day; read their docs in order before starting).
+> **✅ EXECUTED 2026-07-02 (session 0027)** — see `docs/sessions/0027 - the-complement-domain-
+> and-the-aru-pin-lock.md`. E1 COMPLETE: **1467/1469 ARU pins match (feedback table 710/710
+> perfect)** and the sub-LSB mysteries dissolved — **the DAB runs in the COMPLEMENT (active-low)
+> domain, where the traced wiring reproduces the E83 goldens by pure truncation** ('+4 round' /
+> '+3 dual' / '-M-1' were CPU-domain bookkeeping). E2a-c: the true live co-sim (broadband 2.68
+> vs documented 2.6; LFO ~325k instr vs doc ~345k; chorus sweep tracks 0x3CD4). E3: page-1
+> byte↔display calibration EXACT at documented endpoints (+ soft-takeover pickup discovered);
+> LARC key map + full program-name/id map (D2c anomalies dissolved). E4: variation oracle
+> predictions confirmed (V2/V4 shelf-zero cmag 0; V6/V7 DynDecay toggles; V2 render 1.78/1.59
+> vs doc 1.7/1.7; V5 bb 7.0-7.2 vs doc 6.5 avg). BANKED: the ENGINE COMPLEMENT-DOMAIN RE-SYNC
+> (`e5_engine_vs_physical.py` found ±1-2 LSB divergence — the spec + regression), E1d
+> DMEM/FPC tables, E2d dynamics, E3b clean-ups (registry #29-#35 in the session doc).
 **Read first:** `docs/sessions/0024 - the-known-answer-oracles-and-the-pp-bus-capture-correction.md`,
 `0025 - the-csign-lag-falsification-and-the-shelf-injection-law.md`,
 `0026 - the-full-parameter-surface-all-five-larc-pages.md`. The engine of record is
