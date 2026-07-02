@@ -148,7 +148,7 @@
 
 | signal | module | kind | value_source | conf | note |
 |---|---|---|---|---|---|
-| FPCCK | T&C->FPC | clock | FPC CK, once per 293 ns system clock | high | basic FPC clock from T&C |
+| FPCCK | T&C->FPC | clock | FPC CK = MS5 (tc_U39.pin5 Q1; owner-traced 2026-07-01), once per 293 ns system clock | high | basic FPC clock from T&C = the MS5 net crossing the backplane. The FPC's fpcCLKA edge — and thus the D/A double-buffer capture inside a WR DA/ step — lands at MS5, when RDRREG/ (asserted ~MS2-MS8) has the result register on the DAB. |
 | RESET/ | T&C->FPC | strobe | once per sample (29.3 us) | med | active-LOW; syncs the timing cycle at counter 0 (WCS RESET at count 99) |
 | STBGN | FPC ROM U6 | control | ROM (counter) | low | strobe-begin; APPROX edges (~38, ~52, ~88) |
 | STCONV/ | FPC ROM U6 -> AIN SAR | strobe | ROM (counter) | low | §3.8: brought HIGH at counter state 0 to START the AIN SAR conversion, held through the convert window, then back low (13th CNVCK resets SAR). [was inverted] APPROX edges |
@@ -234,7 +234,7 @@ The model generates **fixed-cadence** signals straight from the MS/AS counters; 
 | DIN VALID | fig33 | **NO (decode)** | DRAM write data on the DAB (from ARU result reg) |
 | RESET/ | fig33 | yes | timing |
 | CPC VALID (0-7) | fig33 | yes | CPC counter |
-| FPCCK | fig35 | yes | FPC CK, once per 293 ns system clock |
+| FPCCK | fig35 | yes | FPC CK = MS5 (tc_U39.pin5 Q1; owner-traced 2026-07-01), once per 293 ns system clock |
 | RESET/ | fig35 | yes | once per sample (29.3 us) |
 | STBGN | fig35 | yes | ROM (counter) |
 | STCONV/ | fig35 | yes | ROM (counter) |

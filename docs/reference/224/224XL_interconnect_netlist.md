@@ -600,7 +600,7 @@ strobes) are generated on T&C/SBC → **§G3D**.
 
 ## 5.0 Dataflow (orientation)
 ```
- CPC counter dmem_U51/U65 (+1 per RESET edge) ──A──►┐
+ CPC counter dmem_U51/U65 (+1 per dmemRESET pulse = once per frame event) ──A──►┐
  OFST0..15/ (microword offset, complemented)  ──B──►│ adders dmem_U49→U50→U63→U64  (Cin=+5V)
                                                      │  Σ = address A0..A15  ( = CPC − OFST )
                        row/col mux dmem_U18/U36 (SEL=ROW SEL) ──AD0..7──► DRAM A0..7
@@ -633,14 +633,18 @@ operand nets named `_cpc0.._cpc15` (my naming; the trace gives them pin-to-pin, 
 >   §6D.3) is **owner-trace-only** — its T&C origin is unconfirmed (§G3D).
 
 ## 5.1 CPC — current-position counter `dmem_U51`, `dmem_U65` (74LS393) ✅
-16-bit ripple counter: `dmem_U51` = bits 0–7, `dmem_U65` = bits 8–15. Clocked by the **RESET** net on 1CP
-(a '393 counts on the **falling** edge of CP — datasheet); async clear = **CPC CLR** on MR. ⚠ "RESET" is the
-*count clock* here, not the clear — and is distinct from `RESET/` (slashed). Its source/role beyond the pin is
-**not traced** (§G3D).
+16-bit ripple counter: `dmem_U51` = bits 0–7, `dmem_U65` = bits 8–15. Clocked by the **`dmemRESET`** net on 1CP
+(a '393 counts on the **falling** edge of CP — datasheet); async clear = **CPC CLR** on MR.
+> **✅ RENAMED + SOURCE TRACED (owner, 2026-07-01):** the schematic labels this net "RESET", but it is
+> **sheet-local to the DMEM** — now named **`dmemRESET`** in the pinout to avoid collision with the T&C's
+> combinational `RESET` (tc_U34, §2T.5). **`dmemRESET` = `dmem_U58A` (pin1 ← backplane `RESET/`, pin2 → dmemRESET)**
+> — the inversion of the registered per-frame reset pulse from `tc_U25` FF1 (§3.11). ⇒ **the CPC count clock is
+> the per-frame RESET event, fully traced** (closes the old ⚪). CPC counts on the falling edge of dmemRESET
+> = the rising edge of `RESET/` = the END of the frame-reset pulse (≈MS6 of the step after the reset microword).
 
 | Net | Pins | Role |
 |---|---|---|
-| **RESET** | dmem_U51.pin1 (1CP) | CPC count clock (falling edge); ⚪ source = §G3D |
+| **dmemRESET** (was "RESET") | dmem_U51.pin1 (1CP) ← dmem_U58A.pin2 ← backplane `RESET/` (tc_U25 FF1, §3.11) | CPC count clock (falling edge) — ✅ traced 2026-07-01 |
 | (ripple 7→8) | dmem_U51.pin8 (2QD) → dmem_U65.pin1 (1CP) | low-byte carry clocks high byte |
 | **CPC CLR** | dmem_U51.pin2 (1MR), dmem_U51.pin12 (2MR), dmem_U65.pin2 (1MR), dmem_U65.pin12 (2MR) | async clear; ⚪ source = §G3D (driven by dmem_U58F.pin12) |
 | _cascade U51 | dmem_U51.pin13 (2CP) = dmem_U51.pin6 (1QD) | nibble ripple |
@@ -649,9 +653,13 @@ operand nets named `_cpc0.._cpc15` (my naming; the trace gives them pin-to-pin, 
 > **★ POST-CONFIRMED (2026-06-29): in single-step, CPC advances ONE position per `OUT 0x03` strobe.** The firmware
 > DMEM test (0x0B75) walks 64K contiguous cells with a **constant** offset and **one strobe per cell** (probed live —
 > the data increments each strobe while OFST is held), so the address can only walk via CPC. The full-64K sweep makes
-> CPC **wrap** exactly, which is how the write pass and the read/verify pass realign cell-for-cell. (This pins the
-> ⚪ un-traced "RESET" count-clock source §G3D to a per-strobe edge in single-step; whether RUN mode advances CPC per
-> microinstruction or per audio sample is a separate, still-open question — not needed for POST.) A model that does
+> CPC **wrap** exactly, which is how the write pass and the read/verify pass realign cell-for-cell. **(UPDATED
+> 2026-07-01: the count clock is now TRACED — `dmemRESET` ← `RESET/` ← tc_U25 FF1, i.e. once per frame event — so
+> the RUN cadence question is CLOSED: +1 per program pass. This SHARPENS the single-step question instead: with a
+> MEMW-only test microword, tcWR=0 ⇒ the traced chain cannot pulse `RESET/` per strobe — so EITHER the single-cycle
+> machinery runs a full pass per strobe (one genuine frame event), or a POST scratch word fires the reset, or the
+> emulator's CPC++-per-strobe is an unanchored convention that E91 (a consistency test, cadence-blind) cannot
+> distinguish. Treat as a decode-work anchor, not settled.)** A model that does
 > `addr = (CPC + OFST_stored + 1) & 0xFFFF` with CPC++ per strobe **passes the DMEM test E91 un-suppressed**
 > (`tools/aru_post.py`).
 
@@ -790,7 +798,8 @@ Let the SBC read the current offset. **`dmem_U48`** buffers `OFST0–7/`→`DATA
 
 **Source:** same DMEM hand-trace, sheet 2. Turns the SBC I/O cycle (`ADR0–7/`, `IORC//IOWC/`) into the XREG/DPORT
 strobes + bus handshake. (The *other* device decode — the T&C `tc_U47/48/49` DAB-driver select named in plan §2 —
-is on 060-02475, **not opened** → remains ⚪ for net-group 2 proper.) Inputs `ADR0–7/`, `IORC//IOWC/`, `RESET` ← SBC (§G3D).
+is on 060-02475, **not opened** → remains ⚪ for net-group 2 proper.) Inputs `ADR0–7/`, `IORC//IOWC/` ← SBC bus;
+`RESET/` ← backplane (T&C tc_U25 FF1, §3.11), inverted on-board by `dmem_U58A` → **`dmemRESET`** (§2D.2; owner rename 2026-07-01).
 
 ## 2D.1 Address decoders `dmem_U55/U56/U57` (74LS138) ✅
 Shared address: pin1(A)=**ADR0/**, pin2(B)=**ADR1/**, pin3(C)=**ADR2/** (all three '138s).
@@ -813,8 +822,9 @@ Shared address: pin1(A)=**ADR0/**, pin2(B)=**ADR1/**, pin3(C)=**ADR2/** (all thr
 | dmem_U53 (74LS00) | U53A | pin1=dmem_U55.pin7(Y7), pin2=dmem_U53.pin6, pin3=dmem_U53.pin12 & pin4 |
 | | U53B | pin4=dmem_U53.pin3 & pin12, pin5=dmem_U55.pin9(Y6), pin6=dmem_U53.pin2 |
 | | U53C | pin8(3Y)=dmem_U54.pin5 & **HALT/**, pin9(3A)=dmem_U54.pin6, pin10(3B)=dmem_U55.pin11(Y4) |
-| | U53D | pin11(4Y)=dmem_U54.pin4, pin12(4A)=dmem_U53.pin3 & pin4, pin13(4B)=**RESET** (not RESET/) |
-| dmem_U58 (74S04) | U58C | pin5(3A)=**ADR3/** [&U55.6/U56.6], pin6(3Y)=dmem_U57.pin6 (=/ADR3) |
+| | U53D | pin11(4Y)=dmem_U54.pin4, pin12(4A)=dmem_U53.pin3 & pin4, pin13(4B)=**dmemRESET** (was drawn "RESET" — sheet-local; owner rename 2026-07-01) |
+| dmem_U58 (74S04) | **U58A** | **pin1(1A)=`RESET/` (backplane ← tc_U25 FF1 §3.11), pin2(1Y)=`dmemRESET`** — the board-local inversion of the per-frame reset pulse (→ CPC 1CP §5.1, halt-latch U53D.pin13); **owner-added 2026-07-01** (was missing from the trace) |
+| | U58C | pin5(3A)=**ADR3/** [&U55.6/U56.6], pin6(3Y)=dmem_U57.pin6 (=/ADR3) — schematic mislabels this section "U58B" |
 | | U58D | pin8(4Y)=dmem_U43.pin3, pin9(4A)=GND [& dmem_U43.pin9] (CAS-enable inverter; §6D) |
 | | U58E | pin10(5Y)=dmem_U52.pin12, pin11(5A)=dmem_U54.pin8 [& U55/56/57.pin4] |
 | | U58F | pin12(6Y)=**CPC CLR**, pin13(6A)=dmem_U55.pin13(Y2) |
@@ -876,7 +886,9 @@ DMEM-resident sections (sheet 2) + the three sheet-1 sections:
 
 # Net-group 3 — T&C: WCS store + microword field decode  ✅
 
-**Source:** owner hand-trace `docs/reference/224/224XL TC pinouts from 060-02475-D_1.txt` (board 060-02475-D,
+**Source:** owner hand-trace `docs/reference/224/224XL TC pinouts from 060-02475-D.txt`, sheet-2 section (from
+its line ~512; the separate `..._1.txt` / `Lexicon 224XL 060-2475D T-C Schematic 2.txt` fragments were mis-starts,
+deleted 2026-07-01) (board 060-02475-D,
 **sheet 2 of 2**; sheet 1 = the clock/PLL generator + FPC + some inverter sections, still `placeholder` ⚪).
 Re-keyed to verified `parts/*.v`; pin-label-audited (every chip matches its `.v`). Board prefix `tc_`. Every net
 = **✅ owner trace** unless marked. **Sheet-1 / SBC origins** (now mostly resolved in §6T) (`ARUCK`, `ARUCKE`, `ARUCKE/`, `AS0`,
@@ -1015,7 +1027,8 @@ bit-for-bit** (n = 0–15). Detail (tc_U45 = low byte):
 > and ARU `WA0/WA1` origin (§G3).
 
 ## 3.8 Control output register — `tc_U19` (74LS377) ✅
-/E(1) = **AS0**, CP(11) = **ARUCKE**.
+/E(1) = **AS0/**, CP(11) = **ARUCKE**. *(Owner re-verified 2026-07-01: the raw trace's `AS0/` is correct — this
+doc's earlier "AS0" was a transcription slip. Loads on ARUCKE edges while AS0/ is low, i.e. during the AS0 phase.)*
 | D pin | source | Q pin | output |
 |---|---|---|---|
 | D0(3) | tc_U34.pin3 | Q0(2) | **DP** |
@@ -1050,11 +1063,17 @@ bit-for-bit** (n = 0–15). Detail (tc_U45 = low byte):
 
 ## 3.11 RESET generator — `tc_U25` (74S74, FF-1) ✅
 1D(2) = **RESET**, 1CLK(3) = **DAB RSTB/** (= tcCLKA, §3.6 note), 1/PRE(4) = +5V, 1/CLR(1) = tc_U37.pin8 (= inv MS6), 1/Q(6) = **RESET/**.
-(FF-2 unused.) `RESET/` → tc_U19.pin8 (§3.8).
+(FF-2 unused.) `RESET/` → tc_U19.pin8 (§3.8) **+ backplane** (owner 2026-07-01: commonly-named nets cross the
+backplane) → FPC `U4.pin2` (input-cycle-counter frame sync, fig-3.5) and DMEM `dmem_U58A.pin1` → **`dmemRESET`**
+(CPC count clock + halt-latch input, §5.1/§2D.2).
 > ✅ **RESOLVED 2026-06-28 (§G-Q closed):** the apparent dual-drive was a sheet-2 mis-transcription — owner
 > corrected `tc_U19.pin9` to **`RESETD/`** (a *delayed reset*, not RESET). So `RESET` has a single driver
 > (`tc_U34.pin6`, = tcWR·OFST3/), and `RESETD/` (tc_U19.Q3) drives `tc_U53.pin13` (sheet 1, §6T.5). The reset
 > chain is **RESET → RESET/ (tc_U25 FF1) → RESETD/ (tc_U19 Q3)** — three distinct single-driver nets, no contention.
+> ✅ **COMPLETED 2026-07-01 (owner U58 trace):** the full cross-board frame-event tree is now closed:
+> **reset microword (tcWR·OFST3/) → `RESET` (comb; PC sync-clear via tc_U33) → `RESET/` (tc_U25 FF1, registered,
+> low from the DAB RSTB/ edge until the MS6 force-clear) → backplane → { FPC frame re-sync ∥ DMEM `dmemRESET`
+> (inv) → CPC +1 + halt-latch sync }.** One microword event drives all three per-frame mechanisms.
 
 ---
 
@@ -1157,11 +1176,19 @@ reference + the cross-board origin resolution (it closes most of §G3T).
 > ⚠ `ARUCK`, `ARUCKE`, `ARUCKE/` are **three distinct nets** (owner-confirmed): ARUCKE → (inv) ARUCKE/ → (inv)
 > ARUCK; ARUCK carries the same level as ARUCKE but is a separately-buffered net. (`tc_U41` = the PLL ÷15
 > counter, referenced at tc_U40.pin1/2/3; in the omitted clock block → §G3T.)
+> **✅ BACKPLANE CONVENTION (owner, 2026-07-01): ALL commonly-named nets cross the backplane** — that is how the
+> pinouts are written. In particular **`ARUCKE/` crosses the backplane** to the ARU, which regenerates its local
+> product-reg clock via `aru_U42` (74S86 XOR-as-inverter: 2B=ARUCKE/, 2A=+5V-via-1K → local "ARUCK"). The T&C's
+> own `ARUCK` (tc_U40.pin8) clocks only on-board loads (tc_U9/U13/U23). No cross-board net contention.
 
 ## 6T.2 MS-state generator → `MS0–MS8` ✅
 `tc_U39` (74F374 shift register, CP=MC) generates MS0,1,2,5,6,7,8; `tc_U56` (74S163 counter, CLK=MC) generates
 **MS3** (RCO pin15) and **MS4** (QD pin11). Together = the one-hot MS0–8 skeleton (fig-3.2). (tc_U39: Q5/Q6/Q7=
 MS0/MS1/MS2, Q1/Q2/Q3/Q4=MS5/MS6/MS7/MS8; the D-side carries the shift chain.)
+> **✅ `FPC CK` RESOLVED (owner, 2026-07-01): `FPC CK` = `MS5`** (the tc_U39.pin5 Q1 net = MS5 carries both
+> names; crosses the backplane to the FPC per the backplane convention). ⇒ the FPC's `fpcCLKA` edge — and thus
+> the D/A double-buffer capture inside a `WR DA/` step — lands at **MS5**, when RDRREG/ (asserted ≈MS2–MS8 by the
+> DAB RSTB gate) has the result register stable on the DAB. Closes the "FPC CK origin un-traced" gap.
 
 ## 6T.3 AS-state generator → `AS0 / AS0/ / AS1/` ✅
 `tc_U23` (74LS175, CLK=**ARUCK**, /CLR=**MS4**): Q0(2)=**AS1/**, Q2(10)=**AS0**, /Q2(11)=**AS0/**. (Q1/D-side feed
@@ -1183,7 +1210,7 @@ the AS-sequencing via tc_U38 + the off-sheet tc_U24, §G3T.)
 | **CS** (WCS chip-select) | tc_U21.pin9 (FF2 2Q) | → all WCS SRAM CS0/CS3 (§3.1) |
 | **GSTB/** | tc_U21.pin5 (FF1 1Q) | → tc_U46 /1G (§3.3 read decode) |
 | **WSTB/** | tc_U22.pin5 (FF1 1Q) | → tc_U46 /2G (§3.3 write decode) |
-| **RESET/** | tc_U25.pin6 (FF1 1/Q; sheet 2 §3.11) | → tc_U19.D3 |
+| **RESET/** | tc_U25.pin6 (FF1 1/Q; sheet 2 §3.11) | → tc_U19.D3 **+ backplane → FPC U4.pin2 (frame sync) + DMEM dmem_U58A → `dmemRESET` (CPC clock)** — owner 2026-07-01 |
 | **RESETD/** | tc_U19.pin9 (Q3) | → tc_U53.pin13 (2/CLR) |
 | **XACK/** | tc_U55.pin8 (74LS03 OC) | SBC bus-acknowledge |
 | **WCS-range decode** | tc_U50 (74LS133, 13-input NAND of ADR9/–ADRF/ etc.) + tc_U33 sh1 + tc_U51 | decodes the SBC address range → ADRE/, MRDC//MWTC/ gating, → `ADR SEL/`/CS path |
@@ -1301,7 +1328,9 @@ These are consumed on the ARU but **generated on T&C**. Status after folding 060
 ### §G3D — DMEM cross-board origins + unpopulated structure — 🟡 MOSTLY RESOLVED by T&C sheet 2
 **Consumed on DMEM, generated off-board. Status after folding 060-02475-D sheet 2:**
 - ✅ **Resolved on T&C (sheet 2):** `MEMAC` = MI17 (§3.7); `MEMW/` (§2T.1); `RD XREG/` (§2T.1); `WR XREG/`
-  (§2T.2); the microword offset `OFST0–15/` = MI0–15 (§3.6); `RESET` (§3.11/§2T.5, = tcWR·OFST3/ via tc_U34).
+  (§2T.2); the microword offset `OFST0–15/` = MI0–15 (§3.6). **The DMEM's frame-event input is `RESET/`**
+  (tc_U25 FF1 §3.11, registered form of `RESET` = tcWR·OFST3/), inverted on-board by `dmem_U58A` →
+  **`dmemRESET`** (owner rename + U58A trace, 2026-07-01 — the schematic's DMEM "RESET" label is sheet-local).
 - ✅ **Resolved (sheet 1, §6T):** `DAB RSTB`/`DAB RSTB/` (tc_U20 FF1), `MC` (tc_U40.pin11, PLL tapped), `MS1`
   (tc_U39, the MS-gen).
 - ⚪ **Still open (SBC I/O bus):** `ADR0–7/`, `IORC/`, `IOWC/`. → **§G3T**.
@@ -1326,14 +1355,15 @@ GSTB//WSTB//CS/XACK/). What remains ⚪:
   PLL for the reverb model.
 - ✅ **Resolved 2026-06-28 (owner update):** `tc_U24` (now traced — the S0 sequencer, §6T.7); `S0` (= tc_U24 FF2
   2/Q, §6T.7); `tcCLKA` (= **`DAB RSTB/`**, §3.6 note — the offset latch + field regs + RESET FF all clock on it).
-- **Off-sheet (SBC host-access):** `ADR SEL/` (addr-mux SEL / field-reg clear — consumer-only on T&C; the
-  SBC-access-mode select).
-- **SBC bus inputs (external to T&C):** `ADR0/–ADRF/`, `ADR SEL/`, `MRDC/`, `MWTC/`, `IORC/`, `IOWC/`, `02/`,
+- ✅ **Resolved 2026-07-01 (owner update):** `ADR SEL/` **= `tc_U22.pin7` (2/Q)** — a JK output of the
+  tc_U21/U22/U24/U35 SBC-access handshake state machine (tcCLKB-clocked; note the 2/Q output feeds back into
+  1J at tc_U22.pin3). No longer off-sheet: the addr-mux SEL / field-reg clear is generated on the T&C itself.
+- **SBC bus inputs (external to T&C):** `ADR0/–ADRF/`, `MRDC/`, `MWTC/`, `IORC/`, `IOWC/`, `02/`,
   `HALT/`, `DATA0–7/`. (Program-load + host path; programs are loaded via the firmware boot — not needed for the
   per-sample DSP model.)
-> Net effect: the entire **per-sample DSP signal path is fully net-traced**; the only un-traced items are the PLL
-> (intentionally omitted; MC is the input), the SBC host interface, and one off-sheet stub (`ADR SEL/`, the
-> SBC-access-mode select — consumer-only on T&C, not in the per-sample signal path).
+> Net effect: the entire **per-sample DSP signal path is fully net-traced**; the only un-traced item is the PLL
+> (intentionally omitted; MC is the input) plus the SBC host bus itself. (`ADR SEL/` resolved 2026-07-01 →
+> tc_U22.pin7.)
 
 ### §G3R — ✅ Microword field map (MI0–31) — now SCHEMATIC-TRACED (was decode-belief)
 T&C sheet 2 pins the entire 32-bit microword → control mapping by designator (supersedes the faith-level

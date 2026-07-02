@@ -101,7 +101,7 @@ pin 14 (DOUT) = DAB15
 Current Position Counter — 74LS393, 14 pins each
 
 U51 (74LS393)
-pin 1  (1CP)  = RESET (not RESET/)   [datasheet facts only: pin 1 = 1CP, the '393 clock input (a '393 increments on the FALLING edge of CP); the async CLEAR is MR = the "CPC CLR" net on pins 2/12. NOT VERIFIED: where this "RESET" net comes from, or that it actually advances the CPC per sample — that role is inferred from the wiring, not traced.]
+pin 1  (1CP)  = dmemRESET
 pin 2  (1MR)  = CPC CLR
 pin 3  (1QA)  = U49 pin 5
 pin 4  (1QB)  = U49 pin 3
@@ -484,7 +484,7 @@ pin 10 (3B)  = U55 pin 11
 U53D (¼ LS00)
 pin 11 (4Y)  = U54A pin 4
 pin 12 (4A)  = U53A pin 3, U53B pin 4
-pin 13 (4B)  = RESET (NOT RESET/)
+pin 13 (4B)  = dmemRESET
 
 [U53 VCC pin 14, GND pin 7 — not depicted]
 
@@ -568,7 +568,11 @@ pin 16 (VCC) = Not depicted
 
 ---
 
-U58 (74S04) — hex inverter, sections B, C, D, E, F used
+U58 (74S04) — hex inverter, sections A, B, C, D, E, F used
+
+U58A
+pin 1 (1A)   = RESET/
+pin 2 (1Y)   = dmemRESET
 
 U58B (⅙ S04)   [DEAD SECTION — output feeds only unpopulated U60]
 pin 3  (2A)  = U61 pin 16
