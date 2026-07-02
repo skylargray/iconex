@@ -578,8 +578,13 @@ pin 5   (2B)  = OFST3/
 pin 6   (2Y)  = RESET (not RESET/), U25 pin 2
 pin 7   (GND) = Not depicted
 pin 8   (3Y)  = U20 pin 12
-pin 9   (3A)  = U33 pin 8
-pin 10  (3B)  = AS0
+pin 9   (3A)  = AS0
+pin 10  (3B)  = U33 pin 8
+[0024/0027 note: pins 9/10 SWAPPED here vs schematic 060-02475-D, which draws
+3A = U33 pin 8 and 3B = AS0 (the original transcription matched the schematic
+exactly). The D3 T&C signature run (374/376, d3_signatures.py) measured the swap
+at the pins — a schematic drafting transposition, electrically inert for the
+AND gate.]
 pin 11  (4Y)  = U20 pin 11
 pin 12  (4A)  = AS0
 pin 13  (4B)  = U33 pin 9, U19 pin 12

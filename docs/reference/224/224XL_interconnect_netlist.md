@@ -235,8 +235,10 @@ Per-channel: I0 = adder Σ (normal path), I1 = `B-IN` (saturation clamp), Y = PP
 > diag-3 deliberately saturates at its frame tail and the feedback table shows it (U42.pin3 = `000P`;
 > the no-feedback window's STOP placement excludes those samples, pin3 = `0000`) — **and the clamp
 > output (PP) feeds the ACCUMULATOR D inputs as wired** (the tail samples register the ±rail).
-> Also measured: the two spare U42 gate inputs (pins 9, 10) are **tied +5V** (both read the +5V
-> reference signature) and the spare output pin 8 reads constant-0 (XOR of two highs) — ties, not n/c.
+> Also measured: the spare U42 gate-3 inputs (pins 9, 10) **read HIGH** (both show the +5V reference
+> signature) and its output pin 8 reads constant-0 (XOR of two highs). A tie and a floating-TTL-high
+> input are indistinguishable by signature — the schematic/pinout's "not connected" stands, with the
+> measured levels noted.
 > `aru_U2.pin6` (inv-3 Y) drives the adder chain carry-in (`_aru_cin`, §4.3); inv-3's input (aru_U2.pin5)
 > is the **CSIGN/subtract carry path** and is **not in the owner trace → ⚪ GAP §G2.**
 

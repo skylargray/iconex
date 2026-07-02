@@ -1,9 +1,17 @@
 224XL ARU pinouts from 060-01318
 
+NOTE 2026-07-02 (session 0027): per-pin verified against the SM section-5.7 ARU
+signature tables (1467/1469 match; tools/session0022_probes/e1_aru_signatures.py).
+Corrections applied below are marked "[0027]". Everything unmarked verified as
+transcribed (incl. the three 2026-06-28 SR-tap corrections U40.1/U26.12/U51.4).
+
 ---
 
 result register - Two chips, 74F374, 20 pins each
-U43 (74F374)            
+[0027] U43/U44 headers swapped (transcription error, fixed): U44 = the LOW byte
+(PP3-10 -> DAB0-7), U43 = the HIGH byte (PP11-18 -> DAB8-15), as measured per-pin
+by the signature tables.
+U44 (74F374)            
 pin 1  (OE\)   = RDRREG/
 pin 2  (Q0)    = DAB5       
 pin 3  (D0)    = PP8       
@@ -25,7 +33,7 @@ pin 18 (D7)    = PP5
 pin 19 (Q7)    = DAB2       
 pin 20 (VCC)   = Not Depicted       
 
-U44 (74F374)
+U43 (74F374)
 pin 1  (OE\)   = RDRREG/
 pin 2  (Q0)    = DAB13       
 pin 3  (D0)    = PP16       
@@ -65,50 +73,55 @@ pin 3  (D0/A)  = PP3
 pin 4  (D1/B)  = PP2     
 pin 5  (D2/C)  = PP1     
 pin 6  (D3/D)  = PP0
-pin 11 (Q3/QD) = AC3
-pin 12 (Q2/QC) = AC2
-pin 13 (Q1/QB) = AC1
-pin 14 (Q0/QA) = AC0
+pin 11 (Q3/QD) = AC0
+pin 12 (Q2/QC) = AC1
+pin 13 (Q1/QB) = AC2
+pin 14 (Q0/QA) = AC3
 
 Unique to U46:
 pin 3  (D0/A)  = PP7    
 pin 4  (D1/B)  = PP6     
 pin 5  (D2/C)  = PP5     
 pin 6  (D3/D)  = PP4
-pin 11 (Q3/QD) = AC7
-pin 12 (Q2/QC) = AC6
-pin 13 (Q1/QB) = AC5
-pin 14 (Q0/QA) = AC4
+pin 11 (Q3/QD) = AC4
+pin 12 (Q2/QC) = AC5
+pin 13 (Q1/QB) = AC6
+pin 14 (Q0/QA) = AC7
 
 Unique to U47:
 pin 3  (D0/A)  = PP11    
 pin 4  (D1/B)  = PP10     
 pin 5  (D2/C)  = PP9     
 pin 6  (D3/D)  = PP8
-pin 11 (Q3/QD) = AC11
-pin 12 (Q2/QC) = AC10
-pin 13 (Q1/QB) = AC9
-pin 14 (Q0/QA) = AC8
+pin 11 (Q3/QD) = AC8
+pin 12 (Q2/QC) = AC9
+pin 13 (Q1/QB) = AC10
+pin 14 (Q0/QA) = AC11
 
 Unique to U48:
 pin 3  (D0/A)  = PP15    
 pin 4  (D1/B)  = PP14    
 pin 5  (D2/C)  = PP13    
 pin 6  (D3/D)  = PP12
-pin 11 (Q3/QD) = AC15
-pin 12 (Q2/QC) = AC14
-pin 13 (Q1/QB) = AC13
-pin 14 (Q0/QA) = AC12
+pin 11 (Q3/QD) = AC12
+pin 12 (Q2/QC) = AC13
+pin 13 (Q1/QB) = AC14
+pin 14 (Q0/QA) = AC15
 
 Unique to U49:
 pin 3  (D0/A)  = PP19   
 pin 4  (D1/B)  = PP18    
 pin 5  (D2/C)  = PP17    
 pin 6  (D3/D)  = PP16
-pin 11 (Q3/QD) = AC19
-pin 12 (Q2/QC) = AC18
-pin 13 (Q1/QB) = AC17
-pin 14 (Q0/QA) = AC16
+pin 11 (Q3/QD) = AC16
+pin 12 (Q2/QC) = AC17
+pin 13 (Q1/QB) = AC18
+pin 14 (Q0/QA) = AC19
+
+[0027] Q-row AC labels corrected (were listed descending, pin11=high..pin14=low).
+The '163 pairs each input with its own-letter output (A pin3 <-> QA pin14), so QA
+carries the nibble HIGH bit: e.g. U45 pin 3 (A) = PP3 => pin 14 (QA) = AC3. Measured
+per-pin by the signature tables; now consistent with the D rows above.
 
 ---
 
@@ -890,9 +903,9 @@ pin 4  (2A)  = +5V via 1K series resistor
 pin 5  (2B)  = ARUCKE/
 pin 6  (2Y)  = ARUCK (NOT ARUCKE/)
 pin 7  (GND) = Not depicted
-pin 8  (3Y)  = not connected
-pin 9  (3A)  = not connected
-pin 10 (3B)  = not connected
+pin 8  (3Y)  = not connected [0027: reads constant-0 on the bench = XOR of two highs]
+pin 9  (3A)  = not connected [0027: reads HIGH (the +5V reference signature) - tie or floating-TTL-high; indistinguishable by signature]
+pin 10 (3B)  = not connected [0027: reads HIGH, same as pin 9]
 pin 11 (4Y)  = not connected
 pin 12 (4A)  = not connected
 pin 13 (4B)  = not connected
