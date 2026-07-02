@@ -2,11 +2,12 @@
 """E1c (plan 023) — the ARU §5.7 signature co-sim: per-pin verification of the whole MAC
 datapath against the manufacturer's own signature tables.
 
-★★★ RESULT (2026-07-02, session 0027): 1467/1469 listed pins MATCH at the E1b-predicted
-window anchor (rot 89 = the sample after the RESET/ rise), champion variant = the
-EXACTLY-TRACED wiring in the COMPLEMENT DOMAIN (PRLOAD=raw, RAIL=cs, DUAL3=0, CAPB=0).
-The FEEDBACK table is 710/710 PERFECT; the 2 no-feedback exceptions are single-glyph
-digitization errata, each contradicted by a same-net sister pin that matches:
+★★★ RESULT (2026-07-02, session 0027; 0028 corrected-table update): ALL 1469 listed pins
+MATCH at the E1b-predicted window anchor (rot 89 = the sample after the RESET/ rise),
+champion variant = the EXACTLY-TRACED wiring in the COMPLEMENT DOMAIN (PRLOAD=raw,
+RAIL=cs, DUAL3=0, CAPB=0): no-feedback 759/759 + feedback 710/710. Two single-glyph
+digitization errata of the source tables were owner-confirmed via same-net sister pins
+and corrected in the tables doc (originals recorded in its note):
   U51.12 '33FC' -> 35FC (net SR16; sister U52.12 matches 35FC's stream)
   U39.14 'F1CU' -> F1C0 (net = NAND U41 gate-1 Y; sister U41.3 matches)
 What this locks at hardware pins: the Booth NAND array + front-end adder chain, the

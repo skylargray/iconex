@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""224XL whole-machine free-run scaffold (plan 020 Phase 0.3).
+"""224XL whole-machine free-run scaffold (plan 020 Phase 0.3; plan 024 F1d re-sync).
 
 Hosts a free-running 224XL machine and captures the EMITTED D/A output (`WR DA/`) so it can be
 measured by the proven `reverb_metrics` harness. This is the scaffold every later phase plugs into:
@@ -7,12 +7,12 @@ measured by the proven `reverb_metrics` harness. This is the scaffold every late
     load a WCS image  ->  run N samples with a defined stimulus  ->  capture the WR DA/ stream
     per channel (A/B/C/D)  ->  hand it (and the exact excitation) to reverb_metrics.analyze.
 
-★ FIDELITY HONESTY (read this): at Phase 0.3 the datapath underneath is the BEHAVIORAL free-run
-engine `aru_freerun.FreeRunARU` — NOT yet the edge-driven ClockEngine datapath. That is deliberate
-and matches plan 020's recommended order: Phase 0.5's cheap discriminating experiments run on the
-*existing* behavioral engine (measured by the now-proven metric) to localize the cause BEFORE the
-expensive Phase-1..3 timing rebuild. Phases 1–3 replace the engine here with the edge-driven
-`aru_rtl.ClockEngine` + `aru_rtl_dp` datapath while keeping this capture/measure boundary identical.
+★ ENGINE (plan 024 F1d): the default engine is now the PIN-LOCKED RTL engine
+`aru_freerun22_rtl.RTL22` (session-0022 coordinates, L+1 frame, complement-domain MAC law —
+1469/1469 ARU signature pins) behind the `RTL22Engine` adapter below. The behavioral
+`aru_freerun.FreeRunARU` remains reachable via the `engine=` parameter for archaeology only —
+its audio verdicts are void (session 0022). The frame rate is program-defined (fs22(L)); each
+capture reports its own 'fs'.
 
 WHAT IS ENFORCED HERE (the anti-"dry reported as reverb" guarantees):
   • P1 — the ONLY signal handed to the metric is the WR DA/ capture (the D/A output stream). This
@@ -32,11 +32,44 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 
 import aru_freerun as FR
+import aru_freerun22_rtl as R22
+from aru_freerun22 import enc_io, enc_idle, SRC_RDAD, SRC_RDRREG
 import reverb_metrics as RM
 import reverb_metrics_selftest as RMST
 import stimulus as ST
 
-FS = FR.FS                                  # 34130 Hz (100 microinstr × 292.97 ns)
+FS = FR.FS                                  # legacy nominal (34130 Hz); captures carry their own fs
+
+
+class RTL22Engine:
+    """The plan-024 default engine behind the capture boundary: aru_freerun22_rtl.RTL22
+    (complement-domain physical MAC law, pin-locked 1469/1469). Presents the FreeRunARU
+    run_sample surface (raw 128-word WCS in, (chan_index, value) tuples out); decodes each
+    distinct image once (keyed by its bytes) so per-frame `mutate` modulation stays cheap."""
+
+    def __init__(self, fpc_enabled=False):
+        self.eng = R22.RTL22(fpc_enabled=fpc_enabled)
+        self.fault = None                   # RTL22 has no fault model; kept for surface parity
+        self.L = None
+        self._rows_cache = {}
+
+    def _rows(self, wcs):
+        key = bytes(b for w in wcs for b in w)
+        hit = self._rows_cache.get(key)
+        if hit is None:
+            rows, L, _w_reset = R22.program_rows22(wcs)
+            hit = self._rows_cache[key] = (rows, L)
+        self.L = hit[1]
+        return hit[0]
+
+    @property
+    def fs(self):
+        return R22.fs22(self.L) if self.L is not None else None
+
+    def run_sample(self, wcs, audio_in, offsets=None):
+        assert offsets is None, ("per-step offset tables are a behavioral-era concept; "
+                                 "the RTL path derives addresses from the stored lanes")
+        return [("ABCD".index(c), v) for c, v in self.eng.run_sample(self._rows(wcs), audio_in)]
 
 # CONCERT WCS cache (booting the firmware is ~30–90 s; cache the 0x4000 image to our scratchpad).
 _SCR = (r"C:/Users/Skylar/AppData/Local/Temp/claude/"
@@ -78,13 +111,14 @@ def run_capture(wcs, excitation, offsets=None, fpc=False, mutate=None, probe_fir
                  the POST-grounded convention settled for the static CONCERT program.
     fpc        : apply the FPC float↔fixed codec at the I/O boundary (default OFF → pure fixed-point).
     mutate     : optional callable(sample_index)->wcs for time-varying (modulated) programs.
-    engine     : the machine to run. None → behavioral aru_freerun.FreeRunARU (the M3.X behavioral
-                 column / oracle). Pass a tools.aru_freerun_rtl.FreeRunRTL instance for the timed column.
+    engine     : the machine to run. None → the pin-locked RTL22Engine (plan 024 default).
+                 Pass aru_freerun.FreeRunARU(...) explicitly for behavioral-era archaeology only.
                  Must expose run_sample(wcs, audio_in, offsets=...) -> list of (chan, value) + .fault.
 
     Returns a dict: 'A'..'D' int16 arrays (per-channel D/A output), 'mono' int16 (sum of writes),
-    'n' samples, 'fault'. NOTHING internal (buf_RMS/DMEM/ACC) leaves this function — P1."""
-    aru = engine if engine is not None else FR.FreeRunARU(fpc_enabled=fpc)
+    'n' samples, 'fault', and 'fs' (program-defined rate when the engine exposes one, else the
+    legacy nominal FS). NOTHING internal (buf_RMS/DMEM/ACC) leaves this function — P1."""
+    aru = engine if engine is not None else RTL22Engine(fpc_enabled=fpc)
     n = len(excitation)
     chans = {c: np.zeros(n, dtype=np.int64) for c in "ABCD"}
     mono = np.zeros(n, dtype=np.int64)
@@ -105,7 +139,8 @@ def run_capture(wcs, excitation, offsets=None, fpc=False, mutate=None, probe_fir
             break
     clip = lambda a: np.clip(a, -32768, 32767).astype(np.int16)
     return dict(A=clip(chans["A"]), B=clip(chans["B"]), C=clip(chans["C"]), D=clip(chans["D"]),
-                mono=clip(mono), n=n, fault=aru.fault)
+                mono=clip(mono), n=n, fault=aru.fault,
+                fs=float(getattr(aru, "fs", None) or FS))
 
 
 # ---------------------------------------------------------------------------
@@ -125,15 +160,17 @@ def assert_metric_trusted():
 
 
 def measure_output(captured, excitation, name, channels=("A", "B", "C", "D", "mono"),
-                   burst_end_s=0.0, out_dir=RENDERS):
+                   burst_end_s=0.0, out_dir=RENDERS, fs=None):
     """Measure the captured D/A output per channel with reverb_metrics.analyze (renders a WAV each).
-    Returns {channel: verdict-dict}. Asserts the control battery first (P5)."""
+    Returns {channel: verdict-dict}. Asserts the control battery first (P5). fs defaults to the
+    capture's own program-defined rate (run_capture stamps 'fs')."""
     assert_metric_trusted()
     exc = np.asarray(excitation, dtype=np.int16)
+    fs_hz = fs or captured.get("fs", FS)
     results = {}
     for c in channels:
         out = captured[c]
-        results[c] = RM.analyze(out, exc, FS, f"{name}_ch{c}", out_dir=out_dir, burst_end_s=burst_end_s)
+        results[c] = RM.analyze(out, exc, fs_hz, f"{name}_ch{c}", out_dir=out_dir, burst_end_s=burst_end_s)
     return results
 
 
@@ -166,19 +203,24 @@ def _selfcheck():
     assert_metric_trusted()
     print("  battery: TRUSTED")
 
-    # A zero-delay passthrough WCS: read A/D -> DAB -> WR DA (chan A). Feed an S1 impulse; the metric
-    # must call the emitted output DRY (a pure passthrough is not reverb — P3 dry-gate). This proves
-    # the capture boundary + the metric wiring end-to-end on the free-run scaffold.
-    wcs = [FR.nop_step()] * 128
-    wcs = list(wcs)
-    wcs[0] = FR.encode_io_step(rd="AD", wr_da=True, da_chan=0)
+    # A same-frame passthrough WCS in the 0022 convention (execution order 127 down to the
+    # reset word; the RTL passthrough idiom: RD-AD -> unity MAC -> XFER -> RDRREG out, padded
+    # with idles to L=99 so fs matches the canonical 100-step frame). Feed an S1 impulse; the
+    # metric must call the emitted output DRY (a pure passthrough is not reverb — P3 dry-gate).
+    # This proves the capture boundary + the metric wiring end-to-end on the RTL engine.
+    wcs = [enc_idle()] * 128
+    wcs[127] = enc_io(sel=SRC_RDAD, wa=1, cmag=0, zero=1, csign=0)
+    wcs[126] = enc_idle(ra=1, cmag=32, csign=1)
+    wcs[125] = enc_idle(xfer=1)
+    wcs[29] = enc_io(sel=SRC_RDRREG, wrda=True, chans="A", reset=True)   # w_reset=29 -> L=99
     exc = ST.unit_impulse(-6.0, int(0.3 * FS))
     cap = run_capture(wcs, exc)
-    res = measure_output(cap, exc, "phase03_selfcheck_zerodelay", channels=("A",))
+    print(f"  program-defined fs = {cap['fs']:.1f} Hz (L+1 frame)")
+    res = measure_output(cap, exc, "f1d_selfcheck_zerodelay", channels=("A",))
     v = res["A"]
     print(f"  zero-delay passthrough -> ch A verdict={v['verdict']} (expect DRY), wav={os.path.basename(v['wav'])}")
     ok = v["verdict"] == "DRY"
-    print(f"  scaffold end-to-end: {'OK' if ok else 'FAIL'}")
+    print(f"  scaffold end-to-end (RTL22 engine): {'OK' if ok else 'FAIL'}")
     return ok
 
 

@@ -1,19 +1,35 @@
-> **Session-0024 verification note:** `tools/session0022_probes/d3_signatures.py` reproduces **374 of the
-> 376 listed T&C pin signatures** from the netlist + RTL frame model (diag-3 stimulus, window = one
-> 30-step frame — the manual's own `FP54` = +5V@N=30 confirms the L+1 frame). The two exceptions are
-> presumed single-glyph digitization errata of this transcription, each contradicted by sister pins of
-> the same net elsewhere in the table: **U3 pin 10** `00U0` (GND; U44/U30/U16 pin 10 all read `0000`)
-> and **U11 pin 6** `2PU6` (the C4/ net; U5.12, U11.7, U11.13 all read `29U6`).
+> **Session-0024 verification note (0028 update):** `tools/session0022_probes/d3_signatures.py`
+> reproduces **all 376 listed T&C pin signatures** from the netlist + RTL frame model (diag-3 stimulus,
+> window = one 30-step frame — the manual's own `FP54` = +5V@N=30 confirms the L+1 frame). Two
+> single-glyph digitization errata of the source material were owner-confirmed (session 0028), each
+> contradicted by sister pins of the same net elsewhere in the table: **U3 pin 10** read `00U0`
+> (GND; U44/U30/U16 pin 10 all read `0000`) and **U11 pin 6** read `2PU6` (the C4/ net; U5.12, U11.7,
+> U11.13 all read `29U6`). Both corrected in the block below (originals recorded here).
 >
-> **Session-0027 verification note (the ARU datapath lock):** `tools/session0022_probes/
-> e1_aru_signatures.py` reproduces **1467 of the 1469 listed ARU pin signatures** (BOTH configurations;
-> the feedback table is **710/710 perfect**) from the netlist + the complement-domain bit-level datapath,
-> diag-3 stimulus with XREG=0x607F, analyzer CLOCK = ARUCK falls, window anchored at the RESET/ rise
-> (no-feedback N=62 / feedback N=90 — both +5V references confirmed jointly). The two exceptions are
-> single-glyph digitization errata, each contradicted by a same-net sister pin: **ARU-no-feedback
-> U51 pin 12** `33FC` (SR16 net; sister U52.12 matches the model's `35FC` stream; this was a real typo in
-> the service manual) and **U39 pin 14** `F1CU` (the NAND U41 gate-1 output net; sister U41.3 matches
-> the model's `F1C0`; this was an OCR error). Both exceptions fixed below.
+> **Session-0027 verification note (the ARU datapath lock; 0028 update):** `tools/session0022_probes/
+> e1_aru_signatures.py` reproduces **ALL 1469 listed ARU pin signatures** (no-feedback **759/759**,
+> feedback **710/710**) from the netlist + the complement-domain bit-level datapath, diag-3 stimulus
+> with XREG=0x607F, analyzer CLOCK = ARUCK falls, window anchored at the RESET/ rise (no-feedback
+> N=62 / feedback N=90 — both +5V references confirmed jointly). Two single-glyph digitization errata
+> of the source material were owner-confirmed, each contradicted by a same-net sister pin:
+> **ARU-no-feedback U51 pin 12** read `33FC` (SR16 net; sister U52.12 matches the `35FC` stream; a real
+> typo in the service manual) and **U39 pin 14** read `F1CU` (the NAND U41 gate-1 output net; sister
+> U41.3 matches `F1C0`; an OCR error). Both corrected in the blocks below (originals recorded here).
+> The re-synced engine (`tools/aru_freerun22_rtl.py`, plan 024 F1) walks this bench bit-identically to
+> the scoring Emitter (`f1_e1c_engine_xcheck.py`); the diag-3 stale-cell reads (MEMR rows 1/4/5 through
+> the CPC wrap) are measured-inert to the lock — both DAB15 carriers are unlisted (`f1_dmem_stale_reads.py`).
+>
+> **Session-0028 verification note (the DMEM address path):** `tools/session0022_probes/
+> f2_dmem_signatures.py` reproduces **166 of the 167 listed DMEM pin signatures** (incl. the U1-16/U20-35
+> DRAM-common address pattern) from netlist §5 under the SM lift-jumper setup, with the window length
+> DERIVED before scoring: the lift (U65.13 → U65.1) re-clocks the CPC high nibble from cpc11 to the cpc7
+> net, so cpc12-15 mirror cpc8-11 and the "CPC MSB" (U65.8) period becomes 16×256 = **4096 frames = the
+> manual's own +5V reference `826P`**. The table itself confirms the modified wiring (U65.13 = U65.1 =
+> U51.8 = `C25F`; mirror pairs `5H21`/`HP66`/`U81P`), the sampling instant (mux SEL pins `0000` = ROW SEL
+> low = column side), and the live word (the adder B-constants = row 29's IO command, OFST6/+OFST12/ high).
+> The one exception is an ERRATA CANDIDATE, owner confirmation pending: **U65 pin 4** (1QB = cpc9) reads
+> `0000` in the table while its same-net sister **U63.3** and its lift-jumper mirror **U65.10** both read
+> `19H6` (= the model's cpc9 stream) — a counting bit cannot be constant-0 while its bus twin counts.
 
 #### T&C Module — Version 8.2.1
 
@@ -40,7 +56,7 @@ U3   1  07P6   20  FP54        U4   1  FP54   16  FP54
      7  53PH   14  -                7  0000   10  0000
      8  028H   13  -                8  0000    9  0000
      9  FP54   12  -
-    10  00U0   11  FP54
+    10  0000   11  FP54
 
 U5   1  FP54   16  FP54        U10  1  FP54   16  FP54
      2  -      15  -                2  -      15  -
@@ -56,7 +72,7 @@ U11  1  FP54   16  FP54        U14  1  -      16  FP54
      3  -      14  -                3  -      14  45FF
      4  01UH   13  29U6             4  -      13  F344
      5  P2H5   12  -                5  -      12  95CP
-     6  2PU6   11  FPAA             6  -      11  A36H
+     6  29U6   11  FPAA             6  -      11  A36H
      7  29U6   10  -                7  FP54   10  FP54
      8  0000    9  -                8  0000    9  FP54
 
