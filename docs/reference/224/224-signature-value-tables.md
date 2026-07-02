@@ -27,9 +27,10 @@
 > manual's own +5V reference `826P`**. The table itself confirms the modified wiring (U65.13 = U65.1 =
 > U51.8 = `C25F`; mirror pairs `5H21`/`HP66`/`U81P`), the sampling instant (mux SEL pins `0000` = ROW SEL
 > low = column side), and the live word (the adder B-constants = row 29's IO command, OFST6/+OFST12/ high).
-> The one exception is an ERRATA CANDIDATE, owner confirmation pending: **U65 pin 4** (1QB = cpc9) reads
-> `0000` in the table while its same-net sister **U63.3** and its lift-jumper mirror **U65.10** both read
-> `19H6` (= the model's cpc9 stream) — a counting bit cannot be constant-0 while its bus twin counts.
+> One single-glyph digitization erratum was owner-confirmed (session 0028): **U65 pin 4** (1QB = cpc9)
+> read `0000` in the source while its same-net sister **U63.3** and its lift-jumper mirror **U65.10** both
+> read `19H6` (= the model's cpc9 stream; a counting bit cannot be constant-0 while its bus twin counts).
+> Corrected in the block below (original recorded here) — the model reproduces **all 167 listed pins**.
 
 #### T&C Module — Version 8.2.1
 
@@ -723,7 +724,7 @@ U62  1  826P   20  826P        U63  1  861U   16  826P
 U64  1  44U7   16  826P        U65  1  C25F   14  826P
      2  0000   15  0000             2  0000   13  C25F
      3  19H6   14  HP66             3  5H21   12  0000
-     4  FU8U   13  0AU1             4  0000   11  5H21
+     4  FU8U   13  0AU1             4  19H6   11  5H21
      5  5H21   12  U81P             5  HP66   10  19H6
      6  826P   11  0000             6  U81P    9  HP66
      7  10F0   10  8HU0             7  0000    8  U81P

@@ -23,6 +23,9 @@ Cases (trace_frames = 3 for all):
   concert  wcs_settled_concert.json — mono 0.30 s noise burst (numpy
            default_rng(224), integers -8000..8001) then silence, nsamp = 66000
            (deliberately crossing the 65536-frame CPC wrap)
+  sig6     wcs_diag.json["sig6"] (diag-6 FPC SIGNAT) — zero input, XREG_host =
+           0xFAAA (meta key "xreg_host"), nsamp = 400: the XREG host-latch
+           boundary golden (ch D = -1366 steady, A/B/C = 0)
 
 Also writes booth_vectors.bin — primitive vectors for the gate-array port:
   header  <4sII>  magic b"B224", n_raw (4000), n_be (200)
@@ -82,7 +85,7 @@ def wcs_tuples(b):
     return [(b[4 * k], b[4 * k + 1], b[4 * k + 2], b[4 * k + 3]) for k in range(128)]
 
 
-def export_case(name, wcs_bytes, h1, h2, nsamp, stimulus):
+def export_case(name, wcs_bytes, h1, h2, nsamp, stimulus, xreg_host=None, check=None):
     rows, L, w_reset = program_rows22(wcs_tuples(wcs_bytes))
     fs = fs22(L)
     assert len(h1) == len(h2) == nsamp
@@ -95,6 +98,8 @@ def export_case(name, wcs_bytes, h1, h2, nsamp, stimulus):
     # drive the engine with EXACTLY those samples, as (h1, h2) pairs
     sig = [(int(a) & 0xFFFF, int(b) & 0xFFFF) for a, b in in_arr]
     eng = TracedRTL22(TRACE_FRAMES)
+    if xreg_host is not None:
+        eng.XREG_host = xreg_host          # host->DSP latch, CPU-domain value
     chans = eng.run_free(rows, sig, nsamp)
 
     outs = np.zeros((nsamp, 4), dtype="<i2")
@@ -103,6 +108,8 @@ def export_case(name, wcs_bytes, h1, h2, nsamp, stimulus):
 
     trace = np.asarray(eng.trace, dtype="<i8")
     assert trace.shape == (TRACE_FRAMES * (L + 1), 8), trace.shape
+    if check is not None:
+        check(outs)                        # case sanity gate BEFORE any file is written
 
     base = os.path.join(OUTDIR, name + "_")
     with open(base + "wcs.bin", "wb") as f:
@@ -126,6 +133,8 @@ def export_case(name, wcs_bytes, h1, h2, nsamp, stimulus):
         "outs_format": "int16le nsamp x 4 (A,B,C,D; last-write-wins, unwritten=0)",
         "trace_format": "int64le (step,ACC,RES,DAB,R0,R1,R2,R3) x trace_frames*(L+1); phys, post-step",
     }
+    if xreg_host is not None:
+        meta["xreg_host"] = xreg_host      # harness calls setXregHost(value) after loadProgram
     with open(base + "meta.json", "w") as f:
         json.dump(meta, f, separators=(",", ":"))
     nz = int(np.count_nonzero(outs))
@@ -157,6 +166,32 @@ def case_concert():
     export_case("concert", wcs, sig, sig, nsamp,   # mono: both halves carry the signal
                 {"kind": "noise-burst-mono", "seed": 224, "lo": -8000, "hi": 8000,
                  "burst_frames": nb, "burst_s": 0.30})
+
+
+def case_sig6():
+    """The diag-6 FPC-signature image: the XREG host-latch golden (the one datapath
+    boundary the first three cases never drive). Zero input, regfile left at its
+    default init (phys 0xFFFF = CPU 0), XREG_host parked at 0xFAAA: the program's
+    SRC_XREG read word (CPU w76) unity-MACs the latch to WR-DA channel D each frame,
+    so from frame 2 on (steady, f2_fpc_foundations.py) ch D = s16(0xFAAA) = -1366
+    and ch A/B/C = 0 (unity captures of the CPU-0 default registers)."""
+    XREG = 0xFAAA
+    nsamp = 400
+
+    def check(outs):
+        exp_d = np.int16(XREG - 0x10000)               # s16(0xFAAA) = -1366
+        assert (outs[2:, 3] == exp_d).all(), \
+            ("sig6 ch D != XREG constant", np.unique(outs[2:, 3]))
+        assert (outs[2:, :3] == 0).all(), \
+            ("sig6 ch A/B/C != 0", [np.unique(outs[2:, c]) for c in range(3)])
+        print(f"  sig6 sanity: ch D = {int(exp_d)} (0x{XREG:04X}) frames 2..{nsamp - 1}, "
+              f"A/B/C = 0  -- OK")
+
+    wcs = load_wcs(os.path.join(PROBES, "wcs_diag.json"), "sig6")
+    z = np.zeros(nsamp, dtype=np.int64)
+    export_case("sig6", wcs, z, z, nsamp,
+                {"kind": "zero-mono-xreg", "xreg_host_hex": f"0x{XREG:04X}"},
+                xreg_host=XREG, check=check)
 
 
 def export_booth_vectors():
@@ -200,6 +235,7 @@ CASES = {
     "d1zero": lambda: case_d1("d1zero", "zero", 1),
     "d1max": lambda: case_d1("d1max", "max", 0x3FFF),
     "concert": case_concert,
+    "sig6": case_sig6,
     "booth_vectors": export_booth_vectors,
 }
 

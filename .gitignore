@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 build/
 tools/harness/**/build/
+tools/harness/**/build*/
 docs/reference/224/crops/
 IR/Lexicon 480L/
 *.zip
@@ -13,3 +14,4 @@ docs/reference/224/crops/
 # session-0023 probe renders (reproducible: fixed seeds; regenerate via the c1/c3/c5/d0 probes)
 tools/session0022_probes/renders/
 tools/harness/**/build-rtl/
+renders/

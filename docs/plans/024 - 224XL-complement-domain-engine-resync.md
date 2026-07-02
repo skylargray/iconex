@@ -1,6 +1,17 @@
 # 024 — 224XL: the complement-domain engine re-sync, the remaining signature tables, and dynamics
 
-**Status:** READY TO EXECUTE (written 2026-07-02 at the close of session 0027).
+**Status:** ✅ EXECUTED (session 0028, 2026-07-02) — see
+`docs/sessions/0028 - the-engine-resync-the-table-sweep-and-the-graduated-stop-decay.md`.
+F1 COMPLETE (battery green, e5 ZERO, C++ 3/3 bit-exact); F2a COMPLETE (DMEM 166/167 at the
+pre-derived N=4096 lift-jumper window; U65.4 errata candidate pending owner confirm);
+F2b foundations banked (diag-6 captured, N=98 reconciled, pump constants + D/A stream
+locked; the per-pin emitter = next session); F3 mechanism CLOSED (XREG-readback input
+level; the graduated w62-family scheduler, ~151 ms stop delay; #38/#39/#40 registered —
+the 'w44 9↔22' hypothesis below was the variation delta, not the runtime dynamic);
+F4a/c/d done (F4b carried); F5 complete (analyze_pair, battery 11/11). Registry #31/#35
+closed; #36-#40 added.
+
+**Status (original):** READY TO EXECUTE (written 2026-07-02 at the close of session 0027).
 **Read first:** `docs/sessions/0027 - the-complement-domain-and-the-aru-pin-lock.md` (the whole
 thing — the complement domain reframes the arithmetic), then 0026/0025/0024 as needed. The engine
 of record is still **`tools/aru_freerun22_rtl.py`** — but 0027 proved its MAC value model sits

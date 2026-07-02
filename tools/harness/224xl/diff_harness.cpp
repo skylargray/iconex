@@ -13,7 +13,7 @@
 // The stimulus is READ from <case>_in.bin (int16 LE, h1/h2 pairs) - never
 // regenerated - so C++ and Python consume identical bits.
 //
-// Usage: diff_harness <golden_dir> [case ...]     (default: d1zero d1max concert)
+// Usage: diff_harness <golden_dir> [case ...]  (default: d1zero d1max concert sig6)
 #include "sgdsp/reverb/224xl.hpp"
 #include "golden_io.hpp"
 #include <cstdio>
@@ -55,6 +55,9 @@ static bool runCase(const std::string& dir, const std::string& name)
         std::printf("[%s] L1 FAIL: loadProgram found no reset word\n", name.c_str());
         return false;
     }
+    // optional host->DSP latch value (CPU domain); e.g. the sig6 XREG boundary case
+    const long xregHost = golden::readMetaInt(base + "meta.json", "xreg_host", -1);
+    if (xregHost >= 0) g_core.setXregHost((uint16_t)xregHost);
 
     // ---- Layer 1: program extraction parity ----
     const int nSteps = g_core.frameSteps();
@@ -132,7 +135,7 @@ int main(int argc, char** argv)
     const std::string dir = argv[1];
     std::vector<std::string> cases;
     for (int i = 2; i < argc; ++i) cases.push_back(argv[i]);
-    if (cases.empty()) cases = {"d1zero", "d1max", "concert"};
+    if (cases.empty()) cases = {"d1zero", "d1max", "concert", "sig6"};
 
     int nPass = 0;
     for (const std::string& c : cases) nPass += runCase(dir, c) ? 1 : 0;

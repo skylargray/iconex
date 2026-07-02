@@ -715,457 +715,512 @@
  },
  "p2s1": {
   "name": "LF Stop",
+  "label": "LF STOP DCY",
+  "legend": "LOW MID CHO HFB DIF DEF",
+  "display_page": 2,
+  "apply_page34": 1,
+  "select_display": "LF STOP DCY  3.0  SEC",
+  "preset_byte": 132,
+  "preset_slot": "0x3ca9",
+  "preset_check": [
+   132,
+   " 3.0  P DCY  3.0  SEC"
+  ],
+  "preset_ok": true,
+  "monotonic": true,
   "up": [
    [
     2,
-    "026   AY    026  MSEC"
+    " 3.0  P DCY  3.0  SEC"
    ],
    [
     32,
-    "LF DECAY     1.1  SEC"
+    " 3.0  P DCY  3.0  SEC"
    ],
    [
     64,
-    " 1.5  AY     1.1  SEC"
+    " 3.0  P DCY  3.0  SEC"
    ],
    [
     96,
-    " 2.2  AY     1.1  SEC"
+    " 3.0  P DCY  3.0  SEC"
    ],
    [
     128,
-    " 3.0  AY     1.1  SEC"
+    " 3.0  P DCY  3.0  SEC"
    ],
    [
     160,
-    " 4.6  AY     1.1  SEC"
+    " 4.6  P DCY  3.0  SEC"
    ],
    [
     192,
-    " 7.5  AY     1.1  SEC"
+    " 7.5  P DCY  3.0  SEC"
    ],
    [
     224,
-    " 16   AY     1.1  SEC"
+    " 16   P DCY  3.0  SEC"
    ],
    [
     254,
-    " 70   AY     1.1  SEC"
+    " 70   P DCY  3.0  SEC"
    ]
   ],
   "down": [
    [
     248,
-    " 70   AY     1.1  SEC"
+    " 70   P DCY  3.0  SEC"
    ],
    [
     240,
-    " 35   AY     1.1  SEC"
+    " 35   P DCY  3.0  SEC"
    ],
    [
     224,
-    " 16   AY     1.1  SEC"
+    " 16   P DCY  3.0  SEC"
    ],
    [
     208,
-    " 10   AY     1.1  SEC"
+    " 10   P DCY  3.0  SEC"
    ],
    [
     192,
-    " 7.5  AY     1.1  SEC"
+    " 7.5  P DCY  3.0  SEC"
    ],
    [
     176,
-    " 5.7  AY     1.1  SEC"
+    " 5.7  P DCY  3.0  SEC"
    ],
    [
     160,
-    " 4.6  AY     1.1  SEC"
+    " 4.6  P DCY  3.0  SEC"
    ],
    [
     144,
-    " 3.8  AY     1.1  SEC"
+    " 3.8  P DCY  3.0  SEC"
    ],
    [
     128,
-    " 3.0  AY     1.1  SEC"
+    " 3.0  P DCY  3.0  SEC"
    ],
    [
     112,
-    " 2.6  AY     1.1  SEC"
+    " 2.6  P DCY  3.0  SEC"
    ],
    [
     96,
-    " 2.2  AY     1.1  SEC"
+    " 2.2  P DCY  3.0  SEC"
    ],
    [
     80,
-    " 1.8  AY     1.1  SEC"
+    " 1.8  P DCY  3.0  SEC"
    ],
    [
     64,
-    " 1.5  AY     1.1  SEC"
+    " 1.5  P DCY  3.0  SEC"
    ],
    [
     48,
-    " 1.3  AY     1.1  SEC"
+    " 1.3  P DCY  3.0  SEC"
    ],
    [
     32,
-    " 1.1  AY     1.1  SEC"
+    " 1.1  P DCY  3.0  SEC"
    ],
    [
     24,
-    " 0.9  AY     1.1  SEC"
+    " 0.9  P DCY  3.0  SEC"
    ],
    [
     16,
-    " 0.8  AY     1.1  SEC"
+    " 0.8  P DCY  3.0  SEC"
    ],
    [
     8,
-    " 0.6  AY     1.1  SEC"
+    " 0.6  P DCY  3.0  SEC"
    ],
    [
     2,
-    " 0.6  AY     1.1  SEC"
+    " 0.6  P DCY  3.0  SEC"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p2s2": {
   "name": "Mid Stop",
+  "label": "MID STOP DCY",
+  "legend": "LOW MID CHO HFB DIF DEF",
+  "display_page": 2,
+  "apply_page34": 1,
+  "select_display": "MID STOP DCY 3.0  SEC",
+  "preset_byte": 132,
+  "preset_slot": "0x3caa",
+  "preset_check": [
+   132,
+   " 3.0  OP DCY 3.0  SEC"
+  ],
+  "preset_ok": true,
+  "monotonic": true,
   "up": [
    [
     2,
-    " 0.6  AY     1.1  SEC"
+    " 3.0  OP DCY 3.0  SEC"
    ],
    [
     32,
-    "MID DECAY    1.1  SEC"
+    " 3.0  OP DCY 3.0  SEC"
    ],
    [
     64,
-    " 1.5  CAY    1.1  SEC"
+    " 3.0  OP DCY 3.0  SEC"
    ],
    [
     96,
-    " 2.2  CAY    1.1  SEC"
+    " 3.0  OP DCY 3.0  SEC"
    ],
    [
     128,
-    " 3.0  CAY    1.1  SEC"
+    " 3.0  OP DCY 3.0  SEC"
    ],
    [
     160,
-    " 4.6  CAY    1.1  SEC"
+    " 4.6  OP DCY 3.0  SEC"
    ],
    [
     192,
-    " 7.5  CAY    1.1  SEC"
+    " 7.5  OP DCY 3.0  SEC"
    ],
    [
     224,
-    " 16   CAY    1.1  SEC"
+    " 16   OP DCY 3.0  SEC"
    ],
    [
     254,
-    " 70   CAY    1.1  SEC"
+    " 70   OP DCY 3.0  SEC"
    ]
   ],
   "down": [
    [
     248,
-    " 70   CAY    1.1  SEC"
+    " 70   OP DCY 3.0  SEC"
    ],
    [
     240,
-    " 35   CAY    1.1  SEC"
+    " 35   OP DCY 3.0  SEC"
    ],
    [
     224,
-    " 16   CAY    1.1  SEC"
+    " 16   OP DCY 3.0  SEC"
    ],
    [
     208,
-    " 10   CAY    1.1  SEC"
+    " 10   OP DCY 3.0  SEC"
    ],
    [
     192,
-    " 7.5  CAY    1.1  SEC"
+    " 7.5  OP DCY 3.0  SEC"
    ],
    [
     176,
-    " 5.7  CAY    1.1  SEC"
+    " 5.7  OP DCY 3.0  SEC"
    ],
    [
     160,
-    " 4.6  CAY    1.1  SEC"
+    " 4.6  OP DCY 3.0  SEC"
    ],
    [
     144,
-    " 3.8  CAY    1.1  SEC"
+    " 3.8  OP DCY 3.0  SEC"
    ],
    [
     128,
-    " 3.0  CAY    1.1  SEC"
+    " 3.0  OP DCY 3.0  SEC"
    ],
    [
     112,
-    " 2.6  CAY    1.1  SEC"
+    " 2.6  OP DCY 3.0  SEC"
    ],
    [
     96,
-    " 2.2  CAY    1.1  SEC"
+    " 2.2  OP DCY 3.0  SEC"
    ],
    [
     80,
-    " 1.8  CAY    1.1  SEC"
+    " 1.8  OP DCY 3.0  SEC"
    ],
    [
     64,
-    " 1.5  CAY    1.1  SEC"
+    " 1.5  OP DCY 3.0  SEC"
    ],
    [
     48,
-    " 1.3  CAY    1.1  SEC"
+    " 1.3  OP DCY 3.0  SEC"
    ],
    [
     32,
-    " 1.1  CAY    1.1  SEC"
+    " 1.1  OP DCY 3.0  SEC"
    ],
    [
     24,
-    " 0.9  CAY    1.1  SEC"
+    " 0.9  OP DCY 3.0  SEC"
    ],
    [
     16,
-    " 0.8  CAY    1.1  SEC"
+    " 0.8  OP DCY 3.0  SEC"
    ],
    [
     8,
-    " 0.6  CAY    1.1  SEC"
+    " 0.6  OP DCY 3.0  SEC"
    ],
    [
     2,
-    " 0.6  CAY    1.1  SEC"
+    " 0.6  OP DCY 3.0  SEC"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p2s3": {
   "name": "Chorus",
+  "label": "CHORUS",
+  "legend": "LOW MID CHO HFB DIF DEF",
+  "display_page": 2,
+  "apply_page34": 1,
+  "select_display": "CHORUS       50",
+  "preset_byte": 128,
+  "preset_slot": "0x3cab",
+  "preset_check": [
+   128,
+   " 50          50"
+  ],
+  "preset_ok": true,
+  "monotonic": true,
   "up": [
    [
     2,
-    " 0.6  CAY    1.1  SEC"
+    " 50          50"
    ],
    [
     32,
-    "CROSSOVER   720   HZ"
+    " 50          50"
    ],
    [
     64,
-    "1.57 KHZ          HZ"
+    " 50          50"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    " 50          50"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    " 50          50"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    " 63          50"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    " 75          50"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    " 88          50"
    ],
    [
     254,
-    " --   HZ          HZ"
+    " 97          50"
    ]
   ],
   "down": [
    [
     248,
-    "19.0  HZ          HZ"
+    " 97          50"
    ],
    [
     240,
-    "15.0  HZ          HZ"
+    " 94          50"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    " 88          50"
    ],
    [
     208,
-    "9.00  HZ          HZ"
+    " 82          50"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    " 75          50"
    ],
    [
     176,
-    "6.30  HZ          HZ"
+    " 69          50"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    " 63          50"
    ],
    [
     144,
-    "4.50  HZ          HZ"
+    " 56          50"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    " 50          50"
    ],
    [
     112,
-    "3.10  HZ          HZ"
+    " 44          50"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    " 37          50"
    ],
    [
     80,
-    "2.05  HZ          HZ"
+    " 31          50"
    ],
    [
     64,
-    "1.57  HZ          HZ"
+    " 25          50"
    ],
    [
     48,
-    "1.13  HZ          HZ"
+    " 18          50"
    ],
    [
     32,
-    "720   HZ          HZ"
+    " 12          50"
    ],
    [
     24,
-    "530   HZ          HZ"
+    " 09          50"
    ],
    [
     16,
-    "350   HZ          HZ"
+    " 06          50"
    ],
    [
     8,
-    "170   HZ          HZ"
+    " 03          50"
    ],
    [
     2,
-    "170   HZ          HZ"
+    " 00          50"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p2s4": {
   "name": "HF Bwidth",
+  "label": "HF BANDWIDTH",
+  "legend": "LOW MID CHO HFB DIF DEF",
+  "display_page": 2,
+  "apply_page34": 1,
+  "select_display": "HF BANDWIDTH9.00 KHZ",
+  "preset_byte": 208,
+  "preset_slot": "0x3cac",
+  "preset_check": [
+   208,
+   "9.00 KHZ          HZ"
+  ],
+  "preset_ok": true,
+  "monotonic": true,
   "up": [
    [
     2,
-    "170   HZ          HZ"
+    "9.00  DWIDTH9.00 KHZ"
    ],
    [
     32,
-    "TREBLE DECAY720   HZ"
+    "9.00  DWIDTH9.00 KHZ"
    ],
    [
     64,
-    "1.57 KHZ          HZ"
+    "9.00  DWIDTH9.00 KHZ"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    "9.00  DWIDTH9.00 KHZ"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    "9.00  DWIDTH9.00 KHZ"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    "9.00  DWIDTH9.00 KHZ"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    "9.00  DWIDTH9.00 KHZ"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    "11.3  DWIDTH9.00 KHZ"
    ],
    [
     254,
-    " --   HZ          HZ"
+    " --   DWIDTH9.00 KHZ"
    ]
   ],
   "down": [
    [
     248,
-    "19.0  HZ          HZ"
+    "19.0  DWIDTH9.00 KHZ"
    ],
    [
     240,
-    "15.0  HZ          HZ"
+    "15.0  DWIDTH9.00 KHZ"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    "11.3  DWIDTH9.00 KHZ"
    ],
    [
     208,
-    "9.00  HZ          HZ"
+    "9.00  DWIDTH9.00 KHZ"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    "7.50  DWIDTH9.00 KHZ"
    ],
    [
     176,
-    "6.30  HZ          HZ"
+    "6.30  DWIDTH9.00 KHZ"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    "5.30  DWIDTH9.00 KHZ"
    ],
    [
     144,
-    "4.50  HZ          HZ"
+    "4.50  DWIDTH9.00 KHZ"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    "3.80  DWIDTH9.00 KHZ"
    ],
    [
     112,
-    "3.10  HZ          HZ"
+    "3.10  DWIDTH9.00 KHZ"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    "2.50  DWIDTH9.00 KHZ"
    ],
    [
     80,
-    "2.05  HZ          HZ"
+    "2.05  DWIDTH9.00 KHZ"
    ],
    [
     64,
-    "1.57  HZ          HZ"
+    "1.57  DWIDTH9.00 KHZ"
    ],
    [
     48,
-    "1.13  HZ          HZ"
+    "1.13  DWIDTH9.00 KHZ"
    ],
    [
     32,
@@ -1187,728 +1242,826 @@
     2,
     "170   HZ          HZ"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p2s5": {
   "name": "Diffusion",
+  "label": "DIFFUSION",
+  "legend": "LOW MID CHO HFB DIF DEF",
+  "display_page": 2,
+  "apply_page34": 1,
+  "select_display": "DIFFUSION    25",
+  "preset_byte": 64,
+  "preset_slot": "0x3cad",
+  "preset_check": [
+   64,
+   " 25   ION    25"
+  ],
+  "preset_ok": true,
+  "monotonic": true,
   "up": [
    [
     2,
-    "170   HZ          HZ"
+    " 25   ION    25"
    ],
    [
     32,
-    "DEPTH        12"
+    " 25   ION    25"
    ],
    [
     64,
-    " 25          12"
+    " 25   ION    25"
    ],
    [
     96,
-    " 37          12"
+    " 37   ION    25"
    ],
    [
     128,
-    " 50          12"
+    " 50   ION    25"
    ],
    [
     160,
-    " 63          12"
+    " 63   ION    25"
    ],
    [
     192,
-    " 75          12"
+    " 75   ION    25"
    ],
    [
     224,
-    " 88          12"
+    " 88   ION    25"
    ],
    [
     254,
-    " 99          12"
+    " 99   ION    25"
    ]
   ],
   "down": [
    [
     248,
-    " 97          12"
+    " 97   ION    25"
    ],
    [
     240,
-    " 94          12"
+    " 94   ION    25"
    ],
    [
     224,
-    " 88          12"
+    " 88   ION    25"
    ],
    [
     208,
-    " 82          12"
+    " 82   ION    25"
    ],
    [
     192,
-    " 75          12"
+    " 75   ION    25"
    ],
    [
     176,
-    " 69          12"
+    " 69   ION    25"
    ],
    [
     160,
-    " 63          12"
+    " 63   ION    25"
    ],
    [
     144,
-    " 56          12"
+    " 56   ION    25"
    ],
    [
     128,
-    " 50          12"
+    " 50   ION    25"
    ],
    [
     112,
-    " 44          12"
+    " 44   ION    25"
    ],
    [
     96,
-    " 37          12"
+    " 37   ION    25"
    ],
    [
     80,
-    " 31          12"
+    " 31   ION    25"
    ],
    [
     64,
-    " 25          12"
+    " 25   ION    25"
    ],
    [
     48,
-    " 18          12"
+    " 18   ION    25"
    ],
    [
     32,
-    " 12          12"
+    " 12   ION    25"
    ],
    [
     24,
-    " 09          12"
+    " 09   ION    25"
    ],
    [
     16,
-    " 06          12"
+    " 06   ION    25"
    ],
    [
     8,
-    " 03          12"
+    " 03   ION    25"
    ],
    [
     2,
-    " 00          12"
+    " 00   ION    25"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p2s6": {
   "name": "Definition",
+  "label": "DEFINITION",
+  "legend": "LOW MID CHO HFB DIF DEF",
+  "display_page": 2,
+  "apply_page34": 1,
+  "select_display": "DEFINITION   00",
+  "preset_byte": 2,
+  "preset_slot": "0x3cae",
+  "preset_check": [
+   2,
+   " 00   TION   00"
+  ],
+  "preset_ok": true,
+  "monotonic": true,
   "up": [
    [
     2,
-    " 00          12"
+    " 00   TION   00"
    ],
    [
     32,
-    "PREDELAY    48.0 MSEC"
+    " 12   TION   00"
    ],
    [
     64,
-    "48.0  AY    48.0 MSEC"
+    " 25   TION   00"
    ],
    [
     96,
-    "48.0  AY    48.0 MSEC"
+    " 37   TION   00"
    ],
    [
     128,
-    "48.0  AY    48.0 MSEC"
+    " 50   TION   00"
    ],
    [
     160,
-    "48.0  AY    48.0 MSEC"
+    " 63   TION   00"
    ],
    [
     192,
-    "48.0  AY    48.0 MSEC"
+    " 75   TION   00"
    ],
    [
     224,
-    "48.0  AY    48.0 MSEC"
+    " 75   TION   00"
    ],
    [
     254,
-    "48.0  AY    48.0 MSEC"
+    " 75   TION   00"
    ]
   ],
   "down": [
    [
     248,
-    "48.0  AY    48.0 MSEC"
+    " 75   TION   00"
    ],
    [
     240,
-    "48.0  AY    48.0 MSEC"
+    " 75   TION   00"
    ],
    [
     224,
-    "48.0  AY    48.0 MSEC"
+    " 75   TION   00"
    ],
    [
     208,
-    "48.0  AY    48.0 MSEC"
+    " 75   TION   00"
    ],
    [
     192,
-    "48.0  AY    48.0 MSEC"
+    " 75   TION   00"
    ],
    [
     176,
-    "48.0  AY    48.0 MSEC"
+    " 69   TION   00"
    ],
    [
     160,
-    "48.0  AY    48.0 MSEC"
+    " 63   TION   00"
    ],
    [
     144,
-    "48.0  AY    48.0 MSEC"
+    " 56   TION   00"
    ],
    [
     128,
-    "48.0  AY    48.0 MSEC"
+    " 50   TION   00"
    ],
    [
     112,
-    "48.0  AY    48.0 MSEC"
+    " 44   TION   00"
    ],
    [
     96,
-    "48.0  AY    48.0 MSEC"
+    " 37   TION   00"
    ],
    [
     80,
-    "48.0  AY    48.0 MSEC"
+    " 31   TION   00"
    ],
    [
     64,
-    "48.0  AY    48.0 MSEC"
+    " 25   TION   00"
    ],
    [
     48,
-    "48.0  AY    48.0 MSEC"
+    " 18   TION   00"
    ],
    [
     32,
-    "48.0  AY    48.0 MSEC"
+    " 12   TION   00"
    ],
    [
     24,
-    "48.0  AY    48.0 MSEC"
+    " 09   TION   00"
    ],
    [
     16,
-    "48.0  AY    48.0 MSEC"
+    " 06   TION   00"
    ],
    [
     8,
-    "48.0  AY    48.0 MSEC"
+    " 03   TION   00"
    ],
    [
     2,
-    "48.0  AY    48.0 MSEC"
+    " 00   TION   00"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p3s1": {
   "name": "PE1 Level",
+  "label": "LEVEL 1 L)A",
+  "legend": "[PREECHO LEVELS]",
+  "display_page": 3,
+  "apply_page34": 2,
+  "select_display": "LEVEL 1 L)A  00",
+  "preset_byte": 2,
+  "preset_slot": "0x3caf",
+  "preset_check": [
+   2,
+   " 00   1 L)A  00"
+  ],
+  "preset_ok": true,
+  "monotonic": true,
   "up": [
    [
     2,
-    "48.0  AY    48.0 MSEC"
+    " 00   1 L)A  00"
    ],
    [
     32,
-    "LF DECAY     1.1  SEC"
+    " 12   1 L)A  00"
    ],
    [
     64,
-    " 1.5  AY     1.1  SEC"
+    " 25   1 L)A  00"
    ],
    [
     96,
-    " 2.2  AY     1.1  SEC"
+    " 37   1 L)A  00"
    ],
    [
     128,
-    " 3.0  AY     1.1  SEC"
+    " 50   1 L)A  00"
    ],
    [
     160,
-    " 4.6  AY     1.1  SEC"
+    " 63   1 L)A  00"
    ],
    [
     192,
-    " 7.5  AY     1.1  SEC"
+    " 75   1 L)A  00"
    ],
    [
     224,
-    " 16   AY     1.1  SEC"
+    " 88   1 L)A  00"
    ],
    [
     254,
-    " --   AY     1.1  SEC"
+    " 99   1 L)A  00"
    ]
   ],
   "down": [
    [
     248,
-    " 70   AY     1.1  SEC"
+    " 97   1 L)A  00"
    ],
    [
     240,
-    " 35   AY     1.1  SEC"
+    " 94   1 L)A  00"
    ],
    [
     224,
-    " 16   AY     1.1  SEC"
+    " 88   1 L)A  00"
    ],
    [
     208,
-    " 10   AY     1.1  SEC"
+    " 82   1 L)A  00"
    ],
    [
     192,
-    " 7.5  AY     1.1  SEC"
+    " 75   1 L)A  00"
    ],
    [
     176,
-    " 5.7  AY     1.1  SEC"
+    " 69   1 L)A  00"
    ],
    [
     160,
-    " 4.6  AY     1.1  SEC"
+    " 63   1 L)A  00"
    ],
    [
     144,
-    " 3.8  AY     1.1  SEC"
+    " 56   1 L)A  00"
    ],
    [
     128,
-    " 3.0  AY     1.1  SEC"
+    " 50   1 L)A  00"
    ],
    [
     112,
-    " 2.6  AY     1.1  SEC"
+    " 44   1 L)A  00"
    ],
    [
     96,
-    " 2.2  AY     1.1  SEC"
+    " 37   1 L)A  00"
    ],
    [
     80,
-    " 1.8  AY     1.1  SEC"
+    " 31   1 L)A  00"
    ],
    [
     64,
-    " 1.5  AY     1.1  SEC"
+    " 25   1 L)A  00"
    ],
    [
     48,
-    " 1.3  AY     1.1  SEC"
+    " 18   1 L)A  00"
    ],
    [
     32,
-    " 1.1  AY     1.1  SEC"
+    " 12   1 L)A  00"
    ],
    [
     24,
-    " 0.9  AY     1.1  SEC"
+    " 09   1 L)A  00"
    ],
    [
     16,
-    " 0.8  AY     1.1  SEC"
+    " 06   1 L)A  00"
    ],
    [
     8,
-    " 0.6  AY     1.1  SEC"
+    " 03   1 L)A  00"
    ],
    [
     2,
-    " 0.6  AY     1.1  SEC"
+    " 00   1 L)A  00"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p3s2": {
   "name": "PE2 Level",
+  "label": "LEVEL 2 R)C",
+  "legend": "[PREECHO LEVELS]",
+  "display_page": 3,
+  "apply_page34": 2,
+  "select_display": "LEVEL 2 R)C  00",
+  "preset_byte": 2,
+  "preset_slot": "0x3cb0",
+  "preset_check": [
+   2,
+   " 00   2 R)C  00"
+  ],
+  "preset_ok": true,
+  "monotonic": true,
   "up": [
    [
     2,
-    " 0.6  AY     1.1  SEC"
+    " 00   2 R)C  00"
    ],
    [
     32,
-    "MID DECAY    1.1  SEC"
+    " 12   2 R)C  00"
    ],
    [
     64,
-    " 1.5  CAY    1.1  SEC"
+    " 25   2 R)C  00"
    ],
    [
     96,
-    " 2.2  CAY    1.1  SEC"
+    " 37   2 R)C  00"
    ],
    [
     128,
-    " 3.0  CAY    1.1  SEC"
+    " 50   2 R)C  00"
    ],
    [
     160,
-    " 4.6  CAY    1.1  SEC"
+    " 63   2 R)C  00"
    ],
    [
     192,
-    " 7.5  CAY    1.1  SEC"
+    " 75   2 R)C  00"
    ],
    [
     224,
-    " 16   CAY    1.1  SEC"
+    " 88   2 R)C  00"
    ],
    [
     254,
-    " --   CAY    1.1  SEC"
+    " 99   2 R)C  00"
    ]
   ],
   "down": [
    [
     248,
-    " 70   CAY    1.1  SEC"
+    " 97   2 R)C  00"
    ],
    [
     240,
-    " 35   CAY    1.1  SEC"
+    " 94   2 R)C  00"
    ],
    [
     224,
-    " 16   CAY    1.1  SEC"
+    " 88   2 R)C  00"
    ],
    [
     208,
-    " 10   CAY    1.1  SEC"
+    " 82   2 R)C  00"
    ],
    [
     192,
-    " 7.5  CAY    1.1  SEC"
+    " 75   2 R)C  00"
    ],
    [
     176,
-    " 5.7  CAY    1.1  SEC"
+    " 69   2 R)C  00"
    ],
    [
     160,
-    " 4.6  CAY    1.1  SEC"
+    " 63   2 R)C  00"
    ],
    [
     144,
-    " 3.8  CAY    1.1  SEC"
+    " 56   2 R)C  00"
    ],
    [
     128,
-    " 3.0  CAY    1.1  SEC"
+    " 50   2 R)C  00"
    ],
    [
     112,
-    " 2.6  CAY    1.1  SEC"
+    " 44   2 R)C  00"
    ],
    [
     96,
-    " 2.2  CAY    1.1  SEC"
+    " 37   2 R)C  00"
    ],
    [
     80,
-    " 1.8  CAY    1.1  SEC"
+    " 31   2 R)C  00"
    ],
    [
     64,
-    " 1.5  CAY    1.1  SEC"
+    " 25   2 R)C  00"
    ],
    [
     48,
-    " 1.3  CAY    1.1  SEC"
+    " 18   2 R)C  00"
    ],
    [
     32,
-    " 1.1  CAY    1.1  SEC"
+    " 12   2 R)C  00"
    ],
    [
     24,
-    " 0.9  CAY    1.1  SEC"
+    " 09   2 R)C  00"
    ],
    [
     16,
-    " 0.8  CAY    1.1  SEC"
+    " 06   2 R)C  00"
    ],
    [
     8,
-    " 0.6  CAY    1.1  SEC"
+    " 03   2 R)C  00"
    ],
    [
     2,
-    " 0.6  CAY    1.1  SEC"
+    " 00   2 R)C  00"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p3s3": {
   "name": "PE3 Level",
+  "label": "LEVEL 3 R)A",
+  "legend": "[PREECHO LEVELS]",
+  "display_page": 3,
+  "apply_page34": 2,
+  "select_display": "LEVEL 3 R)A  00",
+  "preset_byte": 2,
+  "preset_slot": "0x3cb1",
+  "preset_check": [
+   2,
+   " 00   3 R)A  00"
+  ],
+  "preset_ok": true,
+  "monotonic": true,
   "up": [
    [
     2,
-    " 0.6  CAY    1.1  SEC"
+    " 00   3 R)A  00"
    ],
    [
     32,
-    "CROSSOVER   720   HZ"
+    " 12   3 R)A  00"
    ],
    [
     64,
-    "1.57 KHZ          HZ"
+    " 25   3 R)A  00"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    " 37   3 R)A  00"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    " 50   3 R)A  00"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    " 63   3 R)A  00"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    " 75   3 R)A  00"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    " 88   3 R)A  00"
    ],
    [
     254,
-    " --   HZ          HZ"
+    " 99   3 R)A  00"
    ]
   ],
   "down": [
    [
     248,
-    "19.0  HZ          HZ"
+    " 97   3 R)A  00"
    ],
    [
     240,
-    "15.0  HZ          HZ"
+    " 94   3 R)A  00"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    " 88   3 R)A  00"
    ],
    [
     208,
-    "9.00  HZ          HZ"
+    " 82   3 R)A  00"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    " 75   3 R)A  00"
    ],
    [
     176,
-    "6.30  HZ          HZ"
+    " 69   3 R)A  00"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    " 63   3 R)A  00"
    ],
    [
     144,
-    "4.50  HZ          HZ"
+    " 56   3 R)A  00"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    " 50   3 R)A  00"
    ],
    [
     112,
-    "3.10  HZ          HZ"
+    " 44   3 R)A  00"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    " 37   3 R)A  00"
    ],
    [
     80,
-    "2.05  HZ          HZ"
+    " 31   3 R)A  00"
    ],
    [
     64,
-    "1.57  HZ          HZ"
+    " 25   3 R)A  00"
    ],
    [
     48,
-    "1.13  HZ          HZ"
+    " 18   3 R)A  00"
    ],
    [
     32,
-    "720   HZ          HZ"
+    " 12   3 R)A  00"
    ],
    [
     24,
-    "530   HZ          HZ"
+    " 09   3 R)A  00"
    ],
    [
     16,
-    "350   HZ          HZ"
+    " 06   3 R)A  00"
    ],
    [
     8,
-    "170   HZ          HZ"
+    " 03   3 R)A  00"
    ],
    [
     2,
-    "170   HZ          HZ"
+    " 00   3 R)A  00"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p3s4": {
   "name": "PE4 Level",
+  "label": "LEVEL 4 L)C",
+  "legend": "[PREECHO LEVELS]",
+  "display_page": 3,
+  "apply_page34": 2,
+  "select_display": "LEVEL 4 L)C  00",
+  "preset_byte": 2,
+  "preset_slot": "0x3cb2",
+  "preset_check": [
+   2,
+   " 00   4 L)C  00"
+  ],
+  "preset_ok": true,
+  "monotonic": true,
   "up": [
    [
     2,
-    "170   HZ          HZ"
+    " 00   4 L)C  00"
    ],
    [
     32,
-    "TREBLE DECAY720   HZ"
+    " 12   4 L)C  00"
    ],
    [
     64,
-    "1.57 KHZ          HZ"
+    " 25   4 L)C  00"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    " 37   4 L)C  00"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    " 50   4 L)C  00"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    " 63   4 L)C  00"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    " 75   4 L)C  00"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    " 88   4 L)C  00"
    ],
    [
     254,
-    " --   HZ          HZ"
+    " 99   4 L)C  00"
    ]
   ],
   "down": [
    [
     248,
-    "19.0  HZ          HZ"
+    " 97   4 L)C  00"
    ],
    [
     240,
-    "15.0  HZ          HZ"
+    " 94   4 L)C  00"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    " 88   4 L)C  00"
    ],
    [
     208,
-    "9.00  HZ          HZ"
+    " 82   4 L)C  00"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    " 75   4 L)C  00"
    ],
    [
     176,
-    "6.30  HZ          HZ"
+    " 69   4 L)C  00"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    " 63   4 L)C  00"
    ],
    [
     144,
-    "4.50  HZ          HZ"
+    " 56   4 L)C  00"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    " 50   4 L)C  00"
    ],
    [
     112,
-    "3.10  HZ          HZ"
+    " 44   4 L)C  00"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    " 37   4 L)C  00"
    ],
    [
     80,
-    "2.05  HZ          HZ"
+    " 31   4 L)C  00"
    ],
    [
     64,
-    "1.57  HZ          HZ"
+    " 25   4 L)C  00"
    ],
    [
     48,
-    "1.13  HZ          HZ"
+    " 18   4 L)C  00"
    ],
    [
     32,
-    "720   HZ          HZ"
+    " 12   4 L)C  00"
    ],
    [
     24,
-    "530   HZ          HZ"
+    " 09   4 L)C  00"
    ],
    [
     16,
-    "350   HZ          HZ"
+    " 06   4 L)C  00"
    ],
    [
     8,
-    "170   HZ          HZ"
+    " 03   4 L)C  00"
    ],
    [
     2,
-    "170   HZ          HZ"
+    " 00   4 L)C  00"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p3s5": {
   "name": "sl5",
+  "label": "INACTIVE",
+  "legend": "[PREECHO LEVELS]",
+  "display_page": 3,
+  "apply_page34": 2,
+  "select_display": "INACTIVE",
+  "preset_byte": 0,
+  "preset_slot": "0x3cb3",
+  "preset_check": [
+   0,
+   "INACTIVE"
+  ],
+  "preset_ok": null,
+  "monotonic": null,
   "up": [
    [
     2,
-    "170   HZ          HZ"
+    "INACTIVE"
    ],
    [
     32,
@@ -2020,10 +2173,24 @@
     2,
     "INACTIVE"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p3s6": {
   "name": "sl6",
+  "label": "INACTIVE",
+  "legend": "[PREECHO LEVELS]",
+  "display_page": 3,
+  "apply_page34": 2,
+  "select_display": "INACTIVE",
+  "preset_byte": 0,
+  "preset_slot": "0x3cb4",
+  "preset_check": [
+   0,
+   "INACTIVE"
+  ],
+  "preset_ok": null,
+  "monotonic": null,
   "up": [
    [
     2,
@@ -2139,10 +2306,955 @@
     2,
     "INACTIVE"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider."
  },
  "p4s1": {
   "name": "PE1 Delay",
+  "label": "DELAY 1 L)A",
+  "legend": "[PREECHO DELAYS][FINPDL]",
+  "display_page": 4,
+  "apply_page34": 3,
+  "select_display": "DELAY 1 L)A 5.00 MSEC",
+  "preset_byte": 5,
+  "preset_slot": "0x3cb5",
+  "preset_check": [
+   5,
+   "3.00  1 L)A 5.00 MSEC"
+  ],
+  "preset_ok": false,
+  "monotonic": true,
+  "up": [
+   [
+    2,
+    "DELAY 1 L)A 5.00 MSEC"
+   ],
+   [
+    32,
+    "8.00  1 L)A 5.00 MSEC"
+   ],
+   [
+    64,
+    "44.0  1 L)A 5.00 MSEC"
+   ],
+   [
+    96,
+    "80.0  1 L)A 5.00 MSEC"
+   ],
+   [
+    128,
+    "116   1 L)A 5.00 MSEC"
+   ],
+   [
+    160,
+    "152   1 L)A 5.00 MSEC"
+   ],
+   [
+    192,
+    "188   1 L)A 5.00 MSEC"
+   ],
+   [
+    224,
+    "188   1 L)A 5.00 MSEC"
+   ],
+   [
+    254,
+    "188   1 L)A 5.00 MSEC"
+   ]
+  ],
+  "down": [
+   [
+    248,
+    "188   1 L)A 5.00 MSEC"
+   ],
+   [
+    240,
+    "188   1 L)A 5.00 MSEC"
+   ],
+   [
+    224,
+    "188   1 L)A 5.00 MSEC"
+   ],
+   [
+    208,
+    "188   1 L)A 5.00 MSEC"
+   ],
+   [
+    192,
+    "188   1 L)A 5.00 MSEC"
+   ],
+   [
+    176,
+    "184   1 L)A 5.00 MSEC"
+   ],
+   [
+    160,
+    "180   1 L)A 5.00 MSEC"
+   ],
+   [
+    144,
+    "162   1 L)A 5.00 MSEC"
+   ],
+   [
+    128,
+    "144   1 L)A 5.00 MSEC"
+   ],
+   [
+    112,
+    "126   1 L)A 5.00 MSEC"
+   ],
+   [
+    96,
+    "108   1 L)A 5.00 MSEC"
+   ],
+   [
+    80,
+    "90.0  1 L)A 5.00 MSEC"
+   ],
+   [
+    64,
+    "72.0  1 L)A 5.00 MSEC"
+   ],
+   [
+    48,
+    "54.0  1 L)A 5.00 MSEC"
+   ],
+   [
+    32,
+    "36.0  1 L)A 5.00 MSEC"
+   ],
+   [
+    24,
+    "27.0  1 L)A 5.00 MSEC"
+   ],
+   [
+    16,
+    "18.0  1 L)A 5.00 MSEC"
+   ],
+   [
+    8,
+    "9.00  1 L)A 5.00 MSEC"
+   ],
+   [
+    2,
+    "2.25  1 L)A 5.00 MSEC"
+   ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-4 wrinkle: ascending slider writes render exactly 25 slider-bytes LOW vs descending writes at the same byte (up(b)==down(b-25), both formatters) \u2014 the DOWN pass is the calibration; and the select-render preset values are NOT on the slider byte grid (finer preset store). preset_ok=False reflects those two measured facts, not a formatter error."
+ },
+ "p4s2": {
+  "name": "PE2 Delay",
+  "label": "DELAY 2 R)C",
+  "legend": "[PREECHO DELAYS][FINPDL]",
+  "display_page": 4,
+  "apply_page34": 3,
+  "select_display": "DELAY 2 R)C 9.75 MSEC",
+  "preset_byte": 9,
+  "preset_slot": "0x3cb6",
+  "preset_check": [
+   9,
+   "4.00  2 R)C 9.75 MSEC"
+  ],
+  "preset_ok": false,
+  "monotonic": true,
+  "up": [
+   [
+    2,
+    "DELAY 2 R)C 9.75 MSEC"
+   ],
+   [
+    32,
+    "8.00  2 R)C 9.75 MSEC"
+   ],
+   [
+    64,
+    "44.0  2 R)C 9.75 MSEC"
+   ],
+   [
+    96,
+    "80.0  2 R)C 9.75 MSEC"
+   ],
+   [
+    128,
+    "116   2 R)C 9.75 MSEC"
+   ],
+   [
+    160,
+    "152   2 R)C 9.75 MSEC"
+   ],
+   [
+    192,
+    "188   2 R)C 9.75 MSEC"
+   ],
+   [
+    224,
+    "188   2 R)C 9.75 MSEC"
+   ],
+   [
+    254,
+    "188   2 R)C 9.75 MSEC"
+   ]
+  ],
+  "down": [
+   [
+    248,
+    "188   2 R)C 9.75 MSEC"
+   ],
+   [
+    240,
+    "188   2 R)C 9.75 MSEC"
+   ],
+   [
+    224,
+    "188   2 R)C 9.75 MSEC"
+   ],
+   [
+    208,
+    "188   2 R)C 9.75 MSEC"
+   ],
+   [
+    192,
+    "188   2 R)C 9.75 MSEC"
+   ],
+   [
+    176,
+    "184   2 R)C 9.75 MSEC"
+   ],
+   [
+    160,
+    "180   2 R)C 9.75 MSEC"
+   ],
+   [
+    144,
+    "162   2 R)C 9.75 MSEC"
+   ],
+   [
+    128,
+    "144   2 R)C 9.75 MSEC"
+   ],
+   [
+    112,
+    "126   2 R)C 9.75 MSEC"
+   ],
+   [
+    96,
+    "108   2 R)C 9.75 MSEC"
+   ],
+   [
+    80,
+    "90.0  2 R)C 9.75 MSEC"
+   ],
+   [
+    64,
+    "72.0  2 R)C 9.75 MSEC"
+   ],
+   [
+    48,
+    "54.0  2 R)C 9.75 MSEC"
+   ],
+   [
+    32,
+    "36.0  2 R)C 9.75 MSEC"
+   ],
+   [
+    24,
+    "27.0  2 R)C 9.75 MSEC"
+   ],
+   [
+    16,
+    "18.0  2 R)C 9.75 MSEC"
+   ],
+   [
+    8,
+    "9.00  2 R)C 9.75 MSEC"
+   ],
+   [
+    2,
+    "2.25  2 R)C 9.75 MSEC"
+   ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-4 wrinkle: ascending slider writes render exactly 25 slider-bytes LOW vs descending writes at the same byte (up(b)==down(b-25), both formatters) \u2014 the DOWN pass is the calibration; and the select-render preset values are NOT on the slider byte grid (finer preset store). preset_ok=False reflects those two measured facts, not a formatter error."
+ },
+ "p4s3": {
+  "name": "PE3 Delay",
+  "label": "DELAY 3 R)A",
+  "legend": "[PREECHO DELAYS][FINPDL]",
+  "display_page": 4,
+  "apply_page34": 3,
+  "select_display": "DELAY 3 R)A 17.5 MSEC",
+  "preset_byte": 17,
+  "preset_slot": "0x3cb7",
+  "preset_check": [
+   17,
+   "6.00  3 R)A 17.5 MSEC"
+  ],
+  "preset_ok": false,
+  "monotonic": true,
+  "up": [
+   [
+    2,
+    "DELAY 3 R)A 17.5 MSEC"
+   ],
+   [
+    32,
+    "8.00  3 R)A 17.5 MSEC"
+   ],
+   [
+    64,
+    "44.0  3 R)A 17.5 MSEC"
+   ],
+   [
+    96,
+    "80.0  3 R)A 17.5 MSEC"
+   ],
+   [
+    128,
+    "116   3 R)A 17.5 MSEC"
+   ],
+   [
+    160,
+    "152   3 R)A 17.5 MSEC"
+   ],
+   [
+    192,
+    "188   3 R)A 17.5 MSEC"
+   ],
+   [
+    224,
+    "188   3 R)A 17.5 MSEC"
+   ],
+   [
+    254,
+    "188   3 R)A 17.5 MSEC"
+   ]
+  ],
+  "down": [
+   [
+    248,
+    "188   3 R)A 17.5 MSEC"
+   ],
+   [
+    240,
+    "188   3 R)A 17.5 MSEC"
+   ],
+   [
+    224,
+    "188   3 R)A 17.5 MSEC"
+   ],
+   [
+    208,
+    "188   3 R)A 17.5 MSEC"
+   ],
+   [
+    192,
+    "188   3 R)A 17.5 MSEC"
+   ],
+   [
+    176,
+    "184   3 R)A 17.5 MSEC"
+   ],
+   [
+    160,
+    "180   3 R)A 17.5 MSEC"
+   ],
+   [
+    144,
+    "162   3 R)A 17.5 MSEC"
+   ],
+   [
+    128,
+    "144   3 R)A 17.5 MSEC"
+   ],
+   [
+    112,
+    "126   3 R)A 17.5 MSEC"
+   ],
+   [
+    96,
+    "108   3 R)A 17.5 MSEC"
+   ],
+   [
+    80,
+    "90.0  3 R)A 17.5 MSEC"
+   ],
+   [
+    64,
+    "72.0  3 R)A 17.5 MSEC"
+   ],
+   [
+    48,
+    "54.0  3 R)A 17.5 MSEC"
+   ],
+   [
+    32,
+    "36.0  3 R)A 17.5 MSEC"
+   ],
+   [
+    24,
+    "27.0  3 R)A 17.5 MSEC"
+   ],
+   [
+    16,
+    "18.0  3 R)A 17.5 MSEC"
+   ],
+   [
+    8,
+    "9.00  3 R)A 17.5 MSEC"
+   ],
+   [
+    2,
+    "2.25  3 R)A 17.5 MSEC"
+   ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-4 wrinkle: ascending slider writes render exactly 25 slider-bytes LOW vs descending writes at the same byte (up(b)==down(b-25), both formatters) \u2014 the DOWN pass is the calibration; and the select-render preset values are NOT on the slider byte grid (finer preset store). preset_ok=False reflects those two measured facts, not a formatter error."
+ },
+ "p4s4": {
+  "name": "PE4 Delay",
+  "label": "DELAY 4 L)C",
+  "legend": "[PREECHO DELAYS][FINPDL]",
+  "display_page": 4,
+  "apply_page34": 3,
+  "select_display": "DELAY 4 L)C 25.0 MSEC",
+  "preset_byte": 25,
+  "preset_slot": "0x3cb8",
+  "preset_check": [
+   25,
+   "8.00  4 L)C 25.0 MSEC"
+  ],
+  "preset_ok": false,
+  "monotonic": true,
+  "up": [
+   [
+    2,
+    "DELAY 4 L)C 25.0 MSEC"
+   ],
+   [
+    32,
+    "8.00  4 L)C 25.0 MSEC"
+   ],
+   [
+    64,
+    "44.0  4 L)C 25.0 MSEC"
+   ],
+   [
+    96,
+    "80.0  4 L)C 25.0 MSEC"
+   ],
+   [
+    128,
+    "116   4 L)C 25.0 MSEC"
+   ],
+   [
+    160,
+    "152   4 L)C 25.0 MSEC"
+   ],
+   [
+    192,
+    "188   4 L)C 25.0 MSEC"
+   ],
+   [
+    224,
+    "188   4 L)C 25.0 MSEC"
+   ],
+   [
+    254,
+    "188   4 L)C 25.0 MSEC"
+   ]
+  ],
+  "down": [
+   [
+    248,
+    "188   4 L)C 25.0 MSEC"
+   ],
+   [
+    240,
+    "188   4 L)C 25.0 MSEC"
+   ],
+   [
+    224,
+    "188   4 L)C 25.0 MSEC"
+   ],
+   [
+    208,
+    "188   4 L)C 25.0 MSEC"
+   ],
+   [
+    192,
+    "188   4 L)C 25.0 MSEC"
+   ],
+   [
+    176,
+    "184   4 L)C 25.0 MSEC"
+   ],
+   [
+    160,
+    "180   4 L)C 25.0 MSEC"
+   ],
+   [
+    144,
+    "162   4 L)C 25.0 MSEC"
+   ],
+   [
+    128,
+    "144   4 L)C 25.0 MSEC"
+   ],
+   [
+    112,
+    "126   4 L)C 25.0 MSEC"
+   ],
+   [
+    96,
+    "108   4 L)C 25.0 MSEC"
+   ],
+   [
+    80,
+    "90.0  4 L)C 25.0 MSEC"
+   ],
+   [
+    64,
+    "72.0  4 L)C 25.0 MSEC"
+   ],
+   [
+    48,
+    "54.0  4 L)C 25.0 MSEC"
+   ],
+   [
+    32,
+    "36.0  4 L)C 25.0 MSEC"
+   ],
+   [
+    24,
+    "27.0  4 L)C 25.0 MSEC"
+   ],
+   [
+    16,
+    "18.0  4 L)C 25.0 MSEC"
+   ],
+   [
+    8,
+    "9.00  4 L)C 25.0 MSEC"
+   ],
+   [
+    2,
+    "2.25  4 L)C 25.0 MSEC"
+   ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-4 wrinkle: ascending slider writes render exactly 25 slider-bytes LOW vs descending writes at the same byte (up(b)==down(b-25), both formatters) \u2014 the DOWN pass is the calibration; and the select-render preset values are NOT on the slider byte grid (finer preset store). preset_ok=False reflects those two measured facts, not a formatter error."
+ },
+ "p4s5": {
+  "name": "FinePD L",
+  "label": "FIN PDLY L)",
+  "legend": "[PREECHO DELAYS][FINPDL]",
+  "display_page": 4,
+  "apply_page34": 3,
+  "select_display": "FIN PDLY L) 0.36 MSEC",
+  "preset_byte": 2,
+  "preset_slot": "0x3cb9",
+  "preset_check": [
+   2,
+   "0.28  LY L) 0.36 MSEC"
+  ],
+  "preset_ok": false,
+  "monotonic": true,
+  "up": [
+   [
+    2,
+    "0.06  LY L) 0.36 MSEC"
+   ],
+   [
+    32,
+    "1.00  LY L) 0.36 MSEC"
+   ],
+   [
+    64,
+    "5.50  LY L) 0.36 MSEC"
+   ],
+   [
+    96,
+    "10.0  LY L) 0.36 MSEC"
+   ],
+   [
+    128,
+    "14.5  LY L) 0.36 MSEC"
+   ],
+   [
+    160,
+    "19.0  LY L) 0.36 MSEC"
+   ],
+   [
+    192,
+    "23.5  LY L) 0.36 MSEC"
+   ],
+   [
+    224,
+    "28.0  LY L) 0.36 MSEC"
+   ],
+   [
+    254,
+    "31.3  LY L) 0.36 MSEC"
+   ]
+  ],
+  "down": [
+   [
+    248,
+    "31.3  LY L) 0.36 MSEC"
+   ],
+   [
+    240,
+    "31.1  LY L) 0.36 MSEC"
+   ],
+   [
+    224,
+    "30.6  LY L) 0.36 MSEC"
+   ],
+   [
+    208,
+    "29.2  LY L) 0.36 MSEC"
+   ],
+   [
+    192,
+    "27.0  LY L) 0.36 MSEC"
+   ],
+   [
+    176,
+    "24.7  LY L) 0.36 MSEC"
+   ],
+   [
+    160,
+    "22.5  LY L) 0.36 MSEC"
+   ],
+   [
+    144,
+    "20.2  LY L) 0.36 MSEC"
+   ],
+   [
+    128,
+    "18.0  LY L) 0.36 MSEC"
+   ],
+   [
+    112,
+    "15.7  LY L) 0.36 MSEC"
+   ],
+   [
+    96,
+    "13.5  LY L) 0.36 MSEC"
+   ],
+   [
+    80,
+    "11.2  LY L) 0.36 MSEC"
+   ],
+   [
+    64,
+    "9.00  LY L) 0.36 MSEC"
+   ],
+   [
+    48,
+    "6.75  LY L) 0.36 MSEC"
+   ],
+   [
+    32,
+    "4.50  LY L) 0.36 MSEC"
+   ],
+   [
+    24,
+    "3.37  LY L) 0.36 MSEC"
+   ],
+   [
+    16,
+    "2.25  LY L) 0.36 MSEC"
+   ],
+   [
+    8,
+    "1.12  LY L) 0.36 MSEC"
+   ],
+   [
+    2,
+    "0.28  LY L) 0.36 MSEC"
+   ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-4 wrinkle: ascending slider writes render exactly 25 slider-bytes LOW vs descending writes at the same byte (up(b)==down(b-25), both formatters) \u2014 the DOWN pass is the calibration; and the select-render preset values are NOT on the slider byte grid (finer preset store). preset_ok=False reflects those two measured facts, not a formatter error."
+ },
+ "p4s6": {
+  "name": "FinePD R",
+  "label": "FIN PDLY R)",
+  "legend": "[PREECHO DELAYS][FINPDL]",
+  "display_page": 4,
+  "apply_page34": 3,
+  "select_display": "FIN PDLY R) 10.2 MSEC",
+  "preset_byte": 82,
+  "preset_slot": "0x3cba",
+  "preset_check": [
+   82,
+   "8.03  LY R) 10.2 MSEC"
+  ],
+  "preset_ok": false,
+  "monotonic": true,
+  "up": [
+   [
+    2,
+    "10.2  LY R) 10.2 MSEC"
+   ],
+   [
+    32,
+    "10.2  LY R) 10.2 MSEC"
+   ],
+   [
+    64,
+    "10.2  LY R) 10.2 MSEC"
+   ],
+   [
+    96,
+    "10.0  LY R) 10.2 MSEC"
+   ],
+   [
+    128,
+    "14.5  LY R) 10.2 MSEC"
+   ],
+   [
+    160,
+    "19.0  LY R) 10.2 MSEC"
+   ],
+   [
+    192,
+    "23.5  LY R) 10.2 MSEC"
+   ],
+   [
+    224,
+    "28.0  LY R) 10.2 MSEC"
+   ],
+   [
+    254,
+    "31.3  LY R) 10.2 MSEC"
+   ]
+  ],
+  "down": [
+   [
+    248,
+    "31.3  LY R) 10.2 MSEC"
+   ],
+   [
+    240,
+    "31.1  LY R) 10.2 MSEC"
+   ],
+   [
+    224,
+    "30.6  LY R) 10.2 MSEC"
+   ],
+   [
+    208,
+    "29.2  LY R) 10.2 MSEC"
+   ],
+   [
+    192,
+    "27.0  LY R) 10.2 MSEC"
+   ],
+   [
+    176,
+    "24.7  LY R) 10.2 MSEC"
+   ],
+   [
+    160,
+    "22.5  LY R) 10.2 MSEC"
+   ],
+   [
+    144,
+    "20.2  LY R) 10.2 MSEC"
+   ],
+   [
+    128,
+    "18.0  LY R) 10.2 MSEC"
+   ],
+   [
+    112,
+    "15.7  LY R) 10.2 MSEC"
+   ],
+   [
+    96,
+    "13.5  LY R) 10.2 MSEC"
+   ],
+   [
+    80,
+    "11.2  LY R) 10.2 MSEC"
+   ],
+   [
+    64,
+    "9.00  LY R) 10.2 MSEC"
+   ],
+   [
+    48,
+    "6.75  LY R) 10.2 MSEC"
+   ],
+   [
+    32,
+    "4.50  LY R) 10.2 MSEC"
+   ],
+   [
+    24,
+    "3.37  LY R) 10.2 MSEC"
+   ],
+   [
+    16,
+    "2.25  LY R) 10.2 MSEC"
+   ],
+   [
+    8,
+    "1.12  LY R) 10.2 MSEC"
+   ],
+   [
+    2,
+    "0.28  LY R) 10.2 MSEC"
+   ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-4 wrinkle: ascending slider writes render exactly 25 slider-bytes LOW vs descending writes at the same byte (up(b)==down(b-25), both formatters) \u2014 the DOWN pass is the calibration; and the select-render preset values are NOT on the slider byte grid (finer preset store). preset_ok=False reflects those two measured facts, not a formatter error."
+ },
+ "p5s1": {
+  "name": "Size",
+  "label": "SIZE 1",
+  "legend": "SIZE    GATE",
+  "display_page": 5,
+  "apply_page34": 5,
+  "select_display": "SIZE 1       40  METERS",
+  "preset_byte": 0,
+  "preset_slot": "0x3cc1",
+  "preset_check": [
+   0,
+   " 10          40  METERS"
+  ],
+  "preset_ok": false,
+  "monotonic": true,
+  "up": [
+   [
+    2,
+    " 10          40  METERS"
+   ],
+   [
+    32,
+    " 13          40  METERS"
+   ],
+   [
+    64,
+    " 17          40  METERS"
+   ],
+   [
+    96,
+    " 21          40  METERS"
+   ],
+   [
+    128,
+    " 25          40  METERS"
+   ],
+   [
+    160,
+    " 29          40  METERS"
+   ],
+   [
+    192,
+    " 33          40  METERS"
+   ],
+   [
+    224,
+    " 37          40  METERS"
+   ],
+   [
+    254,
+    " 40          40  METERS"
+   ]
+  ],
+  "down": [
+   [
+    248,
+    " 40          40  METERS"
+   ],
+   [
+    240,
+    " 39          40  METERS"
+   ],
+   [
+    224,
+    " 37          40  METERS"
+   ],
+   [
+    208,
+    " 35          40  METERS"
+   ],
+   [
+    192,
+    " 33          40  METERS"
+   ],
+   [
+    176,
+    " 31          40  METERS"
+   ],
+   [
+    160,
+    " 29          40  METERS"
+   ],
+   [
+    144,
+    " 27          40  METERS"
+   ],
+   [
+    128,
+    " 25          40  METERS"
+   ],
+   [
+    112,
+    " 23          40  METERS"
+   ],
+   [
+    96,
+    " 21          40  METERS"
+   ],
+   [
+    80,
+    " 19          40  METERS"
+   ],
+   [
+    64,
+    " 17          40  METERS"
+   ],
+   [
+    48,
+    " 15          40  METERS"
+   ],
+   [
+    32,
+    " 13          40  METERS"
+   ],
+   [
+    24,
+    " 12          40  METERS"
+   ],
+   [
+    16,
+    " 11          40  METERS"
+   ],
+   [
+    8,
+    " 10          40  METERS"
+   ],
+   [
+    2,
+    " 10          40  METERS"
+   ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-5 wrinkle: display page 5 pairs with apply-page byte 0x3C34=5 \u2014 the PAGE key SKIPS apply page 4 on CONCERT (refines registry #33); the apply-5 recalled slots read 0x00 and SIZE's select render (40 METERS = f(0xF8..)) matches no flat-array slot \u2014 the page-5 preset storage is unresolved."
+ },
+ "p5s2": {
+  "name": "sl2",
+  "label": "INACTIVE",
+  "legend": "SIZE    GATE",
+  "display_page": 5,
+  "apply_page34": 5,
+  "select_display": "INACTIVE",
+  "preset_byte": 0,
+  "preset_slot": "0x3cc2",
+  "preset_check": [
+   0,
+   "INACTIVE"
+  ],
+  "preset_ok": null,
+  "monotonic": null,
   "up": [
    [
     2,
@@ -2150,1423 +3262,647 @@
    ],
    [
     32,
-    "LF DECAY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     64,
-    " 1.5  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     96,
-    " 2.2  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     128,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     160,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     192,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     224,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     254,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ]
   ],
   "down": [
    [
     248,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     240,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     224,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     208,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     192,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     176,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     160,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     144,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     128,
-    " 2.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     112,
-    " 2.6  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     96,
-    " 2.2  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     80,
-    " 1.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     64,
-    " 1.5  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     48,
-    " 1.3  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     32,
-    " 1.1  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     24,
-    " 0.9  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     16,
-    " 0.8  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     8,
-    " 0.6  AY     1.1  SEC"
+    "INACTIVE"
    ],
    [
     2,
-    " 0.6  AY     1.1  SEC"
-   ]
-  ]
- },
- "p4s2": {
-  "name": "PE2 Delay",
-  "up": [
-   [
-    2,
-    " 0.6  AY     1.1  SEC"
-   ],
-   [
-    32,
-    "MID DECAY    1.1  SEC"
-   ],
-   [
-    64,
-    " 1.5  CAY    1.1  SEC"
-   ],
-   [
-    96,
-    " 2.2  CAY    1.1  SEC"
-   ],
-   [
-    128,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    160,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    192,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    224,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    254,
-    " 2.8  CAY    1.1  SEC"
+    "INACTIVE"
    ]
   ],
-  "down": [
-   [
-    248,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    240,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    224,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    208,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    192,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    176,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    160,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    144,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    128,
-    " 2.8  CAY    1.1  SEC"
-   ],
-   [
-    112,
-    " 2.6  CAY    1.1  SEC"
-   ],
-   [
-    96,
-    " 2.2  CAY    1.1  SEC"
-   ],
-   [
-    80,
-    " 1.8  CAY    1.1  SEC"
-   ],
-   [
-    64,
-    " 1.5  CAY    1.1  SEC"
-   ],
-   [
-    48,
-    " 1.3  CAY    1.1  SEC"
-   ],
-   [
-    32,
-    " 1.1  CAY    1.1  SEC"
-   ],
-   [
-    24,
-    " 0.9  CAY    1.1  SEC"
-   ],
-   [
-    16,
-    " 0.8  CAY    1.1  SEC"
-   ],
-   [
-    8,
-    " 0.6  CAY    1.1  SEC"
-   ],
-   [
-    2,
-    " 0.6  CAY    1.1  SEC"
-   ]
-  ]
- },
- "p4s3": {
-  "name": "PE3 Delay",
-  "up": [
-   [
-    2,
-    " 0.6  CAY    1.1  SEC"
-   ],
-   [
-    32,
-    "CROSSOVER   720   HZ"
-   ],
-   [
-    64,
-    "1.57 KHZ          HZ"
-   ],
-   [
-    96,
-    "2.50  HZ          HZ"
-   ],
-   [
-    128,
-    "3.40  HZ          HZ"
-   ],
-   [
-    160,
-    "3.40  HZ          HZ"
-   ],
-   [
-    192,
-    "3.40  HZ          HZ"
-   ],
-   [
-    224,
-    "3.40  HZ          HZ"
-   ],
-   [
-    254,
-    "3.40  HZ          HZ"
-   ]
-  ],
-  "down": [
-   [
-    248,
-    "3.40  HZ          HZ"
-   ],
-   [
-    240,
-    "3.40  HZ          HZ"
-   ],
-   [
-    224,
-    "3.40  HZ          HZ"
-   ],
-   [
-    208,
-    "3.40  HZ          HZ"
-   ],
-   [
-    192,
-    "3.40  HZ          HZ"
-   ],
-   [
-    176,
-    "3.40  HZ          HZ"
-   ],
-   [
-    160,
-    "3.40  HZ          HZ"
-   ],
-   [
-    144,
-    "3.40  HZ          HZ"
-   ],
-   [
-    128,
-    "3.40  HZ          HZ"
-   ],
-   [
-    112,
-    "3.10  HZ          HZ"
-   ],
-   [
-    96,
-    "2.50  HZ          HZ"
-   ],
-   [
-    80,
-    "2.05  HZ          HZ"
-   ],
-   [
-    64,
-    "1.57  HZ          HZ"
-   ],
-   [
-    48,
-    "1.13  HZ          HZ"
-   ],
-   [
-    32,
-    "720   HZ          HZ"
-   ],
-   [
-    24,
-    "530   HZ          HZ"
-   ],
-   [
-    16,
-    "350   HZ          HZ"
-   ],
-   [
-    8,
-    "170   HZ          HZ"
-   ],
-   [
-    2,
-    "170   HZ          HZ"
-   ]
-  ]
- },
- "p4s4": {
-  "name": "PE4 Delay",
-  "up": [
-   [
-    2,
-    "170   HZ          HZ"
-   ],
-   [
-    32,
-    "TREBLE DECAY720   HZ"
-   ],
-   [
-    64,
-    "1.57 KHZ          HZ"
-   ],
-   [
-    96,
-    "2.50  HZ          HZ"
-   ],
-   [
-    128,
-    "3.40  HZ          HZ"
-   ],
-   [
-    160,
-    "3.40  HZ          HZ"
-   ],
-   [
-    192,
-    "3.40  HZ          HZ"
-   ],
-   [
-    224,
-    "3.40  HZ          HZ"
-   ],
-   [
-    254,
-    "3.40  HZ          HZ"
-   ]
-  ],
-  "down": [
-   [
-    248,
-    "3.40  HZ          HZ"
-   ],
-   [
-    240,
-    "3.40  HZ          HZ"
-   ],
-   [
-    224,
-    "3.40  HZ          HZ"
-   ],
-   [
-    208,
-    "3.40  HZ          HZ"
-   ],
-   [
-    192,
-    "3.40  HZ          HZ"
-   ],
-   [
-    176,
-    "3.40  HZ          HZ"
-   ],
-   [
-    160,
-    "3.40  HZ          HZ"
-   ],
-   [
-    144,
-    "3.40  HZ          HZ"
-   ],
-   [
-    128,
-    "3.40  HZ          HZ"
-   ],
-   [
-    112,
-    "3.10  HZ          HZ"
-   ],
-   [
-    96,
-    "2.50  HZ          HZ"
-   ],
-   [
-    80,
-    "2.05  HZ          HZ"
-   ],
-   [
-    64,
-    "1.57  HZ          HZ"
-   ],
-   [
-    48,
-    "1.13  HZ          HZ"
-   ],
-   [
-    32,
-    "720   HZ          HZ"
-   ],
-   [
-    24,
-    "530   HZ          HZ"
-   ],
-   [
-    16,
-    "350   HZ          HZ"
-   ],
-   [
-    8,
-    "170   HZ          HZ"
-   ],
-   [
-    2,
-    "170   HZ          HZ"
-   ]
-  ]
- },
- "p4s5": {
-  "name": "FinePD L",
-  "up": [
-   [
-    2,
-    "170   HZ          HZ"
-   ],
-   [
-    32,
-    "DEPTH        11"
-   ],
-   [
-    64,
-    " 11          11"
-   ],
-   [
-    96,
-    " 11          11"
-   ],
-   [
-    128,
-    " 11          11"
-   ],
-   [
-    160,
-    " 11          11"
-   ],
-   [
-    192,
-    " 11          11"
-   ],
-   [
-    224,
-    " 11          11"
-   ],
-   [
-    254,
-    " 11          11"
-   ]
-  ],
-  "down": [
-   [
-    248,
-    " 11          11"
-   ],
-   [
-    240,
-    " 11          11"
-   ],
-   [
-    224,
-    " 11          11"
-   ],
-   [
-    208,
-    " 11          11"
-   ],
-   [
-    192,
-    " 11          11"
-   ],
-   [
-    176,
-    " 11          11"
-   ],
-   [
-    160,
-    " 11          11"
-   ],
-   [
-    144,
-    " 11          11"
-   ],
-   [
-    128,
-    " 11          11"
-   ],
-   [
-    112,
-    " 11          11"
-   ],
-   [
-    96,
-    " 11          11"
-   ],
-   [
-    80,
-    " 11          11"
-   ],
-   [
-    64,
-    " 11          11"
-   ],
-   [
-    48,
-    " 11          11"
-   ],
-   [
-    32,
-    " 11          11"
-   ],
-   [
-    24,
-    " 09          11"
-   ],
-   [
-    16,
-    " 06          11"
-   ],
-   [
-    8,
-    " 03          11"
-   ],
-   [
-    2,
-    " 00          11"
-   ]
-  ]
- },
- "p4s6": {
-  "name": "FinePD R",
-  "up": [
-   [
-    2,
-    " 00          11"
-   ],
-   [
-    32,
-    "PREDELAY    4.75 MSEC"
-   ],
-   [
-    64,
-    "8.75  AY    4.75 MSEC"
-   ],
-   [
-    96,
-    "12.7  AY    4.75 MSEC"
-   ],
-   [
-    128,
-    "16.7  AY    4.75 MSEC"
-   ],
-   [
-    160,
-    "20.7  AY    4.75 MSEC"
-   ],
-   [
-    192,
-    "24.7  AY    4.75 MSEC"
-   ],
-   [
-    224,
-    "28.7  AY    4.75 MSEC"
-   ],
-   [
-    254,
-    "31.7  AY    4.75 MSEC"
-   ]
-  ],
-  "down": [
-   [
-    248,
-    "31.7  AY    4.75 MSEC"
-   ],
-   [
-    240,
-    "30.7  AY    4.75 MSEC"
-   ],
-   [
-    224,
-    "28.7  AY    4.75 MSEC"
-   ],
-   [
-    208,
-    "26.7  AY    4.75 MSEC"
-   ],
-   [
-    192,
-    "24.7  AY    4.75 MSEC"
-   ],
-   [
-    176,
-    "22.7  AY    4.75 MSEC"
-   ],
-   [
-    160,
-    "20.7  AY    4.75 MSEC"
-   ],
-   [
-    144,
-    "18.7  AY    4.75 MSEC"
-   ],
-   [
-    128,
-    "16.7  AY    4.75 MSEC"
-   ],
-   [
-    112,
-    "14.7  AY    4.75 MSEC"
-   ],
-   [
-    96,
-    "12.7  AY    4.75 MSEC"
-   ],
-   [
-    80,
-    "10.7  AY    4.75 MSEC"
-   ],
-   [
-    64,
-    "8.75  AY    4.75 MSEC"
-   ],
-   [
-    48,
-    "6.75  AY    4.75 MSEC"
-   ],
-   [
-    32,
-    "4.75  AY    4.75 MSEC"
-   ],
-   [
-    24,
-    "3.75  AY    4.75 MSEC"
-   ],
-   [
-    16,
-    "2.75  AY    4.75 MSEC"
-   ],
-   [
-    8,
-    "1.75  AY    4.75 MSEC"
-   ],
-   [
-    2,
-    "1.00  AY    4.75 MSEC"
-   ]
-  ]
- },
- "p5s1": {
-  "name": "Size",
-  "up": [
-   [
-    2,
-    "1.00  AY    4.75 MSEC"
-   ],
-   [
-    32,
-    "LF DECAY     1.1  SEC"
-   ],
-   [
-    64,
-    " 1.5  AY     1.1  SEC"
-   ],
-   [
-    96,
-    " 2.2  AY     1.1  SEC"
-   ],
-   [
-    128,
-    " 3.0  AY     1.1  SEC"
-   ],
-   [
-    160,
-    " 4.6  AY     1.1  SEC"
-   ],
-   [
-    192,
-    " 7.5  AY     1.1  SEC"
-   ],
-   [
-    224,
-    " 16   AY     1.1  SEC"
-   ],
-   [
-    254,
-    " --   AY     1.1  SEC"
-   ]
-  ],
-  "down": [
-   [
-    248,
-    " 70   AY     1.1  SEC"
-   ],
-   [
-    240,
-    " 35   AY     1.1  SEC"
-   ],
-   [
-    224,
-    " 16   AY     1.1  SEC"
-   ],
-   [
-    208,
-    " 10   AY     1.1  SEC"
-   ],
-   [
-    192,
-    " 7.5  AY     1.1  SEC"
-   ],
-   [
-    176,
-    " 5.7  AY     1.1  SEC"
-   ],
-   [
-    160,
-    " 4.6  AY     1.1  SEC"
-   ],
-   [
-    144,
-    " 3.8  AY     1.1  SEC"
-   ],
-   [
-    128,
-    " 3.0  AY     1.1  SEC"
-   ],
-   [
-    112,
-    " 2.6  AY     1.1  SEC"
-   ],
-   [
-    96,
-    " 2.2  AY     1.1  SEC"
-   ],
-   [
-    80,
-    " 1.8  AY     1.1  SEC"
-   ],
-   [
-    64,
-    " 1.5  AY     1.1  SEC"
-   ],
-   [
-    48,
-    " 1.3  AY     1.1  SEC"
-   ],
-   [
-    32,
-    " 1.1  AY     1.1  SEC"
-   ],
-   [
-    24,
-    " 0.9  AY     1.1  SEC"
-   ],
-   [
-    16,
-    " 0.8  AY     1.1  SEC"
-   ],
-   [
-    8,
-    " 0.6  AY     1.1  SEC"
-   ],
-   [
-    2,
-    " 0.6  AY     1.1  SEC"
-   ]
-  ]
- },
- "p5s2": {
-  "name": "sl2",
-  "up": [
-   [
-    2,
-    " 0.6  AY     1.1  SEC"
-   ],
-   [
-    32,
-    "MID DECAY    1.1  SEC"
-   ],
-   [
-    64,
-    " 1.5  CAY    1.1  SEC"
-   ],
-   [
-    96,
-    " 2.2  CAY    1.1  SEC"
-   ],
-   [
-    128,
-    " 3.0  CAY    1.1  SEC"
-   ],
-   [
-    160,
-    " 4.6  CAY    1.1  SEC"
-   ],
-   [
-    192,
-    " 7.5  CAY    1.1  SEC"
-   ],
-   [
-    224,
-    " 16   CAY    1.1  SEC"
-   ],
-   [
-    254,
-    " --   CAY    1.1  SEC"
-   ]
-  ],
-  "down": [
-   [
-    248,
-    " 70   CAY    1.1  SEC"
-   ],
-   [
-    240,
-    " 35   CAY    1.1  SEC"
-   ],
-   [
-    224,
-    " 16   CAY    1.1  SEC"
-   ],
-   [
-    208,
-    " 10   CAY    1.1  SEC"
-   ],
-   [
-    192,
-    " 7.5  CAY    1.1  SEC"
-   ],
-   [
-    176,
-    " 5.7  CAY    1.1  SEC"
-   ],
-   [
-    160,
-    " 4.6  CAY    1.1  SEC"
-   ],
-   [
-    144,
-    " 3.8  CAY    1.1  SEC"
-   ],
-   [
-    128,
-    " 3.0  CAY    1.1  SEC"
-   ],
-   [
-    112,
-    " 2.6  CAY    1.1  SEC"
-   ],
-   [
-    96,
-    " 2.2  CAY    1.1  SEC"
-   ],
-   [
-    80,
-    " 1.8  CAY    1.1  SEC"
-   ],
-   [
-    64,
-    " 1.5  CAY    1.1  SEC"
-   ],
-   [
-    48,
-    " 1.3  CAY    1.1  SEC"
-   ],
-   [
-    32,
-    " 1.1  CAY    1.1  SEC"
-   ],
-   [
-    24,
-    " 0.9  CAY    1.1  SEC"
-   ],
-   [
-    16,
-    " 0.8  CAY    1.1  SEC"
-   ],
-   [
-    8,
-    " 0.6  CAY    1.1  SEC"
-   ],
-   [
-    2,
-    " 0.6  CAY    1.1  SEC"
-   ]
-  ]
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-5 wrinkle: display page 5 pairs with apply-page byte 0x3C34=5 \u2014 the PAGE key SKIPS apply page 4 on CONCERT (refines registry #33); the apply-5 recalled slots read 0x00 and SIZE's select render (40 METERS = f(0xF8..)) matches no flat-array slot \u2014 the page-5 preset storage is unresolved."
  },
  "p5s3": {
   "name": "Gate",
+  "label": "REV STOP DLY",
+  "legend": "SIZE    GATE",
+  "display_page": 5,
+  "apply_page34": 5,
+  "select_display": "REV STOP DLY0.00  SEC",
+  "preset_byte": 0,
+  "preset_slot": "0x3cc3",
+  "preset_check": [
+   0,
+   "0.00  OP DLY0.00  SEC"
+  ],
+  "preset_ok": true,
+  "monotonic": true,
   "up": [
    [
     2,
-    " 0.6  CAY    1.1  SEC"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     32,
-    "CROSSOVER   720   HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     64,
-    "1.57 KHZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     254,
-    " --   HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ]
   ],
   "down": [
    [
     248,
-    "19.0  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     240,
-    "15.0  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     208,
-    "9.00  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     176,
-    "6.30  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     144,
-    "4.50  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     112,
-    "3.10  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     80,
-    "2.05  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     64,
-    "1.57  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     48,
-    "1.13  HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     32,
-    "720   HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     24,
-    "530   HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     16,
-    "350   HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     8,
-    "170   HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ],
    [
     2,
-    "170   HZ          HZ"
+    "0.00  OP DLY0.00  SEC"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-5 wrinkle: display page 5 pairs with apply-page byte 0x3C34=5 \u2014 the PAGE key SKIPS apply page 4 on CONCERT (refines registry #33); the apply-5 recalled slots read 0x00 and SIZE's select render (40 METERS = f(0xF8..)) matches no flat-array slot \u2014 the page-5 preset storage is unresolved."
  },
  "p5s4": {
   "name": "sl4",
+  "label": "INACTIVE",
+  "legend": "SIZE    GATE",
+  "display_page": 5,
+  "apply_page34": 5,
+  "select_display": "INACTIVE",
+  "preset_byte": 0,
+  "preset_slot": "0x3cc4",
+  "preset_check": [
+   0,
+   "INACTIVE"
+  ],
+  "preset_ok": null,
+  "monotonic": null,
   "up": [
    [
     2,
-    "170   HZ          HZ"
+    "INACTIVE"
    ],
    [
     32,
-    "TREBLE DECAY720   HZ"
+    "INACTIVE"
    ],
    [
     64,
-    "1.57 KHZ          HZ"
+    "INACTIVE"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    "INACTIVE"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    "INACTIVE"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    "INACTIVE"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    "INACTIVE"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    "INACTIVE"
    ],
    [
     254,
-    " --   HZ          HZ"
+    "INACTIVE"
    ]
   ],
   "down": [
    [
     248,
-    "19.0  HZ          HZ"
+    "INACTIVE"
    ],
    [
     240,
-    "15.0  HZ          HZ"
+    "INACTIVE"
    ],
    [
     224,
-    "11.3  HZ          HZ"
+    "INACTIVE"
    ],
    [
     208,
-    "9.00  HZ          HZ"
+    "INACTIVE"
    ],
    [
     192,
-    "7.50  HZ          HZ"
+    "INACTIVE"
    ],
    [
     176,
-    "6.30  HZ          HZ"
+    "INACTIVE"
    ],
    [
     160,
-    "5.30  HZ          HZ"
+    "INACTIVE"
    ],
    [
     144,
-    "4.50  HZ          HZ"
+    "INACTIVE"
    ],
    [
     128,
-    "3.80  HZ          HZ"
+    "INACTIVE"
    ],
    [
     112,
-    "3.10  HZ          HZ"
+    "INACTIVE"
    ],
    [
     96,
-    "2.50  HZ          HZ"
+    "INACTIVE"
    ],
    [
     80,
-    "2.05  HZ          HZ"
+    "INACTIVE"
    ],
    [
     64,
-    "1.57  HZ          HZ"
+    "INACTIVE"
    ],
    [
     48,
-    "1.13  HZ          HZ"
+    "INACTIVE"
    ],
    [
     32,
-    "720   HZ          HZ"
+    "INACTIVE"
    ],
    [
     24,
-    "530   HZ          HZ"
+    "INACTIVE"
    ],
    [
     16,
-    "350   HZ          HZ"
+    "INACTIVE"
    ],
    [
     8,
-    "170   HZ          HZ"
+    "INACTIVE"
    ],
    [
     2,
-    "170   HZ          HZ"
+    "INACTIVE"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-5 wrinkle: display page 5 pairs with apply-page byte 0x3C34=5 \u2014 the PAGE key SKIPS apply page 4 on CONCERT (refines registry #33); the apply-5 recalled slots read 0x00 and SIZE's select render (40 METERS = f(0xF8..)) matches no flat-array slot \u2014 the page-5 preset storage is unresolved."
  },
  "p5s5": {
   "name": "sl5",
+  "label": "INACTIVE",
+  "legend": "SIZE    GATE",
+  "display_page": 5,
+  "apply_page34": 5,
+  "select_display": "INACTIVE",
+  "preset_byte": 0,
+  "preset_slot": "0x3cc5",
+  "preset_check": [
+   0,
+   "INACTIVE"
+  ],
+  "preset_ok": null,
+  "monotonic": null,
   "up": [
    [
     2,
-    "170   HZ          HZ"
+    "INACTIVE"
    ],
    [
     32,
-    "DEPTH        12"
+    "INACTIVE"
    ],
    [
     64,
-    " 25          12"
+    "INACTIVE"
    ],
    [
     96,
-    " 37          12"
+    "INACTIVE"
    ],
    [
     128,
-    " 50          12"
+    "INACTIVE"
    ],
    [
     160,
-    " 63          12"
+    "INACTIVE"
    ],
    [
     192,
-    " 75          12"
+    "INACTIVE"
    ],
    [
     224,
-    " 88          12"
+    "INACTIVE"
    ],
    [
     254,
-    " 99          12"
+    "INACTIVE"
    ]
   ],
   "down": [
    [
     248,
-    " 97          12"
+    "INACTIVE"
    ],
    [
     240,
-    " 94          12"
+    "INACTIVE"
    ],
    [
     224,
-    " 88          12"
+    "INACTIVE"
    ],
    [
     208,
-    " 82          12"
+    "INACTIVE"
    ],
    [
     192,
-    " 75          12"
+    "INACTIVE"
    ],
    [
     176,
-    " 69          12"
+    "INACTIVE"
    ],
    [
     160,
-    " 63          12"
+    "INACTIVE"
    ],
    [
     144,
-    " 56          12"
+    "INACTIVE"
    ],
    [
     128,
-    " 50          12"
+    "INACTIVE"
    ],
    [
     112,
-    " 44          12"
+    "INACTIVE"
    ],
    [
     96,
-    " 37          12"
+    "INACTIVE"
    ],
    [
     80,
-    " 31          12"
+    "INACTIVE"
    ],
    [
     64,
-    " 25          12"
+    "INACTIVE"
    ],
    [
     48,
-    " 18          12"
+    "INACTIVE"
    ],
    [
     32,
-    " 12          12"
+    "INACTIVE"
    ],
    [
     24,
-    " 09          12"
+    "INACTIVE"
    ],
    [
     16,
-    " 06          12"
+    "INACTIVE"
    ],
    [
     8,
-    " 03          12"
+    "INACTIVE"
    ],
    [
     2,
-    " 00          12"
+    "INACTIVE"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-5 wrinkle: display page 5 pairs with apply-page byte 0x3C34=5 \u2014 the PAGE key SKIPS apply page 4 on CONCERT (refines registry #33); the apply-5 recalled slots read 0x00 and SIZE's select render (40 METERS = f(0xF8..)) matches no flat-array slot \u2014 the page-5 preset storage is unresolved."
  },
  "p5s6": {
   "name": "sl6",
+  "label": "INACTIVE",
+  "legend": "SIZE    GATE",
+  "display_page": 5,
+  "apply_page34": 5,
+  "select_display": "INACTIVE",
+  "preset_byte": 0,
+  "preset_slot": "0x3cc6",
+  "preset_check": [
+   0,
+   "INACTIVE"
+  ],
+  "preset_ok": null,
+  "monotonic": null,
   "up": [
    [
     2,
-    " 00          12"
+    "INACTIVE"
    ],
    [
     32,
-    "PREDELAY    062  MSEC"
+    "INACTIVE"
    ],
    [
     64,
-    "126   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     96,
-    "230   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     128,
-    "366   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     160,
-    "622   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     192,
-    "862   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     224,
-    "862   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     254,
-    "862   AY    062  MSEC"
+    "INACTIVE"
    ]
   ],
   "down": [
    [
     248,
-    "862   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     240,
-    "862   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     224,
-    "862   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     208,
-    "862   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     192,
-    "862   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     176,
-    "750   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     160,
-    "622   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     144,
-    "494   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     128,
-    "366   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     112,
-    "294   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     96,
-    "230   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     80,
-    "166   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     64,
-    "126   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     48,
-    "094   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     32,
-    "062   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     24,
-    "048   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     16,
-    "040   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     8,
-    "032   AY    062  MSEC"
+    "INACTIVE"
    ],
    [
     2,
-    "026   AY    062  MSEC"
+    "INACTIVE"
    ]
-  ]
+  ],
+  "note": "F4a plan024: display page set via PAGE key 0x3E before the sweep (0027's p2-p5 data used page-1 formatters). B1P1 CONCERT; banks B2/B3 label slider 5 ATT (bank-dependent legends, not covered). preset_byte = boot-recalled slot 0x3CA3+apply_page34*6+slider. MEASURED page-5 wrinkle: display page 5 pairs with apply-page byte 0x3C34=5 \u2014 the PAGE key SKIPS apply page 4 on CONCERT (refines registry #33); the apply-5 recalled slots read 0x00 and SIZE's select render (40 METERS = f(0xF8..)) matches no flat-array slot \u2014 the page-5 preset storage is unresolved."
  }
 }

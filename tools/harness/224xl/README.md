@@ -22,6 +22,11 @@ never regenerated — so both sides consume identical bits):
   (`tools/session0022_probes/wcs_settled_concert.json`), mono 0.30 s noise
   burst (default_rng(224), ±8000) then silence, nsamp = 66000 — deliberately
   crossing the 65536-frame CPC wrap.
+- `sig6` — the diag-6 FPC-signature image (`wcs_diag.json["sig6"]`, L=97),
+  zero input with the host latch parked at XREG_host = 0xFAAA (meta key
+  `xreg_host`; the harness calls `setXregHost` after `loadProgram`): the
+  program's SRC_XREG word unity-MACs the latch to WR-DA channel D (-1366
+  every frame) — the XREG host-latch boundary golden.
 - `booth_vectors.bin` — 4000 `raw3` gate-array vectors + 200 `backend20`
   sat-mux vectors (both clamp rails covered).
 
@@ -49,19 +54,20 @@ harness builds with MSVC (any host C++17 compiler works).
 ## Scope
 
 **Validated:** C++ == the pin-locked RTL engine, integer/bit-exact, on
-D1 zero/max (impulse, both diag delay taps) and settled CONCERT (noise burst +
-34 s tail including the 65536-frame CPC wrap) — outputs every frame, phys
-state every step of the traced frames; plus 4200 primitive vectors. The C++
-walk includes the complement-domain datapath (phys R/DM/RES/DAB/ACC), raw3
-product-register loads, backend20 sat-mux with clamp-into-ACC (#35), own-sign
-retirement, XFER PP-bus capture `(sum>>3)&0xFFFF`, ZERO sync-clear, write-
-through operand read, stereo RD-AD half alternation, WR-DA channel decode,
-and CPC-offset DMEM addressing.
+D1 zero/max (impulse, both diag delay taps), settled CONCERT (noise burst +
+34 s tail including the 65536-frame CPC wrap), and diag-6 sig6 (the XREG
+host-latch boundary) — outputs every frame, phys state every step of the
+traced frames; plus 4200 primitive vectors. The C++ walk includes the
+complement-domain datapath (phys R/DM/RES/DAB/ACC), raw3 product-register
+loads, backend20 sat-mux with clamp-into-ACC (#35), own-sign retirement, XFER
+PP-bus capture `(sum>>3)&0xFFFF`, ZERO sync-clear, write-through operand
+read, stereo RD-AD half alternation, WR-DA channel decode, the XREG
+host->DAB complement bridge, and CPC-offset DMEM addressing.
 
-**Not exercised by these goldens:** the XREG host-latch path (`setXregHost`,
-WR-XREG readback) is ported 1:1 from the reference but no golden case drives
-it (free-run XREG_host = 0); FPC float codec is not ported (the diff gate is
-the fixed-point path). Params/modulation remain CPU-side (out of ARU scope).
+**Not exercised by these goldens:** the WR-XREG readback latch
+(`xregReadback()`, DSP->host direction) is ported 1:1 but no golden program
+writes it; FPC float codec is not ported (the diff gate is the fixed-point
+path). Params/modulation remain CPU-side (out of ARU scope).
 
 **History:** everything this harness proved before 2026-07-02 (the
 `golden/` directory, `aru_datapath.py` parity, `mult_vectors_test`,
